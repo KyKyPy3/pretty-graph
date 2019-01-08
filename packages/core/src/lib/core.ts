@@ -3,6 +3,7 @@ import {
   BufferGeometry,
   CanvasTexture,
   Color,
+  CubicBezierCurve3,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
   LinearFilter,
@@ -629,6 +630,7 @@ export class PretyGraph {
   }
 
   private _constructLines(links: any[]): any {
+    const start = performance.now();
     const positions: any[] = [];
     const colors: any[] = [];
     const sizes: any = [];
@@ -646,19 +648,54 @@ export class PretyGraph {
       const targetX = link.target.x - radius * Math.cos(angle);
       const targetY = link.target.y - radius * Math.sin(angle);
 
-      positions.push(
-        sourceX, sourceY, 0, // start point
-        targetX, targetY, 0  // end point
-      );
+      if (link.source.x === link.target.x && link.source.y === link.target.y) {
+        const vStart = new Vector3(link.source.x, link.source.y || 0, 0);
+        const vEnd = new Vector3(link.target.x, link.target.y || 0, 0);
 
-      sizes.push(link.size);
+        const d = 150;
+        const endAngle = -0; // Rotate clockwise (from Z angle perspective)
+        const startAngle = endAngle + Math.PI / 2;
 
-      color.setHex(link.color);
-      colors.push(
-        color.r, color.g, color.b, // color start
-        color.r, color.g, color.b  // color end
-      );
+        const curve = new CubicBezierCurve3(
+          vStart,
+          new Vector3(d * Math.cos(startAngle), d * Math.sin(startAngle), 0).add(vStart),
+          new Vector3(d * Math.cos(endAngle), d * Math.sin(endAngle), 0).add(vStart),
+          vEnd
+        );
+        const points = curve.getPoints(30);
+
+        for (let i = 0; i < points.length - 1; i += 2) {
+          positions.push(
+            points[i].x, points[i].y, 0,
+            points[i + 1].x, points[i + 1].y, 0
+          );
+
+          sizes.push(5);
+
+          color.setHex(0xff0000);
+          colors.push(
+            color.r, color.g, color.b, // color start
+            color.r, color.g, color.b  // color end
+          );
+        }
+      } else {
+        positions.push(
+          sourceX, sourceY, 0, // start point
+          targetX, targetY, 0  // end point
+        );
+
+        sizes.push(link.size);
+
+        color.setHex(link.color);
+        colors.push(
+          color.r, color.g, color.b, // color start
+          color.r, color.g, color.b  // color end
+        );
+      }
     });
+
+    const end = performance.now();
+    console.log("line generated: ", end - start);
 
     return {
       colors,
