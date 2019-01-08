@@ -1,0 +1,26 @@
+{
+  "name": "@pretty-graph/core",
+  "version": "0.0.1",
+  "description": "Core graph package",
+  "author": "Efremenko Roman <Roman.Efremenko@infowatch.com>",
+  "keywords": [
+    "pretty-graph"
+  ],
+  "license": "MIT",
+  "main": "dist/core.js",
+  "typings": "dist/index.d.ts",
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "run-p build:dev build:prod",
+    "build:dev": "webpack --profile --progress --env.development",
+    "build:prod": "webpack --profile --progress --env.production"
+  },
+  "dependencies": {
+    "three": "^0.100.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.93.15",
+    "ts-loader": "5.3.2",
+    "webpack": "4.28.3"
+  }
+}

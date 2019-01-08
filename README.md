@@ -1,2 +1,3 @@
-# pretty-graph
-Pretty webgl graph
+# Pretty graph
+
+Test description

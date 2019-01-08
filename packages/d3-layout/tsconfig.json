@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "target": "esnext",
+    "outDir": "dist",
+    "module": "esnext",
+    "typeRoots": ["node_modules/@types", "packages", "src/typings"]
+  },
+  "include": ["src/**/*.ts"]
+}

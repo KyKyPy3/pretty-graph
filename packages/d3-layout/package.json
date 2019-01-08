@@ -1,0 +1,27 @@
+{
+  "name": "@pretty-graph/d3-layout",
+  "version": "0.0.1",
+  "description": "Pretty graph d3 force layout package",
+  "author": "Efremenko Roman <Roman.Efremenko@infowatch.com>",
+  "keywords": [
+    "d3-force",
+    "pretty-graph"
+  ],
+  "license": "MIT",
+  "main": "dist/d3-layout.js",
+  "typings": "dist/index.d.ts",
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "run-p build:dev build:prod",
+    "build:dev": "webpack --profile --progress --env.development",
+    "build:prod": "webpack --profile --progress --env.production"
+  },
+  "dependencies": {
+    "d3-force": "2.0.0"
+  },
+  "devDependencies": {
+    "ts-loader": "5.3.2",
+    "webpack": "4.28.3",
+    "worker-loader": "2.0.0"
+  }
+}
