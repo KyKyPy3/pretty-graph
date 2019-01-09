@@ -45,7 +45,7 @@ export declare class PretyGraph {
     options: GraphOptions;
     setData(data: any): void;
     stopRenderLoop(): void;
-    resuleRenderLoop(): void;
+    resumeRenderLoop(): void;
     destroy(): void;
     private _disposeMesh;
     private _disposeGeometries;

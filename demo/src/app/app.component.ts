@@ -4,7 +4,7 @@ import { PretyGraph } from '@pretty-graph/core';
 import { D3Layout } from '@pretty-graph/d3-layout';
 import { PrettyGraphControls } from '@pretty-graph/controls';
 
-import * as graphData from '../data/graph_data.json';
+import * as graphData from '../data/graph_small.json';
 
 @Component({
   selector: 'app-root',
@@ -41,7 +41,7 @@ export class AppComponent implements OnInit {
     });
 
     graph.onEvent.on('nodeHover', (data) => {
-      this._tooltipEl.nativeElement.innerHTML = data.node.name || data.node.id;
+      this._tooltipEl.nativeElement.innerHTML = data.node.name || data.node.id.split(':').pop();
       const d = this._tooltipEl.nativeElement.getBoundingClientRect();
       this._tooltipEl.nativeElement.style.left = data.x - d.width / 2 + 'px';
       this._tooltipEl.nativeElement.style.top = data.y - (data.node.size / 2) * 10 * data.scale - d.height + 'px';
@@ -52,7 +52,7 @@ export class AppComponent implements OnInit {
     });
 
     const agent = new D3Layout({
-      useWorker: false
+      useWorker: true
     });
 
     agent.onEvent.on('tick', (progress) => {
@@ -75,7 +75,7 @@ export class AppComponent implements OnInit {
       links: this._links
     });
     agent.calculate();
-    agent.destroy();
+    // agent.destroy();
   }
 
   private _prepareGraphData(data): any {
@@ -89,7 +89,7 @@ export class AppComponent implements OnInit {
     this._nodes = data.nodes.map((node) => {
       return {
         ...node,
-        size: 5,
+        size: +node.id === 850 ? 20 : 5,
         img: 'assets/user.jpg',
         color: 0xdcdcdc
       };

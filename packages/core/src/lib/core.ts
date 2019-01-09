@@ -134,6 +134,15 @@ export class PretyGraph {
         this._nodesPickingMaterial.uniforms.scale.value = scale;
         this._nodesPickingMaterial.needsUpdate = true;
       }
+
+      if (this._edges.length && this._lineGeometry) {
+        const links = this._constructLines(this._edges);
+
+        this._lineGeometry.setPositions(links.positions);
+
+        this._lineGeometry.attributes.instanceStart.data.needsUpdate = true;
+        this._lineGeometry.attributes.instanceEnd.data.needsUpdate = true;
+      }
     });
 
     this._controls.onChange.on('mousemove', (position: any) => {
@@ -225,9 +234,7 @@ export class PretyGraph {
     window.addEventListener('resize', () => {
       const d = this._container.getBoundingClientRect();
 
-      if (this._renderer) {
-        this._renderer.setSize(d.width, d.height);
-      }
+      this._renderer.setSize(d.width, d.height);
       this._camera.aspect = d.width / d.height;
       this._camera.updateProjectionMatrix();
 
@@ -265,7 +272,7 @@ export class PretyGraph {
     this._animationFrameRequestId = null;
   }
 
-  public resuleRenderLoop(): void {
+  public resumeRenderLoop(): void {
     if (!this._animationFrameRequestId) {
       this._renderLoop();
     }
