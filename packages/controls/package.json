@@ -6,6 +6,9 @@
   "keywords": [
     "pretty-graph"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "MIT",
   "main": "dist/controls.js",
   "typings": "dist/index.d.ts",
@@ -25,5 +28,6 @@
     "ts-loader": "5.3.2",
     "webpack": "4.28.3",
     "webpack-cli": "^3.2.1"
-  }
+  },
+  "gitHead": "ee0b8028acc1d64c4e5864ee38cd66935e95b6fd"
 }

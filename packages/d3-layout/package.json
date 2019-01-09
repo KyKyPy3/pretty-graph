@@ -7,6 +7,9 @@
     "d3-force",
     "pretty-graph"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "MIT",
   "main": "dist/d3-layout.js",
   "typings": "dist/index.d.ts",
@@ -24,5 +27,6 @@
     "webpack": "4.28.3",
     "webpack-cli": "^3.2.1",
     "worker-loader": "2.0.0"
-  }
+  },
+  "gitHead": "ee0b8028acc1d64c4e5864ee38cd66935e95b6fd"
 }
