@@ -2,6 +2,9 @@
   "packages": [
     "packages/*"
   ],
+  "bootstrap": {
+    "npmClientArgs": ["--no-package-lock"]
+  },
   "npmClient": "yarn",
   "useWorkspaces": true,
   "version": "independent",

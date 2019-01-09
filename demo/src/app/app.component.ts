@@ -4,7 +4,7 @@ import { PretyGraph } from '@pretty-graph/core';
 import { D3Layout } from '@pretty-graph/d3-layout';
 import { PrettyGraphControls } from '@pretty-graph/controls';
 
-import * as graphData from '../data/graph_data.json';
+import * as graphData from '../data/graph_mini.json';
 
 @Component({
   selector: 'app-root',
@@ -61,6 +61,7 @@ export class AppComponent implements OnInit {
 
     agent.onEvent.on('end', (data) => {
       const { nodes, links } = data;
+
       graph.setData({
         nodes: nodes,
         links: links,
@@ -87,12 +88,21 @@ export class AppComponent implements OnInit {
       };
     });
     this._nodes = data.nodes.map((node) => {
-      return {
-        ...node,
-        size: +node.id === 850 ? 5 : 5,
-        img: 'assets/user.jpg',
-        color: 0xdcdcdc
-      };
+      if (+node.id === 373) {
+        return {
+          ...node,
+          size: +node.id === 373 ? 15 : 5,
+          img: 'assets/user.jpg',
+          color: 0xdcdcdc
+        };
+      } else {
+        return {
+          ...node,
+          size: +node.id === 373 ? 15 : 5,
+          img: 'assets/user.jpg',
+          color: 0xdcdcdc
+        };
+      }
     });
 
   }

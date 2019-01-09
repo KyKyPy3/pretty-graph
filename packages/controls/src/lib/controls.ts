@@ -41,15 +41,23 @@ export class PrettyGraphControls {
       .on('mouseup', this._onMouseUp.bind(this))
       .call(this._zoom);
 
-    const initialScale = this._getScaleFromZ(1000);
-    const initialTransform = zoomIdentity.translate(window.innerWidth / 2, window.innerHeight / 2).scale(initialScale);
+    this.scale = this._getScaleFromZ(1000);
+    const dimensions = this._selection.node().getBoundingClientRect();
+    const initialTransform = zoomIdentity.translate(dimensions.width / 2, dimensions.height / 2).scale(this.scale);
     this._zoom.transform(this._selection, initialTransform);
 
     // Set camera position
     this._camera.position.set(0, 1, 1000);
     this._camera.lookAt(0, 0, 0);
+  }
 
-    this.scale = this._getScaleFromZ(1000);
+  public setTransform(position: any): void {
+    const dimensions = this._selection.node().getBoundingClientRect();
+    const x = dimensions.width / 2 - this.scale * position.x;
+    const y = this.scale * position.y + dimensions.height / 2;
+
+    const initialTransform = zoomIdentity.translate(x, y).scale(this.scale);
+    this._zoom.transform(this._selection, initialTransform);
   }
 
   private _onContextMenu(): void {
@@ -89,6 +97,7 @@ export class PrettyGraphControls {
     const x = -(transform.x - dimensions.width / 2) / scale;
     const y = (transform.y - dimensions.height / 2) / scale;
     const z = this._getZFromScale(scale);
+
     this._camera.position.set(x, y, z);
 
     this.onChange.emit('scale', scale);

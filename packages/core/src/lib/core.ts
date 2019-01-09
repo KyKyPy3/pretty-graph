@@ -248,6 +248,7 @@ export class PretyGraph {
 
     if (data.center) {
       this._center = data.nodes.find((n: any) => +n.id === +data.center);
+      this._controls.setTransform(this._center);
     }
 
     this._drawEdges();
@@ -355,6 +356,7 @@ export class PretyGraph {
         this._hoveredNode = this._nodes[id - 1];
         this._hoveredNodeID = id - 1;
         this._setNodeColor(0xff0000);
+
         const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
         this.onEvent.emit('nodeHover', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
       }
@@ -428,11 +430,7 @@ export class PretyGraph {
     this._nodesGeometry.index = nodesGeometry.index;
     this._nodesGeometry.attributes = nodesGeometry.attributes;
 
-    if (this._center) {
-      this._nodesGeometry.addAttribute('position', new BufferAttribute(new Float32Array([-this._center.x, -this._center.y, 0]), 3));
-    } else {
-      this._nodesGeometry.addAttribute('position', new BufferAttribute(new Float32Array([0, 0, 0]), 3));
-    }
+    this._nodesGeometry.addAttribute('position', new BufferAttribute(new Float32Array([0, 0, 0]), 3));
 
     this._nodeTranslateAttribute = new InstancedBufferAttribute(translateArray, 3);
     this._nodeColorAttribute = new InstancedBufferAttribute(colors, 3);
@@ -530,7 +528,7 @@ export class PretyGraph {
     this._lineMaterial.useColor = 1.0;
     this._lineMaterial.resolution.set(dimensions.width, dimensions.height);
 
-    this._lineMesh = new Line2( this._lineGeometry, this._lineMaterial );
+    this._lineMesh = new Line2(this._lineGeometry, this._lineMaterial);
     this._lineMesh.computeLineDistances();
     this._scene.add(this._lineMesh);
   }
@@ -548,7 +546,6 @@ export class PretyGraph {
     const dimensions = this._container.getBoundingClientRect();
 
     this._camera = new PerspectiveCamera(this._fov, dimensions.width / dimensions.height, 0.1, this._far);
-
     this._camera.lookAt(0, 0, 0);
   }
 
@@ -650,7 +647,7 @@ export class PretyGraph {
         const vStart = new Vector3(link.source.x, link.source.y || 0, 0);
         const vEnd = new Vector3(link.target.x, link.target.y || 0, 0);
 
-        const d = 20 * link.source.size;
+        const d = 15 * link.source.size;
         const endAngle = -0; // Rotate clockwise (from Z angle perspective)
         const startAngle = endAngle + Math.PI / 2;
 
@@ -660,7 +657,7 @@ export class PretyGraph {
           new Vector3(d * Math.cos(endAngle), d * Math.sin(endAngle), 0).add(vStart),
           vEnd
         );
-        const points = curve.getPoints(30);
+        const points = curve.getPoints(50);
 
         let lastPoint;
         for (let i = 0; i < points.length - 1; i += 2) {
@@ -674,7 +671,7 @@ export class PretyGraph {
 
             sizes.push(link.size, link.size);
 
-            color.setHex(0xff0000);
+            color.setHex(link.color);
             colors.push(
               color.r, color.g, color.b, // color start
               color.r, color.g, color.b,  // color end
@@ -689,7 +686,7 @@ export class PretyGraph {
 
             sizes.push(link.size);
 
-            color.setHex(0xff0000);
+            color.setHex(link.color);
             colors.push(
               color.r, color.g, color.b, // color start
               color.r, color.g, color.b  // color end
