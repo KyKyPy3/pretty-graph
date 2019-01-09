@@ -134,15 +134,6 @@ export class PretyGraph {
         this._nodesPickingMaterial.uniforms.scale.value = scale;
         this._nodesPickingMaterial.needsUpdate = true;
       }
-
-      if (this._edges.length && this._lineGeometry) {
-        const links = this._constructLines(this._edges);
-
-        this._lineGeometry.setPositions(links.positions);
-
-        this._lineGeometry.attributes.instanceStart.data.needsUpdate = true;
-        this._lineGeometry.attributes.instanceEnd.data.needsUpdate = true;
-      }
     });
 
     this._controls.onChange.on('mousemove', (position: any) => {
@@ -659,7 +650,7 @@ export class PretyGraph {
         const vStart = new Vector3(link.source.x, link.source.y || 0, 0);
         const vEnd = new Vector3(link.target.x, link.target.y || 0, 0);
 
-        const d = 150;
+        const d = 20 * link.source.size;
         const endAngle = -0; // Rotate clockwise (from Z angle perspective)
         const startAngle = endAngle + Math.PI / 2;
 
@@ -671,19 +662,40 @@ export class PretyGraph {
         );
         const points = curve.getPoints(30);
 
+        let lastPoint;
         for (let i = 0; i < points.length - 1; i += 2) {
-          positions.push(
-            points[i].x, points[i].y, 0,
-            points[i + 1].x, points[i + 1].y, 0
-          );
+          if (lastPoint) {
+            positions.push(
+              lastPoint.x, lastPoint.y, 0,
+              points[i].x, points[i].y, 0,
+              points[i].x, points[i].y, 0,
+              points[i + 1].x, points[i + 1].y, 0
+            );
 
-          sizes.push(5);
+            sizes.push(link.size, link.size);
 
-          color.setHex(0xff0000);
-          colors.push(
-            color.r, color.g, color.b, // color start
-            color.r, color.g, color.b  // color end
-          );
+            color.setHex(0xff0000);
+            colors.push(
+              color.r, color.g, color.b, // color start
+              color.r, color.g, color.b,  // color end
+              color.r, color.g, color.b, // color start
+              color.r, color.g, color.b  // color end
+            );
+          } else {
+            positions.push(
+              points[i].x, points[i].y, 0,
+              points[i + 1].x, points[i + 1].y, 0
+            );
+
+            sizes.push(link.size);
+
+            color.setHex(0xff0000);
+            colors.push(
+              color.r, color.g, color.b, // color start
+              color.r, color.g, color.b  // color end
+            );
+          }
+          lastPoint = points[i + 1];
         }
       } else {
         positions.push(
