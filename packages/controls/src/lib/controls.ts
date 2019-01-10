@@ -39,7 +39,9 @@ export class PrettyGraphControls {
       .on('mousedown', this._onMouseDown.bind(this))
       .on('mousemove', this._onMouseMove.bind(this))
       .on('mouseup', this._onMouseUp.bind(this))
-      .call(this._zoom);
+      .on('dblclick', this._onDblClick.bind(this))
+      .call(this._zoom)
+      .on('dblclick.zoom', null);
 
     this.scale = this._getScaleFromZ(1000);
     const dimensions = this._selection.node().getBoundingClientRect();
@@ -79,6 +81,12 @@ export class PrettyGraphControls {
     const [mouseX, mouseY] = mouse(this._selection.node());
 
     this.onChange.emit('mousedown', { x: mouseX, y: mouseY });
+  }
+
+  private _onDblClick(): void {
+    const [mouseX, mouseY] = mouse(this._selection.node());
+
+    this.onChange.emit('dblclick', { x: mouseX, y: mouseY });
   }
 
   private _onMouseUp(): void {

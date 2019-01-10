@@ -80,6 +80,10 @@ export class PretyGraph {
 
   private _hoveredNodeID: number | null = null;
 
+  private _hoveredEdge: any = null;
+
+  private _hoveredEdgeID: number | null = null;
+
   private _dragInProgress: boolean = false;
 
   private _dragging: boolean = false;
@@ -108,7 +112,15 @@ export class PretyGraph {
 
   private _lineMaterial!: LineMaterial;
 
+  private _pickingLineScene!: Scene;
+
+  private _linesPickingGeometry!: LineSegmentsGeometry;
+
   private _lineMesh!: Line2;
+
+  private _canvasTextureWidth: number = 4096;
+
+  private _canvasTextureHeight: number = 4096;
 
   constructor(options: GraphOptions) {
     this.options = options;
@@ -127,90 +139,22 @@ export class PretyGraph {
     this._controls = new options.controls(this._camera, this._container);
     this._controls.init();
 
-    this._controls.onChange.on('scale', (scale: number) => {
-      if (this._nodesMaterial) {
-        this._nodesMaterial.uniforms.scale.value = scale;
-        this._nodesMaterial.needsUpdate = true;
-        this._nodesPickingMaterial.uniforms.scale.value = scale;
-        this._nodesPickingMaterial.needsUpdate = true;
-      }
-    });
+    this._controls.onChange.on('scale', this._onScale.bind(this));
 
-    this._controls.onChange.on('mousemove', (position: any) => {
-      if (this._dragging) {
-        // dragging node
-        const d = this._container.getBoundingClientRect();
-        const mouse = new Vector3();
-        mouse.x = (position.x / d.width) * 2 - 1;
-        mouse.y = -(position.y / d.height) * 2 + 1;
+    this._controls.onChange.on('mousemove', this._onMouseMove.bind(this));
 
-        let newPos = {
-          x: this._hoveredNode.x,
-          y: this._hoveredNode.y
-        };
+    this._controls.onChange.on('contextmenu', this._onContextMenu.bind(this));
 
-        if (!this._dragInProgress) {
-          const worldVector = new Vector3();
-          this._camera.getWorldDirection(worldVector);
-          this._plane.setFromNormalAndCoplanarPoint(worldVector, new Vector3(this._hoveredNode.x, this._hoveredNode.y, 0));
-          this._raycaster.setFromCamera(mouse, this._camera);
-          this._raycaster.ray.intersectPlane(this._plane, this._intersection);
-          this._offset.copy(this._intersection).sub(new Vector3(this._hoveredNode.x, this._hoveredNode.y, 0));
-          newPos = this._intersection.sub(this._offset).clone();
+    this._controls.onChange.on('dblclick', this._onDblClick.bind(this));
 
-          this._dragInProgress = true;
-        } else {
-          this._raycaster.setFromCamera(mouse, this._camera);
-          this._raycaster.ray.intersectPlane(this._plane, this._intersection);
-          newPos = this._intersection.sub(this._offset).clone();
-        }
+    this._controls.onChange.on('mousedown', this._onMouseDown.bind(this));
 
-        if (this._hoveredNodeID !== null) {
-          this._nodesGeometry.attributes.translation.setXYZ(this._hoveredNodeID, newPos.x, newPos.y, 0)
-          this._nodesPickingGeometry.attributes.translation.setXYZ(this._hoveredNodeID, newPos.x, newPos.y, 0)
-        }
-
-        this._hoveredNode.x = newPos.x;
-        this._hoveredNode.y = newPos.y;
-
-        const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
-        this.onEvent.emit('nodeMoving', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
-
-        (this._nodesGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
-        (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
-
-        const links = this._constructLines(this._edges);
-        this._lineGeometry.setPositions(links.positions);
-        this._lineGeometry.attributes.instanceStart.data.needsUpdate = true;
-        this._lineGeometry.attributes.instanceEnd.data.needsUpdate = true;
-      } else {
-        this._testNode(position);
-      }
-    });
-
-    this._controls.onChange.on('contextmenu', () => {
-      if (this._hoveredNode !== null) {
-        const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
-        this.onEvent.emit('nodeContextMenu', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
-      }
-    });
-
-    this._controls.onChange.on('mousedown', () => {
-      if (this._hoveredNode !== null) {
-        const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
-        this.onEvent.emit('nodeClick', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
-        this._controls.enabled = false;
-        this._dragging = true;
-      }
-    });
-
-    this._controls.onChange.on('mouseup', () => {
-      this._controls.enabled = true;
-      this._dragging = false;
-      this._dragInProgress = false;
-    });
+    this._controls.onChange.on('mouseup', this._onMouseUp.bind(this));
 
     this._pickingNodesScene = new Scene();
+    this._pickingNodesScene.background = new Color(0x000000);
+
+    this._pickingLineScene = new Scene();
     this._pickingNodesScene.background = new Color(0x000000);
 
     const dimensions = this._container.getBoundingClientRect();
@@ -283,6 +227,105 @@ export class PretyGraph {
     this._disposeRenderer();
 
     this._container.innerHTML = '';
+  }
+
+  private _onMouseMove(position: any): void {
+    if (this._dragging) {
+      // dragging node
+      const d = this._container.getBoundingClientRect();
+      const mouse = new Vector3();
+      mouse.x = (position.x / d.width) * 2 - 1;
+      mouse.y = -(position.y / d.height) * 2 + 1;
+
+      let newPos = {
+        x: this._hoveredNode.x,
+        y: this._hoveredNode.y
+      };
+
+      if (!this._dragInProgress) {
+        const worldVector = new Vector3();
+        this._camera.getWorldDirection(worldVector);
+        this._plane.setFromNormalAndCoplanarPoint(worldVector, new Vector3(this._hoveredNode.x, this._hoveredNode.y, 0));
+        this._raycaster.setFromCamera(mouse, this._camera);
+        this._raycaster.ray.intersectPlane(this._plane, this._intersection);
+        this._offset.copy(this._intersection).sub(new Vector3(this._hoveredNode.x, this._hoveredNode.y, 0));
+        newPos = this._intersection.sub(this._offset).clone();
+
+        this._dragInProgress = true;
+      } else {
+        this._raycaster.setFromCamera(mouse, this._camera);
+        this._raycaster.ray.intersectPlane(this._plane, this._intersection);
+        newPos = this._intersection.sub(this._offset).clone();
+      }
+
+      if (this._hoveredNodeID !== null) {
+        this._nodesGeometry.attributes.translation.setXYZ(this._hoveredNodeID, newPos.x, newPos.y, 0)
+        this._nodesPickingGeometry.attributes.translation.setXYZ(this._hoveredNodeID, newPos.x, newPos.y, 0)
+      }
+
+      this._hoveredNode.x = newPos.x;
+      this._hoveredNode.y = newPos.y;
+
+      const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
+      this.onEvent.emit('nodeMoving', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
+
+      (this._nodesGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+      (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+
+      const links = this._constructLines(this._edges);
+      this._lineGeometry.setPositions(links.positions);
+      this._linesPickingGeometry.setPositions(links.positions);
+      this._lineGeometry.attributes.instanceStart.data.needsUpdate = true;
+      this._lineGeometry.attributes.instanceEnd.data.needsUpdate = true;
+      this._linesPickingGeometry.attributes.instanceStart.data.needsUpdate = true;
+      this._linesPickingGeometry.attributes.instanceEnd.data.needsUpdate = true;
+    } else {
+      this._testNode(position);
+      this._testEdge(position);
+    }
+  }
+
+  private _onMouseUp(): void {
+    this._controls.enabled = true;
+    this._dragging = false;
+    this._dragInProgress = false;
+  }
+
+  private _onMouseDown(): void {
+    if (this._hoveredNode !== null) {
+      const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
+      this.onEvent.emit('nodeClick', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
+      this._controls.enabled = false;
+      this._dragging = true;
+    }
+  }
+
+  private _onDblClick(): void {
+    if (this._hoveredNode !== null) {
+      const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
+      this.onEvent.emit('nodeDblClick', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
+    }
+  }
+
+  private _onContextMenu(): void {
+    if (this._hoveredNode !== null) {
+      const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
+      this.onEvent.emit('nodeContextMenu', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
+    }
+  }
+
+  private _onScale(scale: number): void {
+    if (this._nodesMaterial) {
+      this._nodesMaterial.uniforms.scale.value = scale;
+      this._nodesMaterial.needsUpdate = true;
+      this._nodesPickingMaterial.uniforms.scale.value = scale;
+      this._nodesPickingMaterial.needsUpdate = true;
+
+      if (this._hoveredNode) {
+        const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
+        this.onEvent.emit('nodeScaling', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
+      }
+    }
   }
 
   private _disposeMesh(): void {
@@ -372,6 +415,75 @@ export class PretyGraph {
     }
   }
 
+  private _testEdge(position: any): void {
+    this._renderer.render(this._pickingLineScene, this._camera, this._pickingTexture);
+    const pixelBuffer = new Uint8Array(4);
+    this._renderer.readRenderTargetPixels(this._pickingTexture, position.x, this._pickingTexture.height - position.y, 1, 1, pixelBuffer);
+    /* tslint:disable-next-line */
+    const id = (pixelBuffer[0]<<16)|(pixelBuffer[1]<<8)|(pixelBuffer[2]);
+    if (id) {
+      if (this._hoveredEdgeID !== id - 1) {
+        if (this._hoveredEdge !== null) {
+          this._setEdgeColor(this._hoveredEdge.color);
+          this._setEdgeSize(this._hoveredEdge.size);
+        }
+
+        this._hoveredEdge = this._edges[id - 1];
+        this._hoveredEdgeID = id - 1;
+        this._setEdgeColor(0xff0000);
+        this._setEdgeSize(this._hoveredEdge.size * 5);
+
+        // ToDo: отсылать надо центр ребра?
+        this.onEvent.emit('edgeHover', { edge: this._hoveredEdge, ...position });
+      }
+    } else {
+      if (this._hoveredEdge !== null) {
+        this._setEdgeColor(this._hoveredEdge.color);
+        this._setEdgeSize(this._hoveredEdge.size);
+
+        this.onEvent.emit('edgeUnhover', { edge: this._hoveredEdge });
+        this._hoveredEdge = null;
+        this._hoveredEdgeID = null;
+      }
+    }
+  }
+
+  private _setEdgeSize(size: number): void {
+    if (this._hoveredEdge._lineSizeRange) {
+      const count = this._hoveredEdge._lineSizeRange[1] - this._hoveredEdge._lineSizeRange[0];
+
+      if (count > 1) {
+        for (let i = this._hoveredEdge._lineSizeRange[0]; i < this._hoveredEdge._lineSizeRange[1] / 2 + 2; i++) {
+          this._lineGeometry.attributes.linewidth.setX(i, size);
+        }
+      } else {
+        this._lineGeometry.attributes.linewidth.setX(this._hoveredEdge._lineSizeRange[0], size);
+      }
+
+      this._lineGeometry.attributes.linewidth.updateRange = { offset: this._hoveredEdge._lineSizeRange[0], count };
+      this._lineGeometry.attributes.linewidth.needsUpdate = true;
+
+      if (count > 1) {
+        for (let i = this._hoveredEdge._lineSizeRange[0]; i < this._hoveredEdge._lineSizeRange[1] / 2 + 2; i++) {
+          this._linesPickingGeometry.attributes.linewidth.setX(i, size);
+        }
+      } else {
+        this._linesPickingGeometry.attributes.linewidth.setX(this._hoveredEdge._lineSizeRange[0], size);
+      }
+      this._linesPickingGeometry.attributes.linewidth.updateRange = { offset: this._hoveredEdge._lineSizeRange[0], count };
+      this._linesPickingGeometry.attributes.linewidth.needsUpdate = true;
+    }
+  }
+
+  private _setEdgeColor(edgeColor: any): void {
+    const color = new Color();
+    color.setHex(edgeColor);
+
+    if (this._hoveredEdgeID !== null) {
+      //
+    }
+  }
+
   private _setNodeColor(nodeColor: any): void {
     const color = new Color();
     color.setHex(nodeColor);
@@ -455,7 +567,7 @@ export class PretyGraph {
           value: new Vector2(this._textureWidth, this._textureHeight)
         },
         textureDim: {
-          value: new Vector2(2048, 2048)
+          value: new Vector2(this._canvasTextureWidth, this._canvasTextureHeight)
         },
         textureMap: {
           type: 't',
@@ -533,6 +645,22 @@ export class PretyGraph {
     this._lineMesh = new Line2(this._lineGeometry, this._lineMaterial);
     this._lineMesh.computeLineDistances();
     this._scene.add(this._lineMesh);
+
+    // clone lines for GPU picking
+    const cloneLine = this._lineMesh.clone();
+    this._linesPickingGeometry = new LineSegmentsGeometry();
+    this._linesPickingGeometry.setPositions(linesData.positions);
+    this._linesPickingGeometry.setColors(linesData.pickingColors);
+
+    this._linesPickingGeometry.addAttribute('linewidth', new InstancedBufferAttribute(new Float32Array(linesData.sizes), 1));
+
+    this._linesPickingGeometry.attributes.instanceStart.data.dynamic = true;
+    this._linesPickingGeometry.attributes.instanceEnd.data.dynamic = true;
+
+    cloneLine.geometry = this._linesPickingGeometry;
+
+    this._pickingLineScene.add(cloneLine);
+    this._pickingLineScene.updateMatrixWorld(true);
   }
 
   private _drawArrows(): void {
@@ -576,15 +704,15 @@ export class PretyGraph {
 
   private _createTextureMap(): void {
     this._textureCanvas = document.createElement('canvas');
-    this._textureCanvas.width = 2048;
-    this._textureCanvas.height = 2048;
-    this._textureHeight = 2048 / Math.sqrt(256);
-    this._textureWidth = 2048 / Math.sqrt(256);
+    this._textureCanvas.width = this._canvasTextureWidth;
+    this._textureCanvas.height = this._canvasTextureHeight;
+    this._textureHeight = this._canvasTextureHeight / 32;
+    this._textureWidth = this._canvasTextureWidth / 32;
 
     const ctx = this._textureCanvas.getContext('2d');
     if (ctx) {
       ctx.fillStyle = 'white';
-      ctx.clearRect(0, 0, 2048, 2048);
+      ctx.clearRect(0, 0, this._canvasTextureWidth, this._canvasTextureHeight);
     }
 
     this._textureMap = new CanvasTexture(this._textureCanvas);
@@ -592,9 +720,9 @@ export class PretyGraph {
   }
 
   private _loadImage(imageUrl: string): number {
-    // if (this._nodeImageToIndex[imageUrl] !== undefined) {
-    //   return this._nodeImageToIndex[imageUrl];
-    // }
+    if (this._nodeImageToIndex[imageUrl] !== undefined) {
+      return this._nodeImageToIndex[imageUrl];
+    }
 
     const ctx = this._textureCanvas.getContext('2d');
 
@@ -609,8 +737,8 @@ export class PretyGraph {
     const img = new Image();
 
     img.onload = () => {
-      const x = (index * this._textureWidth) % 2048;
-      const y = Math.floor((index * this._textureWidth) / 2048) * this._textureHeight;
+      const x = (index * this._textureWidth) % this._canvasTextureWidth;
+      const y = Math.floor((index * this._textureWidth) / this._canvasTextureWidth) * this._textureHeight;
 
       ctx.drawImage(
         img,
@@ -629,14 +757,15 @@ export class PretyGraph {
   }
 
   private _constructLines(links: any[]): any {
-    const start = performance.now();
     const positions: any[] = [];
     const colors: any[] = [];
-    const sizes: any = [];
+    const sizes: any[] = [];
+    const pickingColors: any[] = [];
 
     const color = new Color();
+    const pickingColor = new Color();
 
-    links.forEach((link) => {
+    links.forEach((link, index) => {
       // Это радиус ноды, его надо брать из параметров и вычислять вот так (size * scale * 10.0)
       const radius = (5 / 2) * 10.0;
       const angle = Math.atan2(link.target.y - link.source.y, link.target.x - link.source.x);
@@ -646,6 +775,9 @@ export class PretyGraph {
 
       const targetX = link.target.x - radius * Math.cos(angle);
       const targetY = link.target.y - radius * Math.sin(angle);
+
+      color.setHex(link.color);
+      pickingColor.setHex(index + 1);
 
       if (link.source.x === link.target.x && link.source.y === link.target.y) {
         const vStart = new Vector3(link.source.x, link.source.y || 0, 0);
@@ -662,6 +794,7 @@ export class PretyGraph {
           vEnd
         );
         const points = curve.getPoints(50);
+        link._lineSizeRange = [sizes.length, sizes.length + points.length * 2];
 
         let lastPoint;
         for (let i = 0; i < points.length - 1; i += 2) {
@@ -675,12 +808,18 @@ export class PretyGraph {
 
             sizes.push(link.size, link.size);
 
-            color.setHex(link.color);
             colors.push(
               color.r, color.g, color.b, // color start
               color.r, color.g, color.b,  // color end
               color.r, color.g, color.b, // color start
               color.r, color.g, color.b  // color end
+            );
+
+            pickingColors.push(
+              pickingColor.r, pickingColor.g, pickingColor.b,
+              pickingColor.r, pickingColor.g, pickingColor.b,
+              pickingColor.r, pickingColor.g, pickingColor.b,
+              pickingColor.r, pickingColor.g, pickingColor.b,
             );
           } else {
             positions.push(
@@ -690,10 +829,14 @@ export class PretyGraph {
 
             sizes.push(link.size);
 
-            color.setHex(link.color);
             colors.push(
               color.r, color.g, color.b, // color start
               color.r, color.g, color.b  // color end
+            );
+
+            pickingColors.push(
+              pickingColor.r, pickingColor.g, pickingColor.b,
+              pickingColor.r, pickingColor.g, pickingColor.b,
             );
           }
           lastPoint = points[i + 1];
@@ -704,21 +847,24 @@ export class PretyGraph {
           targetX, targetY, 0  // end point
         );
 
+        link._lineSizeRange = [sizes.length, sizes.length + 1];
         sizes.push(link.size);
 
-        color.setHex(link.color);
         colors.push(
           color.r, color.g, color.b, // color start
           color.r, color.g, color.b  // color end
         );
+
+        pickingColors.push(
+          pickingColor.r, pickingColor.g, pickingColor.b,
+          pickingColor.r, pickingColor.g, pickingColor.b,
+        );
       }
     });
 
-    const end = performance.now();
-    console.log("line generated: ", end - start);
-
     return {
       colors,
+      pickingColors,
       positions,
       sizes
     }
