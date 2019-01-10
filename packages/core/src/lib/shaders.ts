@@ -46,7 +46,7 @@ export const fragmentShader: string = `
   varying highp vec4 v_sprite;
 
   void main() {
-    vec2 uv = vec2( gl_PointCoord.x, 1.0 - gl_PointCoord.y );
+    vec2 uv = vec2( gl_PointCoord.x, gl_PointCoord.y );
     float distance = 0.2;
     float border = 0.2;
     float radius = 0.5;

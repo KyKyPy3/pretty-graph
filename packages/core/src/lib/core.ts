@@ -76,9 +76,9 @@ export class PretyGraph {
 
   private _nodesPickingsMesh!: Points;
 
-  private _hoveredNode!: any;
+  private _hoveredNode: any = null;
 
-  private _hoveredNodeID!: number | null;
+  private _hoveredNodeID: number | null = null;
 
   private _dragInProgress: boolean = false;
 
@@ -165,7 +165,7 @@ export class PretyGraph {
           newPos = this._intersection.sub(this._offset).clone();
         }
 
-        if (this._hoveredNodeID) {
+        if (this._hoveredNodeID !== null) {
           this._nodesGeometry.attributes.translation.setXYZ(this._hoveredNodeID, newPos.x, newPos.y, 0)
           this._nodesPickingGeometry.attributes.translation.setXYZ(this._hoveredNodeID, newPos.x, newPos.y, 0)
         }
@@ -189,14 +189,14 @@ export class PretyGraph {
     });
 
     this._controls.onChange.on('contextmenu', () => {
-      if (this._hoveredNode) {
+      if (this._hoveredNode !== null) {
         const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
         this.onEvent.emit('nodeContextMenu', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
       }
     });
 
     this._controls.onChange.on('mousedown', () => {
-      if (this._hoveredNode) {
+      if (this._hoveredNode !== null) {
         const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
         this.onEvent.emit('nodeClick', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
         this._controls.enabled = false;
@@ -248,7 +248,9 @@ export class PretyGraph {
 
     if (data.center) {
       this._center = data.nodes.find((n: any) => +n.id === +data.center);
-      this._controls.setTransform(this._center);
+      if (this._center) {
+        this._controls.setTransform(this._center);
+      }
     }
 
     this._drawEdges();
@@ -349,7 +351,7 @@ export class PretyGraph {
     const id = (pixelBuffer[0]<<16)|(pixelBuffer[1]<<8)|(pixelBuffer[2]);
     if (id) {
       if (this._hoveredNodeID !== id - 1) {
-        if (this._hoveredNode) {
+        if (this._hoveredNode !== null) {
           this._setNodeColor(this._hoveredNode.color);
         }
 
@@ -361,7 +363,7 @@ export class PretyGraph {
         this.onEvent.emit('nodeHover', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
       }
     } else {
-      if (this._hoveredNode) {
+      if (this._hoveredNode !== null) {
         this._setNodeColor(this._hoveredNode.color);
         this.onEvent.emit('nodeUnhover', { node: this._hoveredNode });
         this._hoveredNode = null;
@@ -586,6 +588,7 @@ export class PretyGraph {
     }
 
     this._textureMap = new CanvasTexture(this._textureCanvas);
+    this._textureMap.flipY = false;
   }
 
   private _loadImage(imageUrl: string): number {
@@ -599,13 +602,15 @@ export class PretyGraph {
       return -1;
     }
 
-    this._nodeImageToIndex[imageUrl] = this._textureIndex;
+    const index = this._textureIndex;
+    this._textureIndex += 1;
+    this._nodeImageToIndex[imageUrl] = index;
 
     const img = new Image();
 
     img.onload = () => {
-      const x = (this._textureIndex * this._textureWidth) % 2048;
-      const y = Math.floor((this._textureIndex * this._textureWidth) / 2048) * this._textureHeight;
+      const x = (index * this._textureWidth) % 2048;
+      const y = Math.floor((index * this._textureWidth) / 2048) * this._textureHeight;
 
       ctx.drawImage(
         img,
@@ -615,13 +620,12 @@ export class PretyGraph {
         this._textureWidth, this._textureHeight
       );
 
-      this._textureIndex += 1;
       this._textureMap.needsUpdate = true;
     };
 
     img.src = imageUrl;
 
-    return this._textureIndex;
+    return index;
   }
 
   private _constructLines(links: any[]): any {
