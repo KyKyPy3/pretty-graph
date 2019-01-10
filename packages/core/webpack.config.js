@@ -12,7 +12,7 @@ module.exports = env => {
       globalObject: "typeof self !== 'undefined' ? self : this"
     },
     externals: {
-      "three": "THREE"
+      "three": "three"
     },
     resolve: {
       modules: [
