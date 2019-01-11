@@ -4,7 +4,8 @@ import { PretyGraph } from '@pretty-graph/core';
 import { D3Layout } from '@pretty-graph/d3-layout';
 import { PrettyGraphControls } from '@pretty-graph/controls';
 
-import * as graphData from '../data/graph_data.json';
+import * as graphMini from '../data/graph_mini.json';
+import * as graphSmall from '../data/graph_small.json';
 
 @Component({
   selector: 'app-root',
@@ -21,8 +22,10 @@ export class AppComponent implements OnInit {
 
   private _nodes: any[] = [];
 
+  private _agent: any;
+
   ngOnInit() {
-    this._prepareGraphData({ nodes: graphData.nodes, links: graphData.links });
+    this._prepareGraphData({ nodes: graphMini.nodes, links: graphMini.links });
     const dimensions = this._graphContainer.nativeElement.getBoundingClientRect();
 
     const graph = new PretyGraph({
@@ -78,15 +81,15 @@ export class AppComponent implements OnInit {
       this._tooltipEl.nativeElement.style.left = -10000 + 'px';
     });
 
-    const agent = new D3Layout({
+    this._agent = new D3Layout({
       useWorker: true
     });
 
-    agent.onEvent.on('tick', (progress) => {
+    this._agent.onEvent.on('tick', (progress) => {
       console.log(progress);
     });
 
-    agent.onEvent.on('end', (data) => {
+    this._agent.onEvent.on('end', (data) => {
       const { nodes, links } = data;
 
       graph.setData({
@@ -96,14 +99,27 @@ export class AppComponent implements OnInit {
       });
     });
 
-    agent.init({
+    this._agent.init({
       height: dimensions.height,
       width: dimensions.width,
       nodes: this._nodes,
       links: this._links
     });
-    agent.calculate();
+    this._agent.calculate();
     // agent.destroy();
+  }
+
+  public addNewData(): void {
+    const dimensions = this._graphContainer.nativeElement.getBoundingClientRect();
+
+    this._prepareGraphData({ nodes: graphSmall.nodes, links: graphSmall.links });
+    this._agent.init({
+      height: dimensions.height,
+      width: dimensions.width,
+      nodes: this._nodes,
+      links: this._links
+    });
+    this._agent.calculate();
   }
 
   private _prepareGraphData(data): any {

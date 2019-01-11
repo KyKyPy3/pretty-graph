@@ -197,6 +197,11 @@ export class PretyGraph {
       }
     }
 
+    this._disposeMesh();
+    this._disposeMaterials();
+    this._disposeGeometries();
+    this._disposeTextures();
+
     this._drawEdges();
     this._drawNodes();
     this._drawArrows();
@@ -280,8 +285,9 @@ export class PretyGraph {
       this._linesPickingGeometry.attributes.instanceStart.data.needsUpdate = true;
       this._linesPickingGeometry.attributes.instanceEnd.data.needsUpdate = true;
     } else {
-      this._testNode(position);
-      this._testEdge(position);
+      if (!this._testNode(position)) {
+        this._testEdge(position);
+      }
     }
   }
 
@@ -386,7 +392,7 @@ export class PretyGraph {
     }
   }
 
-  private _testNode(position: any): void {
+  private _testNode(position: any): boolean {
     this._renderer.render(this._pickingNodesScene, this._camera, this._pickingTexture);
     const pixelBuffer = new Uint8Array(4);
     this._renderer.readRenderTargetPixels(this._pickingTexture, position.x, this._pickingTexture.height - position.y, 1, 1, pixelBuffer);
@@ -398,6 +404,11 @@ export class PretyGraph {
           this._setNodeColor(this._hoveredNode.color);
         }
 
+        if (this._hoveredEdge !== null) {
+          this._setEdgeColor(this._hoveredEdge.color);
+          this._setEdgeSize(this._hoveredEdge.size);
+        }
+
         this._hoveredNode = this._nodes[id - 1];
         this._hoveredNodeID = id - 1;
         this._setNodeColor(0xff0000);
@@ -405,6 +416,7 @@ export class PretyGraph {
         const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
         this.onEvent.emit('nodeHover', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
       }
+      return true;
     } else {
       if (this._hoveredNode !== null) {
         this._setNodeColor(this._hoveredNode.color);
@@ -412,6 +424,7 @@ export class PretyGraph {
         this._hoveredNode = null;
         this._hoveredNodeID = null;
       }
+      return false;
     }
   }
 
@@ -426,6 +439,10 @@ export class PretyGraph {
         if (this._hoveredEdge !== null) {
           this._setEdgeColor(this._hoveredEdge.color);
           this._setEdgeSize(this._hoveredEdge.size);
+        }
+
+        if (this._hoveredNode !== null) {
+          this._setNodeColor(this._hoveredNode.color);
         }
 
         this._hoveredEdge = this._edges[id - 1];
