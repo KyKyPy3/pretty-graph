@@ -4,8 +4,8 @@ import { PretyGraph } from '@pretty-graph/core';
 import { D3Layout } from '@pretty-graph/d3-layout';
 import { PrettyGraphControls } from '@pretty-graph/controls';
 
-import * as graphMini from '../data/graph_mini.json';
-import * as graphSmall from '../data/graph_small.json';
+import * as graphMini from '../data/before.json';
+import * as graphSmall from '../data/after.json';
 
 @Component({
   selector: 'app-root',
@@ -41,6 +41,10 @@ export class AppComponent implements OnInit {
       console.log('Double click', data);
     });
 
+    graph.onEvent.on('workspaceClick', (data) => {
+      console.log('Workspace click', data);
+    });
+
     graph.onEvent.on('nodeMoving', (data) => {
       const d = this._tooltipEl.nativeElement.getBoundingClientRect();
       this._tooltipEl.nativeElement.style.left = data.x - d.width / 2 + 'px';
@@ -48,6 +52,7 @@ export class AppComponent implements OnInit {
     });
 
     graph.onEvent.on('nodeScaling', (data) => {
+      console.log(data.node.size * 10 * data.scale);
       const d = this._tooltipEl.nativeElement.getBoundingClientRect();
       this._tooltipEl.nativeElement.style.left = data.x - d.width / 2 + 'px';
       this._tooltipEl.nativeElement.style.top = data.y - (data.node.size / 2) * 10 * data.scale - d.height + 'px';
@@ -95,7 +100,7 @@ export class AppComponent implements OnInit {
       graph.setData({
         nodes: nodes,
         links: links,
-        center: 373
+        center: 1044
       });
     });
 
@@ -111,7 +116,6 @@ export class AppComponent implements OnInit {
 
   public addNewData(): void {
     const dimensions = this._graphContainer.nativeElement.getBoundingClientRect();
-
     this._prepareGraphData({ nodes: graphSmall.nodes, links: graphSmall.links });
     this._agent.init({
       height: dimensions.height,
@@ -126,24 +130,24 @@ export class AppComponent implements OnInit {
     this._links = data.links.map((link) => {
       return {
         ...link,
-        size: 2,
-        color: 0xdcdcdc
+        // size: 2,
+        // color: 0xdcdcdc
       };
     });
     this._nodes = data.nodes.map((node) => {
       if (+node.id === 373) {
         return {
           ...node,
-          size: +node.id === 373 ? 15 : 5,
+          // size: +node.id === 373 ? 15 : 5,
           img: 'assets/user.jpg',
-          color: 0xdcdcdc
+          // color: 0xdcdcdc
         };
       } else {
         return {
           ...node,
-          size: +node.id === 373 ? 15 : 5,
+          // size: +node.id === 373 ? 15 : 5,
           img: 'assets/user.jpg',
-          color: 0xdcdcdc
+          // color: 0xdcdcdc
         };
       }
     });

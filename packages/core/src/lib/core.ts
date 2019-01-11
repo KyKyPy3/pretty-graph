@@ -147,19 +147,11 @@ export class PretyGraph {
 
     this._controls.onChange.on('dblclick', this._onDblClick.bind(this));
 
+    this._controls.onChange.on('click', this._onClick.bind(this));
+
     this._controls.onChange.on('mousedown', this._onMouseDown.bind(this));
 
     this._controls.onChange.on('mouseup', this._onMouseUp.bind(this));
-
-    this._pickingNodesScene = new Scene();
-    this._pickingNodesScene.background = new Color(0x000000);
-
-    this._pickingLineScene = new Scene();
-    this._pickingNodesScene.background = new Color(0x000000);
-
-    const dimensions = this._container.getBoundingClientRect();
-    this._pickingTexture = new WebGLRenderTarget(dimensions.width, dimensions.height);
-    this._pickingTexture.texture.minFilter = LinearFilter;
 
     this._createTextureMap();
 
@@ -201,6 +193,15 @@ export class PretyGraph {
     this._disposeMaterials();
     this._disposeGeometries();
     this._disposeTextures();
+
+    this._renderer.clear();
+
+    this._setupScene();
+    this._setupPickingScene();
+
+    const dimensions = this._container.getBoundingClientRect();
+    this._pickingTexture = new WebGLRenderTarget(dimensions.width, dimensions.height);
+    this._pickingTexture.texture.minFilter = LinearFilter;
 
     this._drawEdges();
     this._drawNodes();
@@ -306,6 +307,12 @@ export class PretyGraph {
     }
   }
 
+  private _onClick(): void {
+    if (!this._hoveredNode && !this._hoveredEdge) {
+      this.onEvent.emit('workspaceClick');
+    }
+  }
+
   private _onDblClick(): void {
     if (this._hoveredNode !== null) {
       const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
@@ -393,74 +400,80 @@ export class PretyGraph {
   }
 
   private _testNode(position: any): boolean {
-    this._renderer.render(this._pickingNodesScene, this._camera, this._pickingTexture);
-    const pixelBuffer = new Uint8Array(4);
-    this._renderer.readRenderTargetPixels(this._pickingTexture, position.x, this._pickingTexture.height - position.y, 1, 1, pixelBuffer);
-    /* tslint:disable-next-line */
-    const id = (pixelBuffer[0]<<16)|(pixelBuffer[1]<<8)|(pixelBuffer[2]);
-    if (id) {
-      if (this._hoveredNodeID !== id - 1) {
+    if (this._pickingTexture) {
+      this._renderer.render(this._pickingNodesScene, this._camera, this._pickingTexture);
+      const pixelBuffer = new Uint8Array(4);
+      this._renderer.readRenderTargetPixels(this._pickingTexture, position.x, this._pickingTexture.height - position.y, 1, 1, pixelBuffer);
+      /* tslint:disable-next-line */
+      const id = (pixelBuffer[0]<<16)|(pixelBuffer[1]<<8)|(pixelBuffer[2]);
+      if (id) {
+        if (this._hoveredNodeID !== id - 1) {
+          if (this._hoveredNode !== null) {
+            this._setNodeColor(this._hoveredNode.color);
+          }
+
+          if (this._hoveredEdge !== null) {
+            this._setEdgeColor(this._hoveredEdge.color);
+            this._setEdgeSize(this._hoveredEdge.size);
+          }
+
+          this._hoveredNode = this._nodes[id - 1];
+          this._hoveredNodeID = id - 1;
+          this._setNodeColor(0xff0000);
+
+          const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
+          this.onEvent.emit('nodeHover', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
+        }
+        return true;
+      } else {
         if (this._hoveredNode !== null) {
           this._setNodeColor(this._hoveredNode.color);
+          this.onEvent.emit('nodeUnhover', { node: this._hoveredNode });
+          this._hoveredNode = null;
+          this._hoveredNodeID = null;
         }
-
-        if (this._hoveredEdge !== null) {
-          this._setEdgeColor(this._hoveredEdge.color);
-          this._setEdgeSize(this._hoveredEdge.size);
-        }
-
-        this._hoveredNode = this._nodes[id - 1];
-        this._hoveredNodeID = id - 1;
-        this._setNodeColor(0xff0000);
-
-        const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
-        this.onEvent.emit('nodeHover', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
+        return false;
       }
-      return true;
-    } else {
-      if (this._hoveredNode !== null) {
-        this._setNodeColor(this._hoveredNode.color);
-        this.onEvent.emit('nodeUnhover', { node: this._hoveredNode });
-        this._hoveredNode = null;
-        this._hoveredNodeID = null;
-      }
-      return false;
     }
+
+    return false;
   }
 
   private _testEdge(position: any): void {
-    this._renderer.render(this._pickingLineScene, this._camera, this._pickingTexture);
-    const pixelBuffer = new Uint8Array(4);
-    this._renderer.readRenderTargetPixels(this._pickingTexture, position.x, this._pickingTexture.height - position.y, 1, 1, pixelBuffer);
-    /* tslint:disable-next-line */
-    const id = (pixelBuffer[0]<<16)|(pixelBuffer[1]<<8)|(pixelBuffer[2]);
-    if (id) {
-      if (this._hoveredEdgeID !== id - 1) {
+    if (this._pickingTexture) {
+      this._renderer.render(this._pickingLineScene, this._camera, this._pickingTexture);
+      const pixelBuffer = new Uint8Array(4);
+      this._renderer.readRenderTargetPixels(this._pickingTexture, position.x, this._pickingTexture.height - position.y, 1, 1, pixelBuffer);
+      /* tslint:disable-next-line */
+      const id = (pixelBuffer[0]<<16)|(pixelBuffer[1]<<8)|(pixelBuffer[2]);
+      if (id) {
+        if (this._hoveredEdgeID !== id - 1) {
+          if (this._hoveredEdge !== null) {
+            this._setEdgeColor(this._hoveredEdge.color);
+            this._setEdgeSize(this._hoveredEdge.size);
+          }
+
+          if (this._hoveredNode !== null) {
+            this._setNodeColor(this._hoveredNode.color);
+          }
+
+          this._hoveredEdge = this._edges[id - 1];
+          this._hoveredEdgeID = id - 1;
+          this._setEdgeColor(0xff0000);
+          this._setEdgeSize(this._hoveredEdge.size < 5 ? 5 : this._hoveredEdge.size);
+
+          // ToDo: отсылать надо центр ребра?
+          this.onEvent.emit('edgeHover', { edge: this._hoveredEdge, ...position });
+        }
+      } else {
         if (this._hoveredEdge !== null) {
           this._setEdgeColor(this._hoveredEdge.color);
           this._setEdgeSize(this._hoveredEdge.size);
+
+          this.onEvent.emit('edgeUnhover', { edge: this._hoveredEdge });
+          this._hoveredEdge = null;
+          this._hoveredEdgeID = null;
         }
-
-        if (this._hoveredNode !== null) {
-          this._setNodeColor(this._hoveredNode.color);
-        }
-
-        this._hoveredEdge = this._edges[id - 1];
-        this._hoveredEdgeID = id - 1;
-        this._setEdgeColor(0xff0000);
-        this._setEdgeSize(this._hoveredEdge.size * 5);
-
-        // ToDo: отсылать надо центр ребра?
-        this.onEvent.emit('edgeHover', { edge: this._hoveredEdge, ...position });
-      }
-    } else {
-      if (this._hoveredEdge !== null) {
-        this._setEdgeColor(this._hoveredEdge.color);
-        this._setEdgeSize(this._hoveredEdge.size);
-
-        this.onEvent.emit('edgeUnhover', { edge: this._hoveredEdge });
-        this._hoveredEdge = null;
-        this._hoveredEdgeID = null;
       }
     }
   }
@@ -651,6 +664,7 @@ export class PretyGraph {
 
     this._lineMaterial = new LineMaterial({
       dashed: false,
+      depthTest: false,
       vertexColors: VertexColors
     });
 
@@ -687,6 +701,14 @@ export class PretyGraph {
   private _setupScene(): void {
     this._scene = new Scene();
     this._scene.background = new Color(this.options.backgroundColor || 'white');
+  }
+
+  private _setupPickingScene(): void {
+    this._pickingNodesScene = new Scene();
+    this._pickingNodesScene.background = new Color(0x000000);
+
+    this._pickingLineScene = new Scene();
+    this._pickingNodesScene.background = new Color(0x000000);
   }
 
   private _setupCamera(): void {

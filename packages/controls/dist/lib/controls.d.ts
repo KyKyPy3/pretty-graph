@@ -14,6 +14,7 @@ export declare class PrettyGraphControls {
     private _onMouseMove;
     private _onMouseDown;
     private _onDblClick;
+    private _onClick;
     private _onMouseUp;
     private _zoomHandler;
     private _getScaleFromZ;

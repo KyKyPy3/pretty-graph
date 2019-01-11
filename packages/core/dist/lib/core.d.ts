@@ -56,6 +56,7 @@ export declare class PretyGraph {
     private _onMouseMove;
     private _onMouseUp;
     private _onMouseDown;
+    private _onClick;
     private _onDblClick;
     private _onContextMenu;
     private _onScale;
@@ -74,6 +75,7 @@ export declare class PretyGraph {
     private _drawEdges;
     private _drawArrows;
     private _setupScene;
+    private _setupPickingScene;
     private _setupCamera;
     private _setupRenderer;
     private _renderLoop;

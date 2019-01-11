@@ -40,6 +40,7 @@ export class PrettyGraphControls {
       .on('mousemove', this._onMouseMove.bind(this))
       .on('mouseup', this._onMouseUp.bind(this))
       .on('dblclick', this._onDblClick.bind(this))
+      .on('click', this._onClick.bind(this))
       .call(this._zoom)
       .on('dblclick.zoom', null);
 
@@ -87,6 +88,12 @@ export class PrettyGraphControls {
     const [mouseX, mouseY] = mouse(this._selection.node());
 
     this.onChange.emit('dblclick', { x: mouseX, y: mouseY });
+  }
+
+  private _onClick(): void {
+    const [mouseX, mouseY] = mouse(this._selection.node());
+
+    this.onChange.emit('click', { x: mouseX, y: mouseY });
   }
 
   private _onMouseUp(): void {
