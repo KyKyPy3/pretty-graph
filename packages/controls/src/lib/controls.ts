@@ -24,7 +24,6 @@ export class PrettyGraphControls {
 
   constructor(camera: PerspectiveCamera, container: HTMLElement) {
     this._camera = camera;
-
     this._selection = select(container);
   }
 
@@ -54,7 +53,7 @@ export class PrettyGraphControls {
     this._camera.lookAt(0, 0, 0);
   }
 
-  public setTransform(position: any): void {
+  public setTransform(position: { x: number, y: number }): void {
     const dimensions = this._selection.node().getBoundingClientRect();
     const x = dimensions.width / 2 - this.scale * position.x;
     const y = this.scale * position.y + dimensions.height / 2;
@@ -81,7 +80,7 @@ export class PrettyGraphControls {
   private _onMouseDown(): void {
     const [mouseX, mouseY] = mouse(this._selection.node());
 
-    this.onChange.emit('mousedown', { x: mouseX, y: mouseY });
+    this.onChange.emit('mousedown', { x: mouseX, y: mouseY, event });
   }
 
   private _onDblClick(): void {
@@ -119,14 +118,13 @@ export class PrettyGraphControls {
   }
 
   private _getScaleFromZ (z: number): number {
+    const dimensions = this._selection.node().getBoundingClientRect();
     const halfFov = this._camera.fov / 2;
     const halfFovRadians = this._toRadians(halfFov);
     const halfFovHeight = Math.tan(halfFovRadians) * z;
     const fovHeight = halfFovHeight * 2;
 
-    const dimensions = this._selection.node().getBoundingClientRect();
-
-    return dimensions.height / fovHeight; // Divide visualization height by height derived from field of view;
+    return dimensions.height / fovHeight;
   }
 
   private _getZFromScale(scale: number): number {

@@ -304,12 +304,15 @@ export class PretyGraph {
     this._dragInProgress = false;
   }
 
-  private _onMouseDown(): void {
+  private _onMouseDown(data): void {
     if (this._hoveredNode !== null) {
       const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
       this.onEvent.emit('nodeClick', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
-      this._controls.enabled = false;
-      this._dragging = true;
+
+      if (data.event.buttons === 1) {
+        this._controls.enabled = false;
+        this._dragging = true;
+      }
     }
   }
 

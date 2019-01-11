@@ -9,7 +9,10 @@ export declare class PrettyGraphControls {
     private _selection;
     constructor(camera: PerspectiveCamera, container: HTMLElement);
     init(): void;
-    setTransform(position: any): void;
+    setTransform(position: {
+        x: number;
+        y: number;
+    }): void;
     private _onContextMenu;
     private _onMouseMove;
     private _onMouseDown;

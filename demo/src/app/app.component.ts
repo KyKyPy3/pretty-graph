@@ -4,7 +4,7 @@ import { PretyGraph } from '@pretty-graph/core';
 import { D3Layout } from '@pretty-graph/d3-layout';
 import { PrettyGraphControls } from '@pretty-graph/controls';
 
-import * as graphMini from '../data/graph_data.json';
+import * as graphMini from '../data/graph_mini.json';
 import * as graphSmall from '../data/graph_small.json';
 
 @Component({
@@ -41,8 +41,8 @@ export class AppComponent implements OnInit {
       console.log('Double click', data);
     });
 
-    graph.onEvent.on('workspaceClick', (data) => {
-      console.log('Workspace click', data);
+    graph.onEvent.on('workspaceClick', () => {
+      console.log('Workspace click');
     });
 
     graph.onEvent.on('nodeMoving', (data) => {
@@ -52,7 +52,6 @@ export class AppComponent implements OnInit {
     });
 
     graph.onEvent.on('nodeScaling', (data) => {
-      console.log(data.node.size * 10 * data.scale);
       const d = this._tooltipEl.nativeElement.getBoundingClientRect();
       this._tooltipEl.nativeElement.style.left = data.x - d.width / 2 + 'px';
       this._tooltipEl.nativeElement.style.top = data.y - (data.node.size / 2) * 10 * data.scale - d.height + 'px';
@@ -70,8 +69,6 @@ export class AppComponent implements OnInit {
     });
 
     graph.onEvent.on('edgeHover', (data) => {
-      console.log(data);
-
       this._tooltipEl.nativeElement.innerHTML = `
         ${data.edge.source.name || data.edge.source.id.split(':').pop()}
         -
@@ -82,7 +79,7 @@ export class AppComponent implements OnInit {
       this._tooltipEl.nativeElement.style.top = data.y - d.height - 20 + 'px';
     });
 
-    graph.onEvent.on('edgeUnhover', (data) => {
+    graph.onEvent.on('edgeUnhover', () => {
       this._tooltipEl.nativeElement.style.left = -10000 + 'px';
     });
 
