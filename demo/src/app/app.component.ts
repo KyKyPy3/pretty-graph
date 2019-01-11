@@ -4,8 +4,8 @@ import { PretyGraph } from '@pretty-graph/core';
 import { D3Layout } from '@pretty-graph/d3-layout';
 import { PrettyGraphControls } from '@pretty-graph/controls';
 
-import * as graphMini from '../data/before.json';
-import * as graphSmall from '../data/after.json';
+import * as graphMini from '../data/graph_data.json';
+import * as graphSmall from '../data/graph_small.json';
 
 @Component({
   selector: 'app-root',
@@ -100,7 +100,7 @@ export class AppComponent implements OnInit {
       graph.setData({
         nodes: nodes,
         links: links,
-        center: 1044
+        center: 373
       });
     });
 
@@ -130,24 +130,24 @@ export class AppComponent implements OnInit {
     this._links = data.links.map((link) => {
       return {
         ...link,
-        // size: 2,
-        // color: 0xdcdcdc
+        size: 2,
+        color: 0xdcdcdc
       };
     });
     this._nodes = data.nodes.map((node) => {
       if (+node.id === 373) {
         return {
           ...node,
-          // size: +node.id === 373 ? 15 : 5,
+          size: +node.id === 373 ? 15 : 5,
           img: 'assets/user.jpg',
-          // color: 0xdcdcdc
+          color: 0xdcdcdc
         };
       } else {
         return {
           ...node,
-          // size: +node.id === 373 ? 15 : 5,
+          size: +node.id === 373 ? 15 : 5,
           img: 'assets/user.jpg',
-          // color: 0xdcdcdc
+          color: 0xdcdcdc
         };
       }
     });

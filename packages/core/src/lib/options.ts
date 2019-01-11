@@ -1,5 +1,6 @@
 export interface GraphOptions {
   container?: HTMLElement,
   backgroundColor?: string,
-  controls?: any
+  controls?: any,
+  clearContainer?: boolean
 }

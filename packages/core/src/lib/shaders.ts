@@ -41,7 +41,6 @@ export const fragmentShader: string = `
   precision highp float;
 
   uniform sampler2D textureMap;
-  uniform float useColor;
 
   varying float vScale;
   varying float vSize;
@@ -54,23 +53,42 @@ export const fragmentShader: string = `
     float border = 0.2;
     float radius = 0.5;
 
-    if (useColor == 1.) {
-      float r = 0.0, delta = 0.0, alpha = 1.0;
-      vec2 cxy = 2.0 * gl_PointCoord - 1.0;
-      r = dot(cxy, cxy);
-      if (r > 1.0) {
-        discard;
+    if (vSize * 10.0 * vScale > 75.0) {
+      distance = 0.02;
+      if (vScale < 3.0) {
+        border = distance + 0.025;
+      } else {
+        border = distance + 0.02;
       }
+      vec2 m = uv - vec2(0.5, 0.5);
+      float dist = radius - sqrt(dot(m, m));
 
-      gl_FragColor = vec4(vColor, 1.0) * alpha;
+      float sm = smoothstep(0.0, distance, dist);
+      float sm2 = smoothstep(border, border - distance, dist);
+      float alpha = sm*sm2;
+
+      float tm = smoothstep(border, border + distance, dist);
+
+      if (dist > border)
+        gl_FragColor = vec4(texture2D(textureMap, vec2((v_sprite.s + v_sprite.p * uv.x), (v_sprite.t + v_sprite.q * uv.y))).rgb, tm);
+      else if (dist > 0.0)
+        gl_FragColor = vec4(vColor, alpha);
+      else discard;
     } else {
-      if (vSize * 10.0 * vScale > 75.0) {
-        distance = 0.02;
-        if (vScale < 3.0) {
-          border = distance + 0.025;
+      if (vScale < 0.3) {
+        vec2 m = uv - vec2(0.5, 0.5);
+        float dist = radius - sqrt(dot(m, m));
+        if (dist > border || dist > 0.0)
+          gl_FragColor = vec4(0.8, 0.8, 0.8, 1.0);
+        else discard;
+      } else if (vScale < 1.5) {
+        distance = 0.25;
+        if (vScale > 1.2) {
+          border = 0.5 - (vScale / 10.0) * 1.9;
         } else {
-          border = distance + 0.02;
+          border = 0.25;
         }
+
         vec2 m = uv - vec2(0.5, 0.5);
         float dist = radius - sqrt(dot(m, m));
 
@@ -80,40 +98,55 @@ export const fragmentShader: string = `
 
         float tm = smoothstep(border, border + distance, dist);
 
-        if (dist > border)
-          gl_FragColor = vec4(texture2D(textureMap, vec2((v_sprite.s + v_sprite.p * uv.x), (v_sprite.t + v_sprite.q * uv.y))).rgb, tm);
-        else if (dist > 0.0)
-          gl_FragColor = vec4(vColor, alpha);
+        if (dist > border || dist > 0.0)
+          gl_FragColor = vec4(0.0, 0.0, 0.0, alpha);
         else discard;
-      } else {
-        if (vScale < 0.3) {
-          vec2 m = uv - vec2(0.5, 0.5);
-          float dist = radius - sqrt(dot(m, m));
-          if (dist > border || dist > 0.0)
-            gl_FragColor = vec4(0.8, 0.8, 0.8, 1.0);
-          else discard;
-        } else if (vScale < 1.5) {
-          distance = 0.25;
-          if (vScale > 1.2) {
-            border = 0.5 - (vScale / 10.0) * 1.9;
-          } else {
-            border = 0.25;
-          }
-
-          vec2 m = uv - vec2(0.5, 0.5);
-          float dist = radius - sqrt(dot(m, m));
-
-          float sm = smoothstep(0.0, distance, dist);
-          float sm2 = smoothstep(border, border - distance, dist);
-          float alpha = sm*sm2;
-
-          float tm = smoothstep(border, border + distance, dist);
-
-          if (dist > border || dist > 0.0)
-            gl_FragColor = vec4(0.0, 0.0, 0.0, alpha);
-          else discard;
-        }
       }
     }
+  }
+`;
+
+export const pickingVertexShader: string = `
+  precision mediump float;
+
+  uniform mat4 modelViewMatrix;
+  uniform mat4 projectionMatrix;
+  uniform float scale;
+
+  attribute vec3 position;    // blueprint's vertex positions
+  attribute vec3 color;       // only used for raycasting
+  attribute vec3 translation; // x y translation offsets for an instance
+  attribute float size;
+
+  varying vec3 vColor;
+
+  void main() {
+    vColor = color;
+
+    vec3 pos = position + translation;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+
+    gl_PointSize = size * scale * 10.0;
+  }
+`;
+
+export const pickingFragmentShader: string = `
+  #ifdef GL_OES_standard_derivatives
+  #extension GL_OES_standard_derivatives : enable
+  #endif
+
+  precision highp float;
+
+  varying vec3 vColor;
+
+  void main() {
+    float r = 0.0, delta = 0.0, alpha = 1.0;
+    vec2 cxy = 2.0 * gl_PointCoord - 1.0;
+    r = dot(cxy, cxy);
+    if (r > 1.0) {
+      discard;
+    }
+
+    gl_FragColor = vec4(vColor, 1.0) * alpha;
   }
 `;

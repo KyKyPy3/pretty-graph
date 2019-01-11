@@ -22,7 +22,7 @@ import {
 
 import { EventEmitter } from './emitter';
 import { GraphOptions } from './options';
-import { fragmentShader, vertexShader } from './shaders';
+import { fragmentShader, pickingFragmentShader, pickingVertexShader, vertexShader } from './shaders';
 
 import { Line2 } from '../../externals/lines/Line2.js';
 import { LineMaterial } from '../../externals/lines/LineMaterial.js';
@@ -128,8 +128,10 @@ export class PretyGraph {
     if (this.options.container) {
       this._container = this.options.container;
 
-      // Wipe dom
-      this._container.innerHTML = '';
+      if (options.clearContainer) {
+        // Wipe dom
+        this._container.innerHTML = '';
+      }
     }
 
     this._setupScene();
@@ -156,7 +158,7 @@ export class PretyGraph {
     this._createTextureMap();
 
     // Start render loop
-    this._renderLoop();
+    this._render();
 
     window.addEventListener('resize', () => {
       const d = this._container.getBoundingClientRect();
@@ -166,6 +168,8 @@ export class PretyGraph {
       this._camera.updateProjectionMatrix();
 
       this._pickingTexture = new WebGLRenderTarget(d.width, d.height);
+
+      this._render();
     });
   }
 
@@ -218,7 +222,7 @@ export class PretyGraph {
 
   public resumeRenderLoop(): void {
     if (!this._animationFrameRequestId) {
-      this._renderLoop();
+      this._render();
     }
   }
 
@@ -285,6 +289,8 @@ export class PretyGraph {
       this._lineGeometry.attributes.instanceEnd.data.needsUpdate = true;
       this._linesPickingGeometry.attributes.instanceStart.data.needsUpdate = true;
       this._linesPickingGeometry.attributes.instanceEnd.data.needsUpdate = true;
+
+      this._render();
     } else {
       if (!this._testNode(position)) {
         this._testEdge(position);
@@ -338,6 +344,8 @@ export class PretyGraph {
         const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
         this.onEvent.emit('nodeScaling', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
       }
+
+      this._render();
     }
   }
 
@@ -424,6 +432,7 @@ export class PretyGraph {
           const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
           this.onEvent.emit('nodeHover', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
         }
+        this._render();
         return true;
       } else {
         if (this._hoveredNode !== null) {
@@ -432,6 +441,7 @@ export class PretyGraph {
           this._hoveredNode = null;
           this._hoveredNodeID = null;
         }
+        this._render();
         return false;
       }
     }
@@ -464,6 +474,7 @@ export class PretyGraph {
 
           // ToDo: отсылать надо центр ребра?
           this.onEvent.emit('edgeHover', { edge: this._hoveredEdge, ...position });
+          this._render();
         }
       } else {
         if (this._hoveredEdge !== null) {
@@ -473,6 +484,7 @@ export class PretyGraph {
           this.onEvent.emit('edgeUnhover', { edge: this._hoveredEdge });
           this._hoveredEdge = null;
           this._hoveredEdgeID = null;
+          this._render();
         }
       }
     }
@@ -502,6 +514,8 @@ export class PretyGraph {
       }
       this._linesPickingGeometry.attributes.linewidth.updateRange = { offset: this._hoveredEdge._lineSizeRange[0], count };
       this._linesPickingGeometry.attributes.linewidth.needsUpdate = true;
+
+      this._render();
     }
   }
 
@@ -511,6 +525,7 @@ export class PretyGraph {
 
     if (this._hoveredEdgeID !== null) {
       //
+      this._render();
     }
   }
 
@@ -521,6 +536,7 @@ export class PretyGraph {
     if (this._hoveredNodeID !== null) {
       this._nodeColorAttribute.setXYZ(this._hoveredNodeID, color.r, color.g, color.b);
       this._nodeColorAttribute.needsUpdate = true;
+      this._render();
     }
   }
 
@@ -602,11 +618,7 @@ export class PretyGraph {
         textureMap: {
           type: 't',
           value: this._textureMap
-        },
-        useColor: {
-          type: 'f',
-          value: 0.0,
-        },
+        }
       },
       vertexShader
     });
@@ -627,18 +639,14 @@ export class PretyGraph {
     }
 
     this._nodesPickingMaterial = new RawShaderMaterial({
-      fragmentShader,
+      fragmentShader: pickingFragmentShader,
       uniforms: {
         scale: {
           type: 'f',
           value: this._controls ? this._controls.scale : 1.0
-        },
-        useColor: {
-          type: 'f',
-          value: 1.0,
-        },
+        }
       },
-      vertexShader,
+      vertexShader: pickingVertexShader,
     });
 
     const clone = this._nodeMesh.clone();
@@ -648,6 +656,8 @@ export class PretyGraph {
     this._nodesPickingsMesh.frustumCulled = false;
     this._pickingNodesScene.add(this._nodesPickingsMesh);
     this._pickingNodesScene.updateMatrixWorld(true);
+
+    this._render();
   }
 
   private _drawEdges(): void {
@@ -692,6 +702,8 @@ export class PretyGraph {
 
     this._pickingLineScene.add(cloneLine);
     this._pickingLineScene.updateMatrixWorld(true);
+
+    this._render();
   }
 
   private _drawArrows(): void {
@@ -736,9 +748,8 @@ export class PretyGraph {
     this._container.appendChild(this._renderer.domElement);
   }
 
-  private _renderLoop(): void {
+  private _render(): void {
     this._renderer.render(this._scene, this._camera);
-    this._animationFrameRequestId = requestAnimationFrame(this._renderLoop.bind(this));
   }
 
   private _createTextureMap(): void {
@@ -788,6 +799,7 @@ export class PretyGraph {
       );
 
       this._textureMap.needsUpdate = true;
+      this._render();
     };
 
     img.src = imageUrl;

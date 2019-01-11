@@ -78,7 +78,7 @@ export declare class PretyGraph {
     private _setupPickingScene;
     private _setupCamera;
     private _setupRenderer;
-    private _renderLoop;
+    private _render;
     private _createTextureMap;
     private _loadImage;
     private _constructLines;
