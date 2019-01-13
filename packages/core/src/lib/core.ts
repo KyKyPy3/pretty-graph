@@ -213,6 +213,7 @@ export class PretyGraph {
     this._disposeTextures();
 
     this._renderer.clear();
+    this._renderer.renderLists.dispose();
 
     this._setupScene();
     this._setupPickingScene();
