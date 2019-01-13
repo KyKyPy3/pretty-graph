@@ -1,14 +1,16 @@
 import {
   BufferAttribute,
   BufferGeometry,
-  CanvasTexture,
   Color,
   CubicBezierCurve3,
+  Event as ThreeEvent,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
   LinearFilter,
+  Mesh,
   PerspectiveCamera,
   Plane,
+  PlaneBufferGeometry,
   Points,
   RawShaderMaterial,
   Raycaster,
@@ -21,8 +23,17 @@ import {
 } from 'three';
 
 import { EventEmitter } from './emitter';
+import { ImageCanvas } from './imageCanvas';
 import { GraphOptions } from './options';
-import { fragmentShader, pickingFragmentShader, pickingVertexShader, vertexShader } from './shaders';
+import {
+  fragmentShader,
+  labelsFragmentShader,
+  labelsVertexShader,
+  pickingFragmentShader,
+  pickingVertexShader,
+  vertexShader
+} from './shaders';
+import { TextCanvas } from './textCanvas';
 
 import { Line2 } from '../../externals/lines/Line2.js';
 import { LineMaterial } from '../../externals/lines/LineMaterial.js';
@@ -96,18 +107,6 @@ export class PretyGraph {
 
   private _offset = new Vector3();
 
-  private _textureCanvas!: HTMLCanvasElement;
-
-  private _textureWidth: number = 0;
-
-  private _textureHeight: number = 0;
-
-  private _textureIndex: number = 0;
-
-  private _nodeImageToIndex: any = {};
-
-  private _textureMap!: CanvasTexture;
-
   private _lineGeometry!: LineSegmentsGeometry;
 
   private _lineMaterial!: LineMaterial;
@@ -118,9 +117,19 @@ export class PretyGraph {
 
   private _lineMesh!: Line2;
 
-  private _canvasTextureWidth: number = 4096;
+  private _imageCanvas: ImageCanvas;
 
-  private _canvasTextureHeight: number = 4096;
+  private _imageLoaded: (event: ThreeEvent) => void;
+
+  private _textCanvas: TextCanvas;
+
+  private _labelsGeometry!: InstancedBufferGeometry;
+
+  private _labelsTranslateAttribute!: InstancedBufferAttribute;
+
+  private _labelsMesh!: Mesh;
+
+  private _labelsMaterial!: RawShaderMaterial;
 
   constructor(options: GraphOptions) {
     this.options = options;
@@ -141,21 +150,26 @@ export class PretyGraph {
     this._controls = new options.controls(this._camera, this._container);
     this._controls.init();
 
-    this._controls.onChange.on('scale', this._onScale.bind(this));
+    this._controls.addEventListener('scale', this._onScale.bind(this));
 
-    this._controls.onChange.on('mousemove', this._onMouseMove.bind(this));
+    this._controls.addEventListener('mousemove', this._onMouseMove.bind(this));
 
-    this._controls.onChange.on('contextmenu', this._onContextMenu.bind(this));
+    this._controls.addEventListener('contextmenu', this._onContextMenu.bind(this));
 
-    this._controls.onChange.on('dblclick', this._onDblClick.bind(this));
+    this._controls.addEventListener('dblclick', this._onDblClick.bind(this));
 
-    this._controls.onChange.on('click', this._onClick.bind(this));
+    this._controls.addEventListener('click', this._onClick.bind(this));
 
-    this._controls.onChange.on('mousedown', this._onMouseDown.bind(this));
+    this._controls.addEventListener('mousedown', this._onMouseDown.bind(this));
 
-    this._controls.onChange.on('mouseup', this._onMouseUp.bind(this));
+    this._controls.addEventListener('mouseup', this._onMouseUp.bind(this));
 
-    this._createTextureMap();
+    this._imageLoaded = () => {
+      this._render();
+    };
+
+    this._imageCanvas = new ImageCanvas();
+    this._textCanvas = new TextCanvas();
 
     // Start render loop
     this._render();
@@ -207,8 +221,11 @@ export class PretyGraph {
     this._pickingTexture = new WebGLRenderTarget(dimensions.width, dimensions.height);
     this._pickingTexture.texture.minFilter = LinearFilter;
 
+    this._imageCanvas.addEventListener('imageLoaded', this._imageLoaded);
+
     this._drawEdges();
     this._drawNodes();
+    this._drawLabels();
     this._drawArrows();
   }
 
@@ -239,7 +256,7 @@ export class PretyGraph {
     this._container.innerHTML = '';
   }
 
-  private _onMouseMove(position: any): void {
+  private _onMouseMove({ position }: any): void {
     if (this._dragging) {
       // dragging node
       const d = this._container.getBoundingClientRect();
@@ -271,6 +288,8 @@ export class PretyGraph {
       if (this._hoveredNodeID !== null) {
         this._nodesGeometry.attributes.translation.setXYZ(this._hoveredNodeID, newPos.x, newPos.y, 0)
         this._nodesPickingGeometry.attributes.translation.setXYZ(this._hoveredNodeID, newPos.x, newPos.y, 0)
+
+        this._labelsGeometry.attributes.translation.setXYZ(this._hoveredNodeID, newPos.x + this._textCanvas.textureWidth / 2, newPos.y, 0);
       }
 
       this._hoveredNode.x = newPos.x;
@@ -281,6 +300,7 @@ export class PretyGraph {
 
       (this._nodesGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
       (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+      (this._labelsGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
 
       const links = this._constructLines(this._edges);
       this._lineGeometry.setPositions(links.positions);
@@ -304,12 +324,12 @@ export class PretyGraph {
     this._dragInProgress = false;
   }
 
-  private _onMouseDown(data): void {
+  private _onMouseDown({ event }): void {
     if (this._hoveredNode !== null) {
       const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
       this.onEvent.emit('nodeClick', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
 
-      if (data.event.buttons === 1) {
+      if (event.buttons === 1) {
         this._controls.enabled = false;
         this._dragging = true;
       }
@@ -336,12 +356,14 @@ export class PretyGraph {
     }
   }
 
-  private _onScale(scale: number): void {
+  private _onScale(event: any): void {
     if (this._nodesMaterial) {
-      this._nodesMaterial.uniforms.scale.value = scale;
+      this._nodesMaterial.uniforms.scale.value = event.scale;
       this._nodesMaterial.needsUpdate = true;
-      this._nodesPickingMaterial.uniforms.scale.value = scale;
+      this._nodesPickingMaterial.uniforms.scale.value = event.scale;
       this._nodesPickingMaterial.needsUpdate = true;
+      this._labelsMaterial.uniforms.scale.value = event.scale;
+      this._labelsMaterial.needsUpdate = true;
 
       if (this._hoveredNode) {
         const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
@@ -401,8 +423,14 @@ export class PretyGraph {
   }
 
   private _disposeTextures(): void {
-    if (this._textureMap) {
-      this._textureMap.dispose();
+    this._imageCanvas.removeEventListener('imageLoaded', this._imageLoaded);
+
+    if (this._imageCanvas) {
+      this._imageCanvas.dispose();
+    }
+
+    if (this._textCanvas) {
+      this._textCanvas.dispose();
     }
 
     if (this._pickingTexture) {
@@ -434,8 +462,9 @@ export class PretyGraph {
 
           const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
           this.onEvent.emit('nodeHover', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
+          this._render();
         }
-        this._render();
+
         return true;
       } else {
         if (this._hoveredNode !== null) {
@@ -443,8 +472,9 @@ export class PretyGraph {
           this.onEvent.emit('nodeUnhover', { node: this._hoveredNode });
           this._hoveredNode = null;
           this._hoveredNodeID = null;
+          this._render();
         }
-        this._render();
+
         return false;
       }
     }
@@ -582,7 +612,9 @@ export class PretyGraph {
       sizes[i] = this._nodes[i].size;
 
       if (this._nodes[i].img) {
-        images[i] = this._loadImage(this._nodes[i].img);
+        const imageIndex = this._imageCanvas.loadImage(this._nodes[i].img);
+        this._nodes[i]._imageIndex = imageIndex;
+        images[i] = imageIndex;
       } else {
         images[i] = -1;
       }
@@ -613,14 +645,14 @@ export class PretyGraph {
           value: this._controls ? this._controls.scale : 1.0
         },
         spriteDim: {
-          value: new Vector2(this._textureWidth, this._textureHeight)
+          value: new Vector2(this._imageCanvas.textureWidth, this._imageCanvas.textureHeight)
         },
         textureDim: {
-          value: new Vector2(this._canvasTextureWidth, this._canvasTextureHeight)
+          value: new Vector2(this._imageCanvas.canvasWidth, this._imageCanvas.canvasHeight)
         },
         textureMap: {
           type: 't',
-          value: this._textureMap
+          value: this._imageCanvas.textureMap
         }
       },
       vertexShader
@@ -713,6 +745,74 @@ export class PretyGraph {
     //
   }
 
+  private _drawLabels(): void {
+    const translateArray = new Float32Array(this._nodes.length * 3);
+    const images = new Float32Array(this._nodes.length);
+    const sizes = new Float32Array(this._nodes.length);
+
+    for (let i = 0, i3 = 0, l = this._nodes.length; i < l; i ++, i3 += 3 ) {
+      translateArray[ i3 + 0 ] = this._nodes[i].x + this._textCanvas.textureWidth / 2;
+      translateArray[ i3 + 1 ] = this._nodes[i].y;
+      translateArray[ i3 + 2 ] = 0;
+
+      sizes[i] = this._nodes[i].size;
+
+      if (this._nodes[i].label) {
+        const labelIndex = this._textCanvas.drawText(this._nodes[i].label, {
+          color: 'black',
+          font: 'Arial',
+          fontSize: 30
+        });
+        this._nodes[i]._labelIndex = labelIndex;
+        images[i] = labelIndex;
+      } else {
+        images[i] = -1;
+      }
+    }
+
+    const labelsGeometry = new PlaneBufferGeometry(this._textCanvas.textureWidth, this._textCanvas.textureHeight);
+    this._labelsGeometry = new InstancedBufferGeometry();
+    this._labelsGeometry.index = labelsGeometry.index;
+    this._labelsGeometry.attributes = labelsGeometry.attributes;
+
+    this._labelsTranslateAttribute = new InstancedBufferAttribute(translateArray, 3);
+
+    this._labelsGeometry.addAttribute('translation', this._labelsTranslateAttribute);
+    this._labelsGeometry.addAttribute('size', new InstancedBufferAttribute(sizes, 1));
+    this._labelsGeometry.addAttribute('image', new InstancedBufferAttribute(images, 1));
+
+    this._labelsMaterial = new RawShaderMaterial({
+      depthTest: false,
+      fragmentShader: labelsFragmentShader,
+      transparent: true,
+      uniforms: {
+        scale: {
+          type: 'f',
+          value: this._controls ? this._controls.scale : 1.0
+        },
+        spriteDim: {
+          value: new Vector2(this._textCanvas.textureWidth, this._textCanvas.textureHeight)
+        },
+        textureDim: {
+          value: new Vector2(this._textCanvas.canvasWidth, this._textCanvas.canvasHeight)
+        },
+        textureMap: {
+          type: 't',
+          value: this._textCanvas.textureMap
+        }
+      },
+      vertexShader: labelsVertexShader
+    });
+
+    this._labelsMesh = new Mesh(this._labelsGeometry, this._labelsMaterial);
+    this._labelsMesh.frustumCulled = false;
+    // this._nodeMesh.renderOrder = 10;
+    this._scene.add(this._labelsMesh);
+    // this._labelsMesh.visible = false;
+
+    this._render();
+  }
+
   private _setupScene(): void {
     this._scene = new Scene();
     this._scene.background = new Color(this.options.backgroundColor || 'white');
@@ -752,62 +852,8 @@ export class PretyGraph {
   }
 
   private _render(): void {
+    console.log(this._renderer.info.render.calls);
     this._renderer.render(this._scene, this._camera);
-  }
-
-  private _createTextureMap(): void {
-    this._textureCanvas = document.createElement('canvas');
-    this._textureCanvas.width = this._canvasTextureWidth;
-    this._textureCanvas.height = this._canvasTextureHeight;
-    this._textureHeight = this._canvasTextureHeight / 32;
-    this._textureWidth = this._canvasTextureWidth / 32;
-
-    const ctx = this._textureCanvas.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = 'white';
-      ctx.clearRect(0, 0, this._canvasTextureWidth, this._canvasTextureHeight);
-    }
-
-    this._textureMap = new CanvasTexture(this._textureCanvas);
-    this._textureMap.flipY = false;
-  }
-
-  private _loadImage(imageUrl: string): number {
-    if (this._nodeImageToIndex[imageUrl] !== undefined) {
-      return this._nodeImageToIndex[imageUrl];
-    }
-
-    const ctx = this._textureCanvas.getContext('2d');
-
-    if (!ctx) {
-      return -1;
-    }
-
-    const index = this._textureIndex;
-    this._textureIndex += 1;
-    this._nodeImageToIndex[imageUrl] = index;
-
-    const img = new Image();
-
-    img.onload = () => {
-      const x = (index * this._textureWidth) % this._canvasTextureWidth;
-      const y = Math.floor((index * this._textureWidth) / this._canvasTextureWidth) * this._textureHeight;
-
-      ctx.drawImage(
-        img,
-        0, 0,
-        img.width, img.height,
-        x, y,
-        this._textureWidth, this._textureHeight
-      );
-
-      this._textureMap.needsUpdate = true;
-      this._render();
-    };
-
-    img.src = imageUrl;
-
-    return index;
   }
 
   private _constructLines(links: any[]): any {

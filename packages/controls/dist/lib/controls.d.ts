@@ -1,18 +1,18 @@
-import { PerspectiveCamera } from 'three';
-import { EventEmitter } from './emitter';
-export declare class PrettyGraphControls {
+import { EventDispatcher, PerspectiveCamera } from 'three';
+export declare class PrettyGraphControls extends EventDispatcher {
     enabled: boolean;
     scale: number;
-    onChange: EventEmitter;
     private _camera;
     private _zoom;
     private _selection;
-    constructor(camera: PerspectiveCamera, container: HTMLElement);
+    private _onResize;
+    constructor(camera: PerspectiveCamera, container: HTMLElement | HTMLDocument);
     init(): void;
     setTransform(position: {
         x: number;
         y: number;
     }): void;
+    dispose(): void;
     private _onContextMenu;
     private _onMouseMove;
     private _onMouseDown;

@@ -2,19 +2,16 @@ import { event, mouse, select } from 'd3-selection';
 import {
   zoom,
   ZoomBehavior,
-  zoomIdentity
+  zoomIdentity,
+  zoomTransform
 } from 'd3-zoom';
-import { PerspectiveCamera } from 'three';
+import { Event as ThreeEvent, EventDispatcher, PerspectiveCamera } from 'three';
 
-import { EventEmitter } from './emitter';
-
-export class PrettyGraphControls {
+export class PrettyGraphControls extends EventDispatcher {
 
   public enabled: boolean = true;
 
   public scale: number = 1.0;
-
-  public onChange: EventEmitter = new EventEmitter();
 
   private _camera!: PerspectiveCamera;
 
@@ -22,7 +19,11 @@ export class PrettyGraphControls {
 
   private _selection!: any;
 
-  constructor(camera: PerspectiveCamera, container: HTMLElement) {
+  private _onResize!: (event: ThreeEvent) => void;
+
+  constructor(camera: PerspectiveCamera, container: HTMLElement | HTMLDocument) {
+    super();
+
     this._camera = camera;
     this._selection = select(container);
   }
@@ -51,6 +52,12 @@ export class PrettyGraphControls {
     // Set camera position
     this._camera.position.set(0, 1, 1000);
     this._camera.lookAt(0, 0, 0);
+
+    this._onResize = () => {
+      this._zoomHandler(zoomTransform(this._selection.node()));
+    }
+
+    window.addEventListener('resize', this._onResize, false);
   }
 
   public setTransform(position: { x: number, y: number }): void {
@@ -62,41 +69,85 @@ export class PrettyGraphControls {
     this._zoom.transform(this._selection, initialTransform);
   }
 
+  public dispose(): void {
+    this.removeEventListener('resize', this._onResize);
+
+    this._selection
+      .on('contextmenu', null)
+      .on('mousedown', null)
+      .on('mousemove', null)
+      .on('mouseup', null)
+      .on('dblclick', null)
+      .on('click', null)
+      .on('.zoom', null);
+  }
+
   private _onContextMenu(): void {
     event.preventDefault();
     event.stopPropagation();
 
     const [mouseX, mouseY] = mouse(this._selection.node());
 
-    this.onChange.emit('contextmenu', { x: mouseX, y: mouseY });
+    this.dispatchEvent({
+      position: {
+        x: mouseX,
+        y: mouseY
+      },
+      type: 'contextmenu'
+    });
   }
 
   private _onMouseMove(): void {
     const [mouseX, mouseY] = mouse(this._selection.node());
 
-    this.onChange.emit('mousemove', { x: mouseX, y: mouseY });
+    this.dispatchEvent({
+      position: {
+        x: mouseX,
+        y: mouseY
+      },
+      type: 'mousemove'
+    });
   }
 
   private _onMouseDown(): void {
     const [mouseX, mouseY] = mouse(this._selection.node());
 
-    this.onChange.emit('mousedown', { x: mouseX, y: mouseY, event });
+    this.dispatchEvent({
+      event,
+      position: {
+        x: mouseX,
+        y: mouseY
+      },
+      type: 'mousedown'
+    });
   }
 
   private _onDblClick(): void {
     const [mouseX, mouseY] = mouse(this._selection.node());
 
-    this.onChange.emit('dblclick', { x: mouseX, y: mouseY });
+    this.dispatchEvent({
+      position: {
+        x: mouseX,
+        y: mouseY
+      },
+      type: 'dblclick'
+    });
   }
 
   private _onClick(): void {
     const [mouseX, mouseY] = mouse(this._selection.node());
 
-    this.onChange.emit('click', { x: mouseX, y: mouseY });
+    this.dispatchEvent({
+      position: {
+        x: mouseX,
+        y: mouseY
+      },
+      type: 'click'
+    });
   }
 
   private _onMouseUp(): void {
-    this.onChange.emit('mouseup');
+    this.dispatchEvent({ type: 'mouseup' });
   }
 
   private _zoomHandler(transform: any): void {
@@ -114,7 +165,10 @@ export class PrettyGraphControls {
 
     this._camera.position.set(x, y, z);
 
-    this.onChange.emit('scale', scale);
+    this.dispatchEvent({
+      scale,
+      type: 'scale'
+    })
   }
 
   private _getScaleFromZ (z: number): number {

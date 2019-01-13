@@ -3,7 +3,20 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "https://github.com/headbase/pretty-graph.git"
+    "url": "https://github.com/KyKyPy3/pretty-graph.git"
+  },
+  "keywords": [
+    "three",
+    "graph",
+    "webgl"
+  ],
+  "homepage": "https://github.com/KyKyPy3/pretty-graph",
+  "author": {
+    "name": "Roman Efremenko",
+    "url": "https://github.com/KyKyPy3"
+  },
+  "bugs": {
+    "url": "https://github.com/vasturiano/three-render-objects/issues"
   },
   "license": "MIT",
   "scripts": {
@@ -13,15 +26,15 @@
     "tslint": "tslint -c tslint.json \"packages/**/*.ts\""
   },
   "devDependencies": {
-    "jest": "^23.6.0",
-    "lerna": "^3.8.1",
-    "npm-run-all": "^4.1.5",
-    "prettier": "^1.15.3",
-    "rimraf": "^2.6.2",
-    "tslint": "^5.12.0",
-    "tslint-config-prettier": "^1.17.0",
-    "typescript": "^3.2.2",
-    "webpack": "4.28.3"
+    "jest": "23.6.0",
+    "lerna": "3.10.5",
+    "npm-run-all": "4.1.5",
+    "prettier": "1.15.3",
+    "rimraf": "2.6.3",
+    "tslint": "5.12.1",
+    "tslint-config-prettier": "1.17.0",
+    "typescript": "3.2.2",
+    "webpack": "4.28.4"
   },
   "workspaces": [
     "packages/*"
