@@ -136,6 +136,10 @@ export class PretyGraph {
 
   private _arrowGeometry!: BufferGeometry;
 
+  private _arrowMesh!: Mesh;
+
+  private _arrowMaterial!: MeshBasicMaterial;
+
   constructor(options: GraphOptions) {
     this.options = options;
 
@@ -230,9 +234,9 @@ export class PretyGraph {
     this._imageCanvas.addEventListener('imageLoaded', this._imageLoaded);
 
     this._drawEdges();
-    this._drawNodes();
-    this._drawLabels();
     this._drawArrows();
+    this._drawLabels();
+    this._drawNodes();
   }
 
   public stopRenderLoop(): void {
@@ -400,6 +404,10 @@ export class PretyGraph {
       this._scene.remove(this._lineMesh);
     }
 
+    if (this._arrowMesh) {
+      this._scene.remove(this._arrowMesh);
+    }
+
     if (this._nodeMesh) {
       this._scene.remove(this._nodeMesh);
     }
@@ -421,6 +429,10 @@ export class PretyGraph {
     if (this._lineGeometry) {
       this._lineGeometry.dispose();
     }
+
+    if (this._arrowGeometry) {
+      this._arrowGeometry.dispose();
+    }
   }
 
   private _disposeRenderer(): void {
@@ -440,6 +452,10 @@ export class PretyGraph {
 
     if (this._lineMaterial) {
       this._lineMaterial.dispose();
+    }
+
+    if (this._arrowMaterial) {
+      this._arrowMaterial.dispose();
     }
   }
 
@@ -768,19 +784,22 @@ export class PretyGraph {
 
     const { vertices, normals, colors } = this._calculateArrowData();
 
-    // this._arrowGeometry.dynamic = true;
-
-    this._arrowGeometry.addAttribute( 'position', new BufferAttribute( vertices, 3 ) );
-    this._arrowGeometry.addAttribute( 'normal', new Float32BufferAttribute( normals, 3 ));
-    this._arrowGeometry.addAttribute( 'color', new Float32BufferAttribute( colors, 3 ));
+    this._arrowGeometry.addAttribute('position', new BufferAttribute(vertices, 3).setDynamic(true));
+    this._arrowGeometry.addAttribute('normal', new Float32BufferAttribute( normals, 3 ).setDynamic(true));
+    this._arrowGeometry.addAttribute('color', new Float32BufferAttribute( colors, 3 ).setDynamic(true));
 
     this._arrowGeometry.computeBoundingSphere();
-    const mesh = new Mesh( this._arrowGeometry, new MeshBasicMaterial({
+
+    this._arrowMaterial = new MeshBasicMaterial({
       depthTest: false,
       side: BackSide,
       vertexColors: VertexColors
-    }));
-    this._scene.add(mesh);
+    });
+
+    this._arrowMesh = new Mesh( this._arrowGeometry, this._arrowMaterial);
+    this._scene.add(this._arrowMesh);
+
+    this._render();
   }
 
   private _drawLabels(): void {

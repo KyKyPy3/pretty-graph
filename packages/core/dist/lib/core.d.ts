@@ -47,6 +47,8 @@ export declare class PretyGraph {
     private _labelsMesh;
     private _labelsMaterial;
     private _arrowGeometry;
+    private _arrowMesh;
+    private _arrowMaterial;
     constructor(options: GraphOptions);
     options: GraphOptions;
     setData(data: any): void;
