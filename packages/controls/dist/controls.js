@@ -1,12 +1,12 @@
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("THREE"));
+		module.exports = factory(require("three"));
 	else if(typeof define === 'function' && define.amd)
-		define("prettyGraphControls", ["THREE"], factory);
+		define("prettyGraphControls", ["three"], factory);
 	else if(typeof exports === 'object')
-		exports["prettyGraphControls"] = factory(require("THREE"));
+		exports["prettyGraphControls"] = factory(require("three"));
 	else
-		root["prettyGraphControls"] = factory(root["THREE"]);
+		root["prettyGraphControls"] = factory(root["three"]);
 })(typeof self !== 'undefined' ? self : this, function(__WEBPACK_EXTERNAL_MODULE_three__) {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
@@ -1754,12 +1754,12 @@ eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export (binding) *
 
 /***/ "three":
 /*!************************!*\
-  !*** external "THREE" ***!
+  !*** external "three" ***!
   \************************/
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-eval("module.exports = __WEBPACK_EXTERNAL_MODULE_three__;\n\n//# sourceURL=webpack://prettyGraphControls/external_%22THREE%22?");
+eval("module.exports = __WEBPACK_EXTERNAL_MODULE_three__;\n\n//# sourceURL=webpack://prettyGraphControls/external_%22three%22?");
 
 /***/ })
 
