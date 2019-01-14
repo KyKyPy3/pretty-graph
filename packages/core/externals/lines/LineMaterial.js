@@ -25,7 +25,8 @@ UniformsLib.line = {
 	resolution: { value: new Vector2( 1, 1 ) },
 	dashScale: { value: 1 },
 	useColor: { value: 0 },
-	dashSize: { value: 1 },
+  dashSize: { value: 1 },
+  scale: { value: 1 },
 	gapSize: { value: 1 } // todo FIX - maybe change to totalSize
 
 };
@@ -46,7 +47,8 @@ ShaderLib[ 'line' ] = {
 		#include <logdepthbuf_pars_vertex>
 		#include <clipping_planes_pars_vertex>
 
-		uniform vec2 resolution;
+    uniform vec2 resolution;
+    uniform float scale;
 
 		attribute vec3 instanceStart;
 		attribute vec3 instanceEnd;
@@ -161,7 +163,7 @@ ShaderLib[ 'line' ] = {
 			}
 
 			// adjust for linewidth
-			offset *= linewidth;
+			offset *= linewidth * scale;
 
 			// adjust for clip-space to screen-space conversion // maybe resolution should be based on viewport ...
 			offset /= resolution.y;
@@ -355,6 +357,24 @@ function LineMaterial( parameters ) {
 
 			}
 
+    },
+
+    scale: {
+
+			enumerable: true,
+
+			get: function () {
+
+				return this.uniforms.scale.value;
+
+			},
+
+			set: function ( value ) {
+
+				this.uniforms.scale.value =  value;
+
+			}
+
 		},
 
 		resolution: {
@@ -392,7 +412,7 @@ LineMaterial.prototype.copy = function ( source ) {
 
 	this.color.copy( source.color );
 
-	this.resolution = source.resolution;
+  this.resolution = source.resolution;
 
 	// todo
 

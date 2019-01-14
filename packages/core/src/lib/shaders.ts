@@ -29,7 +29,11 @@ export const vertexShader: string = `
     vec3 pos = position + translation;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 
-    gl_PointSize = size * scale * 10.0;
+    if (size * scale * 7.0 > 12.0) {
+      gl_PointSize = size * scale * 7.0;
+    } else {
+      gl_PointSize = 12.0;
+    }
   }
 `;
 
@@ -58,7 +62,7 @@ export const labelsVertexShader: string = `
     v_sprite = vec4(sp.x / textureDim.x, sp.y / textureDim.y, spriteDim.x / textureDim.x, spriteDim.y / textureDim.y);
 
     vec3 pos = position + translation;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos.x + 10.0 * (size / 2.0), pos.y, pos.z, 1.0);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos.x + 7.0 * (size / 2.0), pos.y, pos.z, 1.0);
   }
 `;
 
@@ -82,10 +86,12 @@ export const fragmentShader: string = `
     float border = 0.2;
     float radius = 0.5;
 
-    if (vSize * 10.0 * vScale > 50.0) {
+    if (vSize * 7.0 * vScale > 40.0) {
       distance = 0.02;
-      if (vScale < 3.0) {
-        border = distance + 0.025;
+      if (vScale < 2.0) {
+        border = distance + 0.04;
+      } else if (vScale < 4.0) {
+        border = distance + 0.03;
       } else {
         border = distance + 0.02;
       }
@@ -104,33 +110,25 @@ export const fragmentShader: string = `
         gl_FragColor = vec4(vColor, alpha);
       else discard;
     } else {
-      if (vScale < 0.3) {
-        vec2 m = uv - vec2(0.5, 0.5);
-        float dist = radius - sqrt(dot(m, m));
-        if (dist > border || dist > 0.0)
-          gl_FragColor = vec4(0.8, 0.8, 0.8, 1.0);
-        else discard;
-      } else if (vScale < 1.5) {
-        distance = 0.25;
-        if (vScale > 1.2) {
-          border = 0.5 - (vScale / 10.0) * 1.9;
-        } else {
-          border = 0.25;
-        }
-
-        vec2 m = uv - vec2(0.5, 0.5);
-        float dist = radius - sqrt(dot(m, m));
-
-        float sm = smoothstep(0.0, distance, dist);
-        float sm2 = smoothstep(border, border - distance, dist);
-        float alpha = sm*sm2;
-
-        float tm = smoothstep(border, border + distance, dist);
-
-        if (dist > border || dist > 0.0)
-          gl_FragColor = vec4(0.0, 0.0, 0.0, alpha);
-        else discard;
+      distance = 0.25;
+      if (vScale > 1.2) {
+        border = 0.5 - (vScale / 7.0) * 1.9;
+      } else {
+        border = 0.25;
       }
+
+      vec2 m = uv - vec2(0.5, 0.5);
+      float dist = radius - sqrt(dot(m, m));
+
+      float sm = smoothstep(0.0, distance, dist);
+      float sm2 = smoothstep(border, border - distance, dist);
+      float alpha = sm*sm2;
+
+      float tm = smoothstep(border, border + distance, dist);
+
+      if (dist > border || dist > 0.0)
+        gl_FragColor = vec4(0.0, 0.0, 0.0, alpha);
+      else discard;
     }
   }
 `;
@@ -169,7 +167,7 @@ export const pickingVertexShader: string = `
     vec3 pos = position + translation;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 
-    gl_PointSize = size * scale * 10.0;
+    gl_PointSize = size * scale * 7.0;
   }
 `;
 

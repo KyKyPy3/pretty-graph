@@ -127,7 +127,7 @@ export class AppComponent implements OnInit {
     this._links = data.links.map((link) => {
       return {
         ...link,
-        // size: 2,
+        // size: 8,
         // color: 0xdcdcdc
       };
     });

@@ -1,13 +1,16 @@
 import {
+  BackSide,
   BufferAttribute,
   BufferGeometry,
   Color,
   CubicBezierCurve3,
   Event as ThreeEvent,
+  Float32BufferAttribute,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
   LinearFilter,
   Mesh,
+  MeshBasicMaterial,
   PerspectiveCamera,
   Plane,
   PlaneBufferGeometry,
@@ -130,6 +133,8 @@ export class PretyGraph {
   private _labelsMesh!: Mesh;
 
   private _labelsMaterial!: RawShaderMaterial;
+
+  private _arrowGeometry!: BufferGeometry;
 
   constructor(options: GraphOptions) {
     this.options = options;
@@ -311,6 +316,12 @@ export class PretyGraph {
       this._linesPickingGeometry.attributes.instanceStart.data.needsUpdate = true;
       this._linesPickingGeometry.attributes.instanceEnd.data.needsUpdate = true;
 
+      const { vertices, normals } = this._calculateArrowData();
+      this._arrowGeometry.attributes.position.array = vertices;
+      this._arrowGeometry.attributes.normal.array = normals;
+      (this._arrowGeometry.attributes.position as BufferAttribute).needsUpdate = true;
+      (this._arrowGeometry.attributes.normal as BufferAttribute).needsUpdate = true;
+
       this._render();
     } else {
       if (!this._testNode(position)) {
@@ -365,6 +376,15 @@ export class PretyGraph {
       this._nodesPickingMaterial.needsUpdate = true;
       this._labelsMaterial.uniforms.scale.value = event.scale;
       this._labelsMaterial.needsUpdate = true;
+
+      this._lineMaterial.uniforms.scale.value = event.scale;
+      this._lineMaterial.needsUpdate = true;
+
+      const { vertices, normals } = this._calculateArrowData();
+      this._arrowGeometry.attributes.position.array = vertices;
+      this._arrowGeometry.attributes.normal.array = normals;
+      (this._arrowGeometry.attributes.position as BufferAttribute).needsUpdate = true;
+      (this._arrowGeometry.attributes.normal as BufferAttribute).needsUpdate = true;
 
       if (this._hoveredNode) {
         const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
@@ -711,6 +731,7 @@ export class PretyGraph {
     this._lineMaterial = new LineMaterial({
       dashed: false,
       depthTest: false,
+      scale: this._controls ? this._controls.scale : 1.0,
       vertexColors: VertexColors
     });
 
@@ -743,7 +764,23 @@ export class PretyGraph {
   }
 
   private _drawArrows(): void {
-    //
+    this._arrowGeometry = new BufferGeometry();
+
+    const { vertices, normals, colors } = this._calculateArrowData();
+
+    // this._arrowGeometry.dynamic = true;
+
+    this._arrowGeometry.addAttribute( 'position', new BufferAttribute( vertices, 3 ) );
+    this._arrowGeometry.addAttribute( 'normal', new Float32BufferAttribute( normals, 3 ));
+    this._arrowGeometry.addAttribute( 'color', new Float32BufferAttribute( colors, 3 ));
+
+    this._arrowGeometry.computeBoundingSphere();
+    const mesh = new Mesh( this._arrowGeometry, new MeshBasicMaterial({
+      depthTest: false,
+      side: BackSide,
+      vertexColors: VertexColors
+    }));
+    this._scene.add(mesh);
   }
 
   private _drawLabels(): void {
@@ -853,7 +890,7 @@ export class PretyGraph {
   }
 
   private _render(): void {
-    console.log(this._renderer.info.render.calls);
+    console.log('Render draw calls: ', this._renderer.info.render.calls);
     this._renderer.render(this._scene, this._camera);
   }
 
@@ -867,15 +904,13 @@ export class PretyGraph {
     const pickingColor = new Color();
 
     links.forEach((link, index) => {
-      // Это радиус ноды, его надо брать из параметров и вычислять вот так (size * scale * 10.0)
-      const radius = (5 / 2) * 10.0;
       const angle = Math.atan2(link.target.y - link.source.y, link.target.x - link.source.x);
 
-      const sourceX = link.source.x + radius * Math.cos(angle);
-      const sourceY = link.source.y + radius * Math.sin(angle);
+      const sourceX = link.source.x + ((link.source.size / 2) * 7.0) * Math.cos(angle);
+      const sourceY = link.source.y + ((link.source.size / 2) * 7.0) * Math.sin(angle);
 
-      const targetX = link.target.x - radius * Math.cos(angle);
-      const targetY = link.target.y - radius * Math.sin(angle);
+      const targetX = link.target.x - (((link.target.size / 2) * 7.0) + link.size * 2) * Math.cos(angle);
+      const targetY = link.target.y - (((link.target.size / 2) * 7.0) + link.size * 2) * Math.sin(angle);
 
       color.setHex(link.color);
       pickingColor.setHex(index + 1);
@@ -969,5 +1004,124 @@ export class PretyGraph {
       positions,
       sizes
     }
+  }
+
+  private _calculateArrowVertices(edge, sourcePoint, targetPoint): any {
+    // Нужно использовать реальный размер ноды
+    const radius = (targetPoint.size / 2) * 7.0 - 0.4;
+
+    const dx = sourcePoint.x - targetPoint.x;
+    const dy = sourcePoint.y - targetPoint.y;
+
+    const angle = Math.atan2(dy, dx);
+    const vNorm = Math.sqrt(dx * dx + dy * dy);
+
+    const sourceX = targetPoint.x + radius * Math.cos(angle);
+    const sourceY = targetPoint.y + radius * Math.sin(angle);
+
+    const scalingFactor = edge.size;
+
+    // point on line at distance
+    const pointOnLine = [sourceX + 2 * edge.size * dx / vNorm, sourceY + 2 * edge.size * dy / vNorm]
+
+    // endpoints of arrows at length above point (the distance from the original line
+    const pointBelow = [pointOnLine[0] - scalingFactor * -dy / vNorm, pointOnLine[1] - scalingFactor * dx / vNorm, ]
+    const pointAbove = [pointOnLine[0] + scalingFactor * -dy / vNorm, pointOnLine[1] + scalingFactor * dx / vNorm, ]
+
+    return {
+      pointAbove,
+      pointBelow,
+      pointOnLine: [sourceX, sourceY]
+    }
+  }
+
+  private _calculateNormals(arrowVertices): any {
+    const pA = new Vector3();
+    const pB = new Vector3();
+    const pC = new Vector3();
+
+    const cb = new Vector3();
+    const ab = new Vector3();
+
+    pA.set(arrowVertices.pointBelow[0], arrowVertices.pointBelow[1], 0);
+    pB.set(arrowVertices.pointAbove[0], arrowVertices.pointAbove[1], 0);
+    pC.set(arrowVertices.pointOnLine[0], arrowVertices.pointOnLine[1], 0);
+
+    cb.subVectors( pC, pB );
+    ab.subVectors( pA, pB );
+    cb.cross(ab);
+
+    cb.normalize();
+
+    return {
+      nx: cb.x,
+      ny: cb.y,
+      nz: cb.z
+    }
+  }
+
+  private _calculateArrowData(): any {
+    const vertices = new Float32Array(this._edges.length * 9);
+    const normals = new Float32Array(this._edges.length * 9);
+    const colors = new Float32Array(this._edges.length * 9);
+
+    const color = new Color();
+    for ( let i = 0, i3 = 0, l = this._edges.length; i < l; i ++, i3 += 9 ) {
+      color.setHex(this._edges[i].color);
+
+      if (this._edges[i].target.id === this._edges[i].source.id) {
+        // Если это нода сама на себя, то пока сикпаем такую связь
+        continue;
+      }
+
+      const arrowVertices = this._calculateArrowVertices(this._edges[i], this._edges[i].source, this._edges[i].target);
+
+      // Add vertices
+      vertices[i3 + 0] = arrowVertices.pointBelow[0];
+      vertices[i3 + 1] = arrowVertices.pointBelow[1];
+      vertices[i3 + 2] = 0;
+
+      vertices[i3 + 3] = arrowVertices.pointOnLine[0];
+      vertices[i3 + 4] = arrowVertices.pointOnLine[1];
+      vertices[i3 + 5] = 0;
+
+      vertices[i3 + 6] = arrowVertices.pointAbove[0];
+      vertices[i3 + 7] = arrowVertices.pointAbove[1];
+      vertices[i3 + 8] = 0;
+
+      // Add normals
+      const n = this._calculateNormals(arrowVertices);
+
+      normals[i3 + 0] = n.nx;
+      normals[i3 + 1] = n.ny;
+      normals[i3 + 2] = n.nz;
+
+      normals[i3 + 3] = n.nx;
+      normals[i3 + 4] = n.ny;
+      normals[i3 + 5] = n.nz;
+
+      normals[i3 + 6] = n.nx;
+      normals[i3 + 7] = n.ny;
+      normals[i3 + 8] = n.nz;
+
+      // colors
+      colors[i3 + 0] = color.r;
+      colors[i3 + 1] = color.g;
+      colors[i3 + 2] = color.b;
+
+      colors[i3 + 3] = color.r;
+      colors[i3 + 4] = color.g;
+      colors[i3 + 5] = color.b;
+
+      colors[i3 + 6] = color.r;
+      colors[i3 + 7] = color.g;
+      colors[i3 + 8] = color.b;
+    }
+
+    return {
+      colors,
+      normals,
+      vertices,
+    };
   }
 }
