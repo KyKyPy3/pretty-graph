@@ -126,16 +126,13 @@ export class AppComponent implements OnInit {
   private _prepareGraphData(data): any {
     this._links = data.links.map((link) => {
       return {
-        ...link,
-        // size: 8,
-        // color: 0xdcdcdc
+        ...link
       };
     });
     this._nodes = data.nodes.map((node) => {
       if (+node.id === 373) {
         return {
           ...node,
-          // size: +node.id === 373 ? 15 : 5,
           img: 'assets/user.jpg',
           color: 0xdcdcdc,
           label: null
@@ -143,7 +140,6 @@ export class AppComponent implements OnInit {
       } else {
         return {
           ...node,
-          // size: +node.id === 373 ? 15 : 5,
           img: 'assets/user.jpg',
           color: 0xdcdcdc,
           label: null
