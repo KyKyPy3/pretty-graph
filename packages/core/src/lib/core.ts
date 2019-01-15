@@ -92,8 +92,6 @@ export class PretyGraph {
 
   private _hoveredNode: any = null;
 
-  private _hoveredNodeID: number | null = null;
-
   private _hoveredEdge: any = null;
 
   private _hoveredEdgeID: number | null = null;
@@ -120,6 +118,8 @@ export class PretyGraph {
 
   private _lineMesh!: Line2;
 
+  private _linePickingMesh!: Line2;
+
   private _imageCanvas: ImageCanvas;
 
   private _imageLoaded: (event: ThreeEvent) => void;
@@ -139,6 +139,10 @@ export class PretyGraph {
   private _arrowMesh!: Mesh;
 
   private _arrowMaterial!: MeshBasicMaterial;
+
+  private _indexedNodes: { [id: string]: any; } = {};
+
+  private _colorToNodeID: { [id: number]: string; } = {};
 
   constructor(options: GraphOptions) {
     this.options = options;
@@ -180,7 +184,6 @@ export class PretyGraph {
     this._imageCanvas = new ImageCanvas();
     this._textCanvas = new TextCanvas();
 
-    // Start render loop
     this._render();
 
     window.addEventListener('resize', () => {
@@ -209,8 +212,10 @@ export class PretyGraph {
     this._nodes = data.nodes;
     this._edges = data.links;
 
+    this._indexingNodes();
+
     if (data.center) {
-      this._center = data.nodes.find((n: any) => +n.id === +data.center);
+      this._center = this._indexedNodes[data.center];
       if (this._center) {
         this._controls.setTransform(this._center);
       }
@@ -295,11 +300,11 @@ export class PretyGraph {
         newPos = this._intersection.sub(this._offset).clone();
       }
 
-      if (this._hoveredNodeID !== null) {
-        this._nodesGeometry.attributes.translation.setXYZ(this._hoveredNodeID, newPos.x, newPos.y, 0)
-        this._nodesPickingGeometry.attributes.translation.setXYZ(this._hoveredNodeID, newPos.x, newPos.y, 0)
+      if (this._hoveredNode !== null) {
+        this._nodesGeometry.attributes.translation.setXYZ(this._hoveredNode.__positionIndex, newPos.x, newPos.y, 0)
+        this._nodesPickingGeometry.attributes.translation.setXYZ(this._hoveredNode.__positionIndex, newPos.x, newPos.y, 0)
 
-        this._labelsGeometry.attributes.translation.setXYZ(this._hoveredNodeID, newPos.x + this._textCanvas.textureWidth / 2, newPos.y, 0);
+        this._labelsGeometry.attributes.translation.setXYZ(this._hoveredNode.__labelIndex, newPos.x + this._textCanvas.textureWidth / 2, newPos.y, 0);
       }
 
       this._hoveredNode.x = newPos.x;
@@ -412,8 +417,16 @@ export class PretyGraph {
       this._scene.remove(this._nodeMesh);
     }
 
+    if (this._labelsMesh) {
+      this._scene.remove(this._labelsMesh);
+    }
+
     if (this._nodesPickingsMesh) {
       this._pickingNodesScene.remove(this._nodesPickingsMesh);
+    }
+
+    if (this._linePickingMesh) {
+      this._pickingLineScene.remove(this._linePickingMesh);
     }
   }
 
@@ -430,13 +443,23 @@ export class PretyGraph {
       this._lineGeometry.dispose();
     }
 
+    if (this._linesPickingGeometry) {
+      this._linesPickingGeometry.dispose();
+    }
+
     if (this._arrowGeometry) {
       this._arrowGeometry.dispose();
+    }
+
+    if (this._labelsGeometry) {
+      this._labelsGeometry.dispose();
     }
   }
 
   private _disposeRenderer(): void {
     if (this._renderer) {
+      this._renderer.clear();
+      this._renderer.renderLists.dispose();
       this._renderer.dispose();
     }
   }
@@ -456,6 +479,10 @@ export class PretyGraph {
 
     if (this._arrowMaterial) {
       this._arrowMaterial.dispose();
+    }
+
+    if (this._labelsMaterial) {
+      this._labelsMaterial.dispose();
     }
   }
 
@@ -483,7 +510,8 @@ export class PretyGraph {
       /* tslint:disable-next-line */
       const id = (pixelBuffer[0]<<16)|(pixelBuffer[1]<<8)|(pixelBuffer[2]);
       if (id) {
-        if (this._hoveredNodeID !== id - 1) {
+        const node = this._indexedNodes[this._colorToNodeID[id]];
+        if (this._hoveredNode !== node) {
           if (this._hoveredNode !== null) {
             this._setNodeColor(this._hoveredNode.color);
           }
@@ -493,8 +521,7 @@ export class PretyGraph {
             this._setEdgeSize(this._hoveredEdge.size);
           }
 
-          this._hoveredNode = this._nodes[id - 1];
-          this._hoveredNodeID = id - 1;
+          this._hoveredNode = this._indexedNodes[this._colorToNodeID[id]];
           this._setNodeColor(0xff0000);
 
           const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
@@ -508,7 +535,6 @@ export class PretyGraph {
           this._setNodeColor(this._hoveredNode.color);
           this.onEvent.emit('nodeUnhover', { node: this._hoveredNode });
           this._hoveredNode = null;
-          this._hoveredNodeID = null;
           this._render();
         }
 
@@ -603,8 +629,8 @@ export class PretyGraph {
     const color = new Color();
     color.setHex(nodeColor);
 
-    if (this._hoveredNodeID !== null) {
-      this._nodeColorAttribute.setXYZ(this._hoveredNodeID, color.r, color.g, color.b);
+    if (this._hoveredNode !== null) {
+      this._nodeColorAttribute.setXYZ(this._hoveredNode.__positionIndex, color.r, color.g, color.b);
       this._nodeColorAttribute.needsUpdate = true;
       this._render();
     }
@@ -655,6 +681,8 @@ export class PretyGraph {
       } else {
         images[i] = -1;
       }
+
+      this._nodes[i].__positionIndex = i;
     }
 
     const nodesGeometry = new BufferGeometry();
@@ -665,7 +693,9 @@ export class PretyGraph {
     this._nodesGeometry.addAttribute('position', new BufferAttribute(new Float32Array([0, 0, 0]), 3));
 
     this._nodeTranslateAttribute = new InstancedBufferAttribute(translateArray, 3);
+    this._nodeTranslateAttribute.setDynamic(true);
     this._nodeColorAttribute = new InstancedBufferAttribute(colors, 3);
+    this._nodeColorAttribute.setDynamic(true);
 
     this._nodesGeometry.addAttribute('translation', this._nodeTranslateAttribute);
     this._nodesGeometry.addAttribute('color', this._nodeColorAttribute);
@@ -708,6 +738,8 @@ export class PretyGraph {
       pickingColors[ i3 + 0 ] = color.r;
       pickingColors[ i3 + 1 ] = color.g;
       pickingColors[ i3 + 2 ] = color.b;
+
+      this._colorToNodeID[i + 1] = this._nodes[i].id;
     }
 
     this._nodesPickingMaterial = new RawShaderMaterial({
@@ -761,7 +793,7 @@ export class PretyGraph {
     this._scene.add(this._lineMesh);
 
     // clone lines for GPU picking
-    const cloneLine = this._lineMesh.clone();
+    this._linePickingMesh = this._lineMesh.clone();
     this._linesPickingGeometry = new LineSegmentsGeometry();
     this._linesPickingGeometry.setPositions(linesData.positions);
     this._linesPickingGeometry.setColors(linesData.pickingColors);
@@ -771,9 +803,9 @@ export class PretyGraph {
     this._linesPickingGeometry.attributes.instanceStart.data.dynamic = true;
     this._linesPickingGeometry.attributes.instanceEnd.data.dynamic = true;
 
-    cloneLine.geometry = this._linesPickingGeometry;
+    this._linePickingMesh.geometry = this._linesPickingGeometry;
 
-    this._pickingLineScene.add(cloneLine);
+    this._pickingLineScene.add(this._linePickingMesh);
     this._pickingLineScene.updateMatrixWorld(true);
 
     this._render();
@@ -825,6 +857,8 @@ export class PretyGraph {
       } else {
         images[i] = -1;
       }
+
+      this._nodes[i].__labelIndex = i;
     }
 
     const labelsGeometry = new PlaneBufferGeometry(this._textCanvas.textureWidth, this._textCanvas.textureHeight);
@@ -863,9 +897,7 @@ export class PretyGraph {
 
     this._labelsMesh = new Mesh(this._labelsGeometry, this._labelsMaterial);
     this._labelsMesh.frustumCulled = false;
-    // this._nodeMesh.renderOrder = 10;
     this._scene.add(this._labelsMesh);
-    // this._labelsMesh.visible = false;
 
     this._render();
   }
@@ -1142,5 +1174,17 @@ export class PretyGraph {
       normals,
       vertices,
     };
+  }
+
+  private _indexingNodes(): void {
+    this._indexedNodes = {};
+
+    this._nodes.forEach((node) => {
+      if (this._indexedNodes[node.id]) {
+        console.error(`Node with id ${node.id} already exists`);
+      }
+
+      this._indexedNodes[node.id] = node;
+    });
   }
 }

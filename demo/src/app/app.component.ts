@@ -135,14 +135,14 @@ export class AppComponent implements OnInit {
           ...node,
           img: 'assets/user.jpg',
           color: 0xdcdcdc,
-          label: null
+          // label: null
         };
       } else {
         return {
           ...node,
           img: 'assets/user.jpg',
           color: 0xdcdcdc,
-          label: null
+          // label: null
         };
       }
     });

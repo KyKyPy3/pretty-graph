@@ -25,7 +25,6 @@ export declare class PretyGraph {
     private _nodeMesh;
     private _nodesPickingsMesh;
     private _hoveredNode;
-    private _hoveredNodeID;
     private _hoveredEdge;
     private _hoveredEdgeID;
     private _dragInProgress;
@@ -39,6 +38,7 @@ export declare class PretyGraph {
     private _pickingLineScene;
     private _linesPickingGeometry;
     private _lineMesh;
+    private _linePickingMesh;
     private _imageCanvas;
     private _imageLoaded;
     private _textCanvas;
@@ -49,6 +49,8 @@ export declare class PretyGraph {
     private _arrowGeometry;
     private _arrowMesh;
     private _arrowMaterial;
+    private _indexedNodes;
+    private _colorToNodeID;
     constructor(options: GraphOptions);
     options: GraphOptions;
     setData(data: any): void;
@@ -86,4 +88,5 @@ export declare class PretyGraph {
     private _calculateArrowVertices;
     private _calculateNormals;
     private _calculateArrowData;
+    private _indexingNodes;
 }
