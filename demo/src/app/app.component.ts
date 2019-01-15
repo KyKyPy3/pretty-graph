@@ -125,6 +125,10 @@ export class AppComponent implements OnInit {
     this._agent.calculate();
   }
 
+  public fullscreen(): void {
+    this._graphContainer.nativeElement.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+  }
+
   private _prepareGraphData(data): any {
     this._links = data.links.map((link) => {
       return {

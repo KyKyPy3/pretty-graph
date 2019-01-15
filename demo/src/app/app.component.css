@@ -8,8 +8,18 @@
   height: 100%;
 }
 
+.graph::backdrop {
+  background: white;
+}
+
 .addData {
   position: absolute;
   top: 0;
+  right: 0;
+}
+
+.fullscreen {
+  position: absolute;
+  top: 30px;
   right: 0;
 }

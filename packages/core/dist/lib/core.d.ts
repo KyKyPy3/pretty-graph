@@ -94,5 +94,6 @@ export declare class PretyGraph {
     private _calculateArrowData;
     private _indexingNodes;
     private _moveNodes;
+    private _getRandomFromRange;
     private _animate;
 }

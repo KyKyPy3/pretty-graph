@@ -214,6 +214,9 @@ export class PretyGraph {
     this._nodes = data.nodes;
     this._edges = data.links;
 
+    const lastIndexedNodes = JSON.parse(JSON.stringify(this._indexedNodes));
+    this._indexingNodes();
+
     if (data.center) {
       this._center = this._indexedNodes[data.center];
       if (this._center) {
@@ -239,10 +242,6 @@ export class PretyGraph {
     this._imageCanvas.addEventListener('imageLoaded', this._imageLoaded);
 
     if (options.animate) {
-      const lastIndexedNodes = JSON.parse(JSON.stringify(this._indexedNodes));
-      this._indexingNodes();
-
-      if (Object.keys(lastIndexedNodes).length) {
         for (const k in this._indexedNodes) {
           if (lastIndexedNodes[k]) {
             this._indexedNodes[k].toX = this._indexedNodes[k].x;
@@ -254,10 +253,17 @@ export class PretyGraph {
           } else {
             this._indexedNodes[k].toX = this._indexedNodes[k].x;
             this._indexedNodes[k].toY = this._indexedNodes[k].y;
-            this._indexedNodes[k].fromX = this._center ? this._center.x : 0;
-            this._indexedNodes[k].fromY = this._center ? this._center.y : 0;
-            this._indexedNodes[k].x = this._center ? this._center.x : 0;
-            this._indexedNodes[k].y = this._center ? this._center.y : 0;
+            if (this._center && this._indexedNodes[k].id === this._center.id) {
+              this._indexedNodes[k].fromX = this._center.x;
+              this._indexedNodes[k].fromY = this._center.y;
+              this._indexedNodes[k].x = this._center.x;
+              this._indexedNodes[k].y = this._center.y;
+            } else {
+              this._indexedNodes[k].fromX = this._getRandomFromRange(-dimensions.width, dimensions.width);
+              this._indexedNodes[k].fromY = this._getRandomFromRange(-dimensions.height, dimensions.height);
+              this._indexedNodes[k].x = this._getRandomFromRange(-dimensions.width, dimensions.width);
+              this._indexedNodes[k].y = this._getRandomFromRange(-dimensions.height, dimensions.height);
+            }
           }
         }
 
@@ -269,17 +275,7 @@ export class PretyGraph {
         this._render();
 
         this._animate();
-      } else {
-        this._drawEdges();
-        this._drawArrows();
-        this._drawLabels();
-        this._drawNodes();
-
-        this._render();
-      }
     } else {
-      this._indexingNodes();
-
       this._drawEdges();
       this._drawArrows();
       this._drawLabels();
@@ -987,7 +983,7 @@ export class PretyGraph {
   private _setupRenderer(): void {
     this._renderer = new WebGLRenderer({
       alpha: true,
-      antialias: true
+      antialias: true,
     });
 
     // Add support for retina displays
@@ -1003,6 +999,7 @@ export class PretyGraph {
   }
 
   private _render(): void {
+    /* tslint:disable-next-line */
     console.log('Render draw calls: ', this._renderer.info.render.calls);
     this._renderer.render(this._scene, this._camera);
   }
@@ -1189,16 +1186,16 @@ export class PretyGraph {
       const arrowVertices = this._calculateArrowVertices(this._edges[i], this._edges[i].source, this._edges[i].target);
 
       // Add vertices
-      vertices[i3 + 0] = arrowVertices.pointBelow[0];
-      vertices[i3 + 1] = arrowVertices.pointBelow[1];
+      vertices[i3 + 0] = arrowVertices.pointBelow[0] || 0;
+      vertices[i3 + 1] = arrowVertices.pointBelow[1] || 0;
       vertices[i3 + 2] = 0;
 
-      vertices[i3 + 3] = arrowVertices.pointOnLine[0];
-      vertices[i3 + 4] = arrowVertices.pointOnLine[1];
+      vertices[i3 + 3] = arrowVertices.pointOnLine[0] || 0;
+      vertices[i3 + 4] = arrowVertices.pointOnLine[1] || 0;
       vertices[i3 + 5] = 0;
 
-      vertices[i3 + 6] = arrowVertices.pointAbove[0];
-      vertices[i3 + 7] = arrowVertices.pointAbove[1];
+      vertices[i3 + 6] = arrowVertices.pointAbove[0] || 0;
+      vertices[i3 + 7] = arrowVertices.pointAbove[1] || 0;
       vertices[i3 + 8] = 0;
 
       // Add normals
@@ -1265,10 +1262,18 @@ export class PretyGraph {
 
     // (this._labelsGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
 
-    const links = this._constructLines(this._edges);
-    this._lineGeometry.setPositions(links.positions);
-    this._lineGeometry.attributes.instanceStart.data.needsUpdate = true;
-    this._lineGeometry.attributes.instanceEnd.data.needsUpdate = true;
+    this._lineGeometry.dispose();
+    const linesData = this._constructLines(this._edges);
+    this._lineGeometry = new LineSegmentsGeometry();
+    this._lineGeometry.setPositions(linesData.positions);
+    this._lineGeometry.setColors(linesData.colors);
+
+    this._lineGeometry.addAttribute('linewidth', new InstancedBufferAttribute(new Float32Array(linesData.sizes), 1));
+
+    this._lineGeometry.attributes.instanceStart.data.dynamic = true;
+    this._lineGeometry.attributes.instanceEnd.data.dynamic = true;
+
+    this._lineMesh.geometry = this._lineGeometry;
 
     const { vertices, normals } = this._calculateArrowData();
     this._arrowGeometry.attributes.position.array = vertices;
@@ -1280,10 +1285,21 @@ export class PretyGraph {
       (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).setArray(translateArray);
       (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
 
-      this._linesPickingGeometry.setPositions(links.positions);
-      this._linesPickingGeometry.attributes.instanceStart.data.needsUpdate = true;
-      this._linesPickingGeometry.attributes.instanceEnd.data.needsUpdate = true;
+      this._linesPickingGeometry.dispose();
+      this._linesPickingGeometry = new LineSegmentsGeometry();
+      this._linesPickingGeometry.setPositions(linesData.positions);
+      this._linesPickingGeometry.setColors(linesData.pickingColors);
+
+      this._linesPickingGeometry.addAttribute('linewidth', new InstancedBufferAttribute(new Float32Array(linesData.sizes), 1));
+
+      this._linesPickingGeometry.attributes.instanceStart.data.dynamic = true;
+      this._linesPickingGeometry.attributes.instanceEnd.data.dynamic = true;
+      this._linePickingMesh.geometry = this._linesPickingGeometry;
     }
+  }
+
+  private _getRandomFromRange(min, max): number {
+    return Math.floor(Math.random() * (max - min)) + min;
   }
 
   private _animate(): void {
