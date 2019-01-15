@@ -210,11 +210,9 @@ export class PretyGraph {
     return this._options;
   }
 
-  public setData(data: any): void {
+  public setData(data: any, options = { animate: false }): void {
     this._nodes = data.nodes;
     this._edges = data.links;
-
-    this._indexingNodes();
 
     if (data.center) {
       this._center = this._indexedNodes[data.center];
@@ -240,10 +238,55 @@ export class PretyGraph {
 
     this._imageCanvas.addEventListener('imageLoaded', this._imageLoaded);
 
-    this._drawEdges();
-    this._drawArrows();
-    this._drawLabels();
-    this._drawNodes();
+    if (options.animate) {
+      const lastIndexedNodes = JSON.parse(JSON.stringify(this._indexedNodes));
+      this._indexingNodes();
+
+      if (Object.keys(lastIndexedNodes).length) {
+        for (const k in this._indexedNodes) {
+          if (lastIndexedNodes[k]) {
+            this._indexedNodes[k].toX = this._indexedNodes[k].x;
+            this._indexedNodes[k].toY = this._indexedNodes[k].y;
+            this._indexedNodes[k].fromX = lastIndexedNodes[k].x;
+            this._indexedNodes[k].fromY = lastIndexedNodes[k].y;
+            this._indexedNodes[k].x = lastIndexedNodes[k].x;
+            this._indexedNodes[k].y = lastIndexedNodes[k].y;
+          } else {
+            this._indexedNodes[k].toX = this._indexedNodes[k].x;
+            this._indexedNodes[k].toY = this._indexedNodes[k].y;
+            this._indexedNodes[k].fromX = this._center ? this._center.x : 0;
+            this._indexedNodes[k].fromY = this._center ? this._center.y : 0;
+            this._indexedNodes[k].x = this._center ? this._center.x : 0;
+            this._indexedNodes[k].y = this._center ? this._center.y : 0;
+          }
+        }
+
+        this._drawEdges();
+        this._drawArrows();
+        this._drawLabels();
+        this._drawNodes();
+
+        this._render();
+
+        this._animate();
+      } else {
+        this._drawEdges();
+        this._drawArrows();
+        this._drawLabels();
+        this._drawNodes();
+
+        this._render();
+      }
+    } else {
+      this._indexingNodes();
+
+      this._drawEdges();
+      this._drawArrows();
+      this._drawLabels();
+      this._drawNodes();
+
+      this._render();
+    }
   }
 
   public stopRenderLoop(): void {
@@ -783,8 +826,6 @@ export class PretyGraph {
     this._nodesPickingsMesh.frustumCulled = false;
     this._pickingNodesScene.add(this._nodesPickingsMesh);
     this._pickingNodesScene.updateMatrixWorld(true);
-
-    this._render();
   }
 
   private _drawEdges(): void {
@@ -830,8 +871,6 @@ export class PretyGraph {
 
     this._pickingLineScene.add(this._linePickingMesh);
     this._pickingLineScene.updateMatrixWorld(true);
-
-    this._render();
   }
 
   private _drawArrows(): void {
@@ -853,8 +892,6 @@ export class PretyGraph {
 
     this._arrowMesh = new Mesh( this._arrowGeometry, this._arrowMaterial);
     this._scene.add(this._arrowMesh);
-
-    this._render();
   }
 
   private _drawLabels(): void {
@@ -925,8 +962,6 @@ export class PretyGraph {
     this._labelsMesh = new Mesh(this._labelsGeometry, this._labelsMaterial);
     this._labelsMesh.frustumCulled = false;
     this._scene.add(this._labelsMesh);
-
-    this._render();
   }
 
   private _setupScene(): void {
@@ -1212,5 +1247,89 @@ export class PretyGraph {
 
       this._indexedNodes[node.id] = node;
     });
+  }
+
+  private _moveNodes(last: boolean = false): void {
+    const translateArray = new Float32Array(this._nodes.length * 3);
+
+    for (let i = 0, i3 = 0, l = this._nodes.length; i < l; i ++, i3 += 3 ) {
+      translateArray[ i3 + 0 ] = this._nodes[i].x;
+      translateArray[ i3 + 1 ] = this._nodes[i].y;
+      translateArray[ i3 + 2 ] = 0;
+
+      this._nodes[i].__positionIndex = i;
+    }
+
+    (this._nodesGeometry.attributes.translation as InstancedBufferAttribute).setArray(translateArray);
+    (this._nodesGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+
+    // (this._labelsGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+
+    const links = this._constructLines(this._edges);
+    this._lineGeometry.setPositions(links.positions);
+    this._lineGeometry.attributes.instanceStart.data.needsUpdate = true;
+    this._lineGeometry.attributes.instanceEnd.data.needsUpdate = true;
+
+    const { vertices, normals } = this._calculateArrowData();
+    this._arrowGeometry.attributes.position.array = vertices;
+    this._arrowGeometry.attributes.normal.array = normals;
+    (this._arrowGeometry.attributes.position as BufferAttribute).needsUpdate = true;
+    (this._arrowGeometry.attributes.normal as BufferAttribute).needsUpdate = true;
+
+    if (last) {
+      (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).setArray(translateArray);
+      (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+
+      this._linesPickingGeometry.setPositions(links.positions);
+      this._linesPickingGeometry.attributes.instanceStart.data.needsUpdate = true;
+      this._linesPickingGeometry.attributes.instanceEnd.data.needsUpdate = true;
+    }
+  }
+
+  private _animate(): void {
+    const interpolate = (val: number) => {
+      let newValue = val;
+
+      if ((newValue *= 2) < 1) {
+        return 0.5 * newValue * newValue;
+      }
+      return - 0.5 * (--newValue * (newValue - 2) - 1);
+    };
+
+    const start = Date.now();
+
+    const step = () => {
+      let p = (Date.now() - start) / 1000;
+
+      if (p >= 1) {
+        for (const k in this._indexedNodes) {
+          if (this._indexedNodes[k]) {
+            this._indexedNodes[k].x = this._indexedNodes[k].toX;
+            this._indexedNodes[k].y = this._indexedNodes[k].toY;
+          }
+        }
+
+        // ADD change node positions
+        this._moveNodes(true);
+
+        this._render();
+      } else {
+        p = interpolate(p);
+        for (const k in this._indexedNodes) {
+          if (this._indexedNodes[k]) {
+            this._indexedNodes[k].x = this._indexedNodes[k].toX * p + this._indexedNodes[k].fromX * (1 - p);
+            this._indexedNodes[k].y = this._indexedNodes[k].toY * p + this._indexedNodes[k].fromY * (1 - p);
+          }
+        }
+
+        // ADD change node positions
+        this._moveNodes();
+
+        this._render();
+        requestAnimationFrame(step);
+      }
+    };
+
+    step();
   }
 }

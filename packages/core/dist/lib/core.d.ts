@@ -54,7 +54,9 @@ export declare class PretyGraph {
     private _colorToNodeID;
     constructor(options: GraphOptions);
     options: GraphOptions;
-    setData(data: any): void;
+    setData(data: any, options?: {
+        animate: boolean;
+    }): void;
     stopRenderLoop(): void;
     resumeRenderLoop(): void;
     getNodeByID(nodeID: string): any;
@@ -91,4 +93,6 @@ export declare class PretyGraph {
     private _calculateNormals;
     private _calculateArrowData;
     private _indexingNodes;
+    private _moveNodes;
+    private _animate;
 }

@@ -97,7 +97,9 @@ export class AppComponent implements OnInit {
       graph.setData({
         nodes: nodes,
         links: links,
-        center: 373
+        center: 1044
+      }, {
+        animate: true
       });
     });
 
