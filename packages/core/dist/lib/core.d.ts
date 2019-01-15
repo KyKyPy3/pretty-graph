@@ -2,6 +2,7 @@ import { EventEmitter } from './emitter';
 import { GraphOptions } from './options';
 export declare class PretyGraph {
     onEvent: EventEmitter;
+    nodeScalingFactor: number;
     private _camera;
     private _scene;
     private _options;
@@ -56,6 +57,7 @@ export declare class PretyGraph {
     setData(data: any): void;
     stopRenderLoop(): void;
     resumeRenderLoop(): void;
+    getNodeByID(nodeID: string): any;
     destroy(): void;
     private _onMouseMove;
     private _onMouseUp;

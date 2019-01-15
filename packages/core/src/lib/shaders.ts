@@ -4,6 +4,7 @@ export const vertexShader: string = `
   uniform mat4 modelViewMatrix;
   uniform mat4 projectionMatrix;
   uniform float scale;
+  uniform float nodeScalingFactor;
   uniform vec2 spriteDim;
   uniform vec2 textureDim;
 
@@ -15,6 +16,7 @@ export const vertexShader: string = `
 
   varying vec3 vColor;
   varying float vScale;
+  varying float vNodeScaleFactor;
   varying float vSize;
   varying highp vec4 v_sprite;
 
@@ -22,6 +24,7 @@ export const vertexShader: string = `
     vColor = color;
     vScale = scale;
     vSize = size;
+    vNodeScaleFactor = nodeScalingFactor;
 
     highp vec2 sp = vec2(mod((image * spriteDim.x), textureDim.x), floor((image * spriteDim.x) / textureDim.y) * spriteDim.y);
     v_sprite = vec4(sp.x / textureDim.x, sp.y / textureDim.y, spriteDim.x / textureDim.x, spriteDim.y / textureDim.y);
@@ -29,8 +32,8 @@ export const vertexShader: string = `
     vec3 pos = position + translation;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 
-    if (size * scale * 7.0 > 12.0) {
-      gl_PointSize = size * scale * 7.0;
+    if (size * scale * nodeScalingFactor > 12.0) {
+      gl_PointSize = size * scale * nodeScalingFactor;
     } else {
       gl_PointSize = 12.0;
     }
@@ -45,6 +48,7 @@ export const labelsVertexShader: string = `
   uniform vec2 spriteDim;
   uniform vec2 textureDim;
   uniform float scale;
+  uniform float nodeScalingFactor;
 
   attribute vec3 position;    // blueprint's vertex positions
   attribute vec3 translation; // x y translation offsets for an instance
@@ -62,7 +66,7 @@ export const labelsVertexShader: string = `
     v_sprite = vec4(sp.x / textureDim.x, sp.y / textureDim.y, spriteDim.x / textureDim.x, spriteDim.y / textureDim.y);
 
     vec3 pos = position + translation;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos.x + 7.0 * (size / 2.0), pos.y, pos.z, 1.0);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos.x + nodeScalingFactor * (size / 2.0), pos.y, pos.z, 1.0);
   }
 `;
 
@@ -76,6 +80,7 @@ export const fragmentShader: string = `
   uniform sampler2D textureMap;
 
   varying float vScale;
+  varying float vNodeScaleFactor;
   varying float vSize;
   varying vec3 vColor;
   varying highp vec4 v_sprite;
@@ -86,7 +91,7 @@ export const fragmentShader: string = `
     float border = 0.2;
     float radius = 0.5;
 
-    if (vSize * 7.0 * vScale > 40.0) {
+    if (vSize * vNodeScaleFactor * vScale > 40.0) {
       distance = 0.02;
       if (vScale < 2.0) {
         border = distance + 0.04;
@@ -112,7 +117,7 @@ export const fragmentShader: string = `
     } else {
       distance = 0.25;
       if (vScale > 1.2) {
-        border = 0.5 - (vScale / 7.0) * 1.9;
+        border = 0.5 - (vScale / vNodeScaleFactor) * 1.9;
       } else {
         border = 0.25;
       }
@@ -152,6 +157,7 @@ export const pickingVertexShader: string = `
 
   uniform mat4 modelViewMatrix;
   uniform mat4 projectionMatrix;
+  uniform float nodeScalingFactor;
   uniform float scale;
 
   attribute vec3 position;    // blueprint's vertex positions
@@ -167,7 +173,7 @@ export const pickingVertexShader: string = `
     vec3 pos = position + translation;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 
-    gl_PointSize = size * scale * 7.0;
+    gl_PointSize = size * scale * nodeScalingFactor;
   }
 `;
 

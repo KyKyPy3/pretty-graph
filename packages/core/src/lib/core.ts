@@ -46,6 +46,8 @@ export class PretyGraph {
 
   public onEvent: EventEmitter = new EventEmitter();
 
+  public nodeScalingFactor: number = 7.0;
+
   private _camera!: PerspectiveCamera;
 
   private _scene!: Scene;
@@ -258,6 +260,18 @@ export class PretyGraph {
     }
   }
 
+  public getNodeByID(nodeID: string): any {
+    const node = this._indexedNodes[nodeID];
+
+    const coordinates = this._translateCoordinates(node.x, node.y);
+
+    return {
+      node,
+      ...coordinates,
+      scale: this._controls.scale
+    };
+  }
+
   public destroy(): void {
     this._disposeMesh();
     this._disposeTextures();
@@ -458,6 +472,7 @@ export class PretyGraph {
 
   private _disposeRenderer(): void {
     if (this._renderer) {
+      this._container.removeChild(this._renderer.domElement);
       this._renderer.clear();
       this._renderer.renderLists.dispose();
       this._renderer.dispose();
@@ -707,6 +722,10 @@ export class PretyGraph {
       fragmentShader,
       transparent: false,
       uniforms: {
+        nodeScalingFactor: {
+          type: 'f',
+          value: this.nodeScalingFactor
+        },
         scale: {
           type: 'f',
           value: this._controls ? this._controls.scale : 1.0
@@ -745,6 +764,10 @@ export class PretyGraph {
     this._nodesPickingMaterial = new RawShaderMaterial({
       fragmentShader: pickingFragmentShader,
       uniforms: {
+        nodeScalingFactor: {
+          type: 'f',
+          value: this.nodeScalingFactor
+        },
         scale: {
           type: 'f',
           value: this._controls ? this._controls.scale : 1.0
@@ -877,6 +900,10 @@ export class PretyGraph {
       fragmentShader: labelsFragmentShader,
       transparent: true,
       uniforms: {
+        nodeScalingFactor: {
+          type: 'f',
+          value: this.nodeScalingFactor
+        },
         scale: {
           type: 'f',
           value: this._controls ? this._controls.scale : 1.0
@@ -957,11 +984,11 @@ export class PretyGraph {
     links.forEach((link, index) => {
       const angle = Math.atan2(link.target.y - link.source.y, link.target.x - link.source.x);
 
-      const sourceX = link.source.x + ((link.source.size / 2) * 7.0) * Math.cos(angle);
-      const sourceY = link.source.y + ((link.source.size / 2) * 7.0) * Math.sin(angle);
+      const sourceX = link.source.x + ((link.source.size / 2) * this.nodeScalingFactor) * Math.cos(angle);
+      const sourceY = link.source.y + ((link.source.size / 2) * this.nodeScalingFactor) * Math.sin(angle);
 
-      const targetX = link.target.x - (((link.target.size / 2) * 7.0) + link.size * 2) * Math.cos(angle);
-      const targetY = link.target.y - (((link.target.size / 2) * 7.0) + link.size * 2) * Math.sin(angle);
+      const targetX = link.target.x - (((link.target.size / 2) * this.nodeScalingFactor) + link.size * 2) * Math.cos(angle);
+      const targetY = link.target.y - (((link.target.size / 2) * this.nodeScalingFactor) + link.size * 2) * Math.sin(angle);
 
       color.setHex(link.color);
       pickingColor.setHex(index + 1);
@@ -1058,8 +1085,7 @@ export class PretyGraph {
   }
 
   private _calculateArrowVertices(edge, sourcePoint, targetPoint): any {
-    // Нужно использовать реальный размер ноды
-    const radius = (targetPoint.size / 2) * 7.0 - 0.4;
+    const radius = (targetPoint.size / 2) * this.nodeScalingFactor - 0.4;
 
     const dx = sourcePoint.x - targetPoint.x;
     const dy = sourcePoint.y - targetPoint.y;
