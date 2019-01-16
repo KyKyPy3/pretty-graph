@@ -4,7 +4,7 @@ import { PretyGraph } from '@pretty-graph/core';
 import { D3Layout } from '@pretty-graph/d3-layout';
 import { PrettyGraphControls } from '@pretty-graph/controls';
 
-import * as graphMini from '../data/before.json';
+import * as graphMini from '../data/graph_data.json';
 import * as graphSmall from '../data/after.json';
 
 @Component({
@@ -126,13 +126,15 @@ export class AppComponent implements OnInit {
   }
 
   public fullscreen(): void {
-    this._graphContainer.nativeElement.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+    this._graphContainer.nativeElement.webkitRequestFullscreen();
   }
 
   private _prepareGraphData(data): any {
     this._links = data.links.map((link) => {
       return {
-        ...link
+        ...link,
+        size: 2,
+        color: 0xdcdcdc
       };
     });
     this._nodes = data.nodes.map((node) => {
@@ -141,11 +143,13 @@ export class AppComponent implements OnInit {
           ...node,
           img: 'assets/user.jpg',
           color: 0xdcdcdc,
-          label: null
+          label: null,
+          size: node.size || 5
         };
       } else {
         return {
           ...node,
+          size: node.size || 5,
           img: 'assets/user.jpg',
           color: 0xdcdcdc,
           label: null

@@ -10,7 +10,6 @@ import {
   InstancedBufferGeometry,
   LinearFilter,
   Mesh,
-  MeshBasicMaterial,
   PerspectiveCamera,
   Plane,
   PlaneBufferGeometry,
@@ -18,6 +17,7 @@ import {
   RawShaderMaterial,
   Raycaster,
   Scene,
+  ShaderMaterial,
   Vector2,
   Vector3,
   VertexColors,
@@ -29,12 +29,14 @@ import { EventEmitter } from './emitter';
 import { ImageCanvas } from './imageCanvas';
 import { GraphOptions } from './options';
 import {
+  arrowFragmentShader,
+  arrowVertexShader,
   fragmentShader,
   labelsFragmentShader,
   labelsVertexShader,
   pickingFragmentShader,
   pickingVertexShader,
-  vertexShader
+  vertexShader,
 } from './shaders';
 import { TextCanvas } from './textCanvas';
 
@@ -142,7 +144,7 @@ export class PretyGraph {
 
   private _arrowMesh!: Mesh;
 
-  private _arrowMaterial!: MeshBasicMaterial;
+  private _arrowMaterial!: ShaderMaterial;
 
   private _indexedNodes: { [id: string]: any; } = {};
 
@@ -444,11 +446,11 @@ export class PretyGraph {
       this._lineMaterial.uniforms.scale.value = event.scale;
       this._lineMaterial.needsUpdate = true;
 
-      const { vertices, normals } = this._calculateArrowData();
-      this._arrowGeometry.attributes.position.array = vertices;
-      this._arrowGeometry.attributes.normal.array = normals;
-      (this._arrowGeometry.attributes.position as BufferAttribute).needsUpdate = true;
-      (this._arrowGeometry.attributes.normal as BufferAttribute).needsUpdate = true;
+      // const { vertices, normals } = this._calculateArrowData();
+      // this._arrowGeometry.attributes.position.array = vertices;
+      // this._arrowGeometry.attributes.normal.array = normals;
+      // (this._arrowGeometry.attributes.position as BufferAttribute).needsUpdate = true;
+      // (this._arrowGeometry.attributes.normal as BufferAttribute).needsUpdate = true;
 
       if (this._hoveredNode) {
         const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
@@ -622,7 +624,7 @@ export class PretyGraph {
           this._hoveredEdge = this._edges[id - 1];
           this._hoveredEdgeID = id - 1;
           this._setEdgeColor(0xff0000);
-          this._setEdgeSize(this._hoveredEdge.size < 5 ? 5 : this._hoveredEdge.size);
+          this._setEdgeSize(this._hoveredEdge.size < 3 ? 3 : this._hoveredEdge.size);
 
           // ToDo: отсылать надо центр ребра?
           this.onEvent.emit('edgeHover', { edge: this._hoveredEdge, ...position });
@@ -882,13 +884,16 @@ export class PretyGraph {
 
     this._arrowGeometry.computeBoundingSphere();
 
-    this._arrowMaterial = new MeshBasicMaterial({
+    this._arrowMaterial = new ShaderMaterial({
       depthTest: false,
+      fragmentShader: arrowFragmentShader,
       side: BackSide,
-      vertexColors: VertexColors
+      transparent: false,
+      vertexColors: VertexColors,
+      vertexShader: arrowVertexShader
     });
 
-    this._arrowMesh = new Mesh( this._arrowGeometry, this._arrowMaterial);
+    this._arrowMesh = new Mesh(this._arrowGeometry, this._arrowMaterial);
     this._scene.add(this._arrowMesh);
   }
 
@@ -1130,14 +1135,15 @@ export class PretyGraph {
     const sourceX = targetPoint.x + radius * Math.cos(angle);
     const sourceY = targetPoint.y + radius * Math.sin(angle);
 
-    const scalingFactor = edge.size;
+    const scalingCornerFactor = edge.size < 6 ? 6 : edge.size;
+    const scalingOnLineFactor = edge.size < 6 ? 12 : 2 * edge.size;
 
     // point on line at distance
-    const pointOnLine = [sourceX + 2 * edge.size * dx / vNorm, sourceY + 2 * edge.size * dy / vNorm]
+    const pointOnLine = [sourceX + scalingOnLineFactor * dx / vNorm, sourceY + scalingOnLineFactor * dy / vNorm]
 
     // endpoints of arrows at length above point (the distance from the original line
-    const pointBelow = [pointOnLine[0] - scalingFactor * -dy / vNorm, pointOnLine[1] - scalingFactor * dx / vNorm, ]
-    const pointAbove = [pointOnLine[0] + scalingFactor * -dy / vNorm, pointOnLine[1] + scalingFactor * dx / vNorm, ]
+    const pointBelow = [pointOnLine[0] - scalingCornerFactor * -dy / vNorm, pointOnLine[1] - scalingCornerFactor * dx / vNorm, ]
+    const pointAbove = [pointOnLine[0] + scalingCornerFactor * -dy / vNorm, pointOnLine[1] + scalingCornerFactor * dx / vNorm, ]
 
     return {
       pointAbove,
@@ -1325,6 +1331,8 @@ export class PretyGraph {
     };
 
     const start = Date.now();
+    this._arrowMesh.visible = false;
+    this._labelsMesh.visible = false;
 
     const step = () => {
       let p = (Date.now() - start) / this.animationTime;
@@ -1339,6 +1347,9 @@ export class PretyGraph {
 
         // ADD change node positions
         this._moveNodes(true);
+
+        this._arrowMesh.visible = true;
+        this._labelsMesh.visible = true;
 
         this._render();
       } else {

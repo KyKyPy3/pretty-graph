@@ -162,8 +162,11 @@ ShaderLib[ 'line' ] = {
 
 			}
 
-			// adjust for linewidth
-			offset *= linewidth * scale;
+      // adjust for linewidth
+      if (scale > 1.0)
+        offset *= linewidth * scale;
+      else
+        offset *= linewidth;
 
 			// adjust for clip-space to screen-space conversion // maybe resolution should be based on viewport ...
 			offset /= resolution.y;
