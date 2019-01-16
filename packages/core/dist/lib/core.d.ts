@@ -3,6 +3,7 @@ import { GraphOptions } from './options';
 export declare class PretyGraph {
     onEvent: EventEmitter;
     nodeScalingFactor: number;
+    animationTime: number;
     private _camera;
     private _scene;
     private _options;

@@ -48,6 +48,8 @@ export class PretyGraph {
 
   public nodeScalingFactor: number = 7.0;
 
+  public animationTime: number = 500;
+
   private _camera!: PerspectiveCamera;
 
   private _scene!: Scene;
@@ -274,7 +276,7 @@ export class PretyGraph {
 
         this._render();
 
-        this._animate();
+        requestAnimationFrame(this._animate.bind(this));
     } else {
       this._drawEdges();
       this._drawArrows();
@@ -1260,7 +1262,17 @@ export class PretyGraph {
     (this._nodesGeometry.attributes.translation as InstancedBufferAttribute).setArray(translateArray);
     (this._nodesGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
 
-    // (this._labelsGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+    const labelsTranslateArray = new Float32Array(this._nodes.length * 3);
+    for (let i = 0, i3 = 0, l = this._nodes.length; i < l; i ++, i3 += 3 ) {
+      labelsTranslateArray[ i3 + 0 ] = this._nodes[i].x + this._textCanvas.textureWidth / 2;
+      labelsTranslateArray[ i3 + 1 ] = this._nodes[i].y;
+      labelsTranslateArray[ i3 + 2 ] = 0;
+
+      this._nodes[i].__labelIndex = i;
+    }
+
+    (this._labelsGeometry.attributes.translation as InstancedBufferAttribute).setArray(labelsTranslateArray);
+    (this._labelsGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
 
     this._lineGeometry.dispose();
     const linesData = this._constructLines(this._edges);
@@ -1315,7 +1327,7 @@ export class PretyGraph {
     const start = Date.now();
 
     const step = () => {
-      let p = (Date.now() - start) / 1000;
+      let p = (Date.now() - start) / this.animationTime;
 
       if (p >= 1) {
         for (const k in this._indexedNodes) {
