@@ -99,7 +99,7 @@ export class AppComponent implements OnInit {
         links: links,
         center: 1044
       }, {
-        animate: true
+        animate: false
       });
     });
 

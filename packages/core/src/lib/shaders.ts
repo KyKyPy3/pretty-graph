@@ -108,21 +108,19 @@ export const fragmentShader: string = `
 
   void main() {
     vec2 uv = vec2( gl_PointCoord.x, gl_PointCoord.y );
-    float distance = 0.2;
-    float border = 0.2;
     float radius = 0.5;
+    float border = 0.0;
+    float distance = 0.0;
 
     vec2 m = uv - vec2(0.5, 0.5);
     float dist = radius - sqrt(dot(m, m));
 
     if (vSize * vNodeScaleFactor * vScale > 40.0) {
-      distance = 0.02;
-      if (vScale < 2.0) {
-        border = distance + 0.04;
-      } else if (vScale < 4.0) {
-        border = distance + 0.03;
+      distance = 0.025;
+      if (0.08 - vSize * (vScale / 1000.0) > 0.04) {
+        border = 0.08 - vSize * (vScale / 1000.0) / 2.0;
       } else {
-        border = distance + 0.02;
+        border = 0.06;
       }
 
       float sm = smoothstep(0.0, distance, dist);
@@ -137,16 +135,28 @@ export const fragmentShader: string = `
         gl_FragColor = vec4(vColor, alpha);
       else discard;
     } else {
-      distance = 0.02 - vScale / 100.0;
-      border = 0.25 - (vScale / vNodeScaleFactor);
+      distance = 0.1;
+      border = 0.15;
+      float l = vColor.r * 0.3 + vColor.g * 0.59 + vColor.b * 0.11;
+      if (l > 0.5) {
+        // gray
+        if (vScale < 0.5) {
+          distance = 0.1;
+          border = 0.25;
+        } else if (vScale > 10.0) {
+          border = 0.05;
+          distance = 0.016;
+        } else {
+          border = 0.3 - vScale / 50.0;
+          distance = border / 2.5;
+        }
+      }
 
       float sm = smoothstep(0.0, distance, dist);
       float sm2 = smoothstep(border, border - distance, dist);
       float alpha = sm*sm2;
 
-      if (dist > border)
-        gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-      else if (dist > 0.0)
+      if (dist > border || dist > 0.0)
         gl_FragColor = vec4(vColor, alpha);
       else discard;
     }

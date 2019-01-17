@@ -446,11 +446,11 @@ export class PretyGraph {
       this._lineMaterial.uniforms.scale.value = event.scale;
       this._lineMaterial.needsUpdate = true;
 
-      // const { vertices, normals } = this._calculateArrowData();
-      // this._arrowGeometry.attributes.position.array = vertices;
-      // this._arrowGeometry.attributes.normal.array = normals;
-      // (this._arrowGeometry.attributes.position as BufferAttribute).needsUpdate = true;
-      // (this._arrowGeometry.attributes.normal as BufferAttribute).needsUpdate = true;
+      const { vertices, normals } = this._calculateArrowData();
+      this._arrowGeometry.attributes.position.array = vertices;
+      this._arrowGeometry.attributes.normal.array = normals;
+      (this._arrowGeometry.attributes.position as BufferAttribute).needsUpdate = true;
+      (this._arrowGeometry.attributes.normal as BufferAttribute).needsUpdate = true;
 
       if (this._hoveredNode) {
         const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
@@ -991,6 +991,7 @@ export class PretyGraph {
     this._renderer = new WebGLRenderer({
       alpha: true,
       antialias: true,
+      // premultipliedAlpha: false
     });
 
     // Add support for retina displays
