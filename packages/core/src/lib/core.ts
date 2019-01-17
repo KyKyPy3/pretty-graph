@@ -446,8 +446,7 @@ export class PretyGraph {
     }
 
     if (this._hoveredEdge) {
-      const coordinates = this._translateCoordinates(position.x, position.y);
-      this.onEvent.emit('edgeContextMenu', { edge: this._hoveredEdge, ...coordinates, scale: this._controls.scale });
+      this.onEvent.emit('edgeContextMenu', { edge: this._hoveredEdge, coordinates: position, scale: this._controls.scale });
     }
   }
 
