@@ -26,6 +26,8 @@ export class AppComponent implements OnInit {
 
   private _graph: any;
 
+  private _activeNode: any;
+
   ngOnInit() {
     this._prepareGraphData({ nodes: graphMini.nodes, links: graphMini.links });
     const dimensions = this._graphContainer.nativeElement.getBoundingClientRect();
@@ -52,7 +54,11 @@ export class AppComponent implements OnInit {
     });
 
     this._graph.onEvent.on('workspaceViewChanged', () => {
-      console.log('Workspace scale');
+      const node = this._graph.getNodeByID(this._activeNode.id);
+
+      const d = this._tooltipEl.nativeElement.getBoundingClientRect();
+      this._tooltipEl.nativeElement.style.left = node.x - d.width / 2 + 'px';
+      this._tooltipEl.nativeElement.style.top = node.y - (node.node.size / 2) * 7 * node.scale - d.height + 'px';
     });
 
     this._graph.onEvent.on('nodeMoving', (data) => {
@@ -68,6 +74,7 @@ export class AppComponent implements OnInit {
     });
 
     this._graph.onEvent.on('nodeHover', (data) => {
+      this._activeNode = data.node;
       this._tooltipEl.nativeElement.innerHTML = data.node.name || data.node.id.split(':').pop();
       const d = this._tooltipEl.nativeElement.getBoundingClientRect();
       this._tooltipEl.nativeElement.style.left = data.x - d.width / 2 + 'px';

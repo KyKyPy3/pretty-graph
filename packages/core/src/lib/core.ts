@@ -443,11 +443,10 @@ export class PretyGraph {
     if (this._hoveredNode) {
       const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
       this.onEvent.emit('nodeContextMenu', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
-    }
-
-    if (this._hoveredEdge) {
+    } else if (this._hoveredEdge) {
       this.onEvent.emit('edgeContextMenu', { edge: this._hoveredEdge, coordinates: position, scale: this._controls.scale });
     }
+
   }
 
   private _onScale(event: any): void {
@@ -468,14 +467,14 @@ export class PretyGraph {
       (this._arrowGeometry.attributes.position as BufferAttribute).needsUpdate = true;
       (this._arrowGeometry.attributes.normal as BufferAttribute).needsUpdate = true;
 
+      this._render();
+
       if (this._hoveredNode) {
         const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
         this.onEvent.emit('nodeScaling', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
       } else {
         this.onEvent.emit('workspaceViewChanged', { scale: this._controls.scale });
       }
-
-      this._render();
     }
   }
 
