@@ -24,59 +24,61 @@ export class AppComponent implements OnInit {
 
   private _agent: any;
 
+  private _graph: any;
+
   ngOnInit() {
     this._prepareGraphData({ nodes: graphMini.nodes, links: graphMini.links });
     const dimensions = this._graphContainer.nativeElement.getBoundingClientRect();
 
-    const graph = new PretyGraph({
+    this._graph = new PretyGraph({
       container: this._graphContainer.nativeElement,
       controls: PrettyGraphControls
     });
 
-    graph.onEvent.on('nodeContextMenu', (data) => {
+    this._graph.onEvent.on('nodeContextMenu', (data) => {
       console.log(data);
     });
 
-    graph.onEvent.on('edgeContextMenu', (data) => {
+    this._graph.onEvent.on('edgeContextMenu', (data) => {
       console.log(data);
     });
 
-    graph.onEvent.on('nodeDblClick', (data) => {
+    this._graph.onEvent.on('nodeDblClick', (data) => {
       console.log('Double click', data);
     });
 
-    graph.onEvent.on('workspaceClick', () => {
+    this._graph.onEvent.on('workspaceClick', () => {
       console.log('Workspace click');
     });
 
-    graph.onEvent.on('workspaceViewChanged', () => {
+    this._graph.onEvent.on('workspaceViewChanged', () => {
       console.log('Workspace scale');
     });
 
-    graph.onEvent.on('nodeMoving', (data) => {
+    this._graph.onEvent.on('nodeMoving', (data) => {
       const d = this._tooltipEl.nativeElement.getBoundingClientRect();
       this._tooltipEl.nativeElement.style.left = data.x - d.width / 2 + 'px';
       this._tooltipEl.nativeElement.style.top = data.y - (data.node.size / 2) * 7 * data.scale - d.height + 'px';
     });
 
-    graph.onEvent.on('nodeScaling', (data) => {
+    this._graph.onEvent.on('nodeScaling', (data) => {
       const d = this._tooltipEl.nativeElement.getBoundingClientRect();
       this._tooltipEl.nativeElement.style.left = data.x - d.width / 2 + 'px';
       this._tooltipEl.nativeElement.style.top = data.y - (data.node.size / 2) * 7 * data.scale - d.height + 'px';
     });
 
-    graph.onEvent.on('nodeHover', (data) => {
+    this._graph.onEvent.on('nodeHover', (data) => {
       this._tooltipEl.nativeElement.innerHTML = data.node.name || data.node.id.split(':').pop();
       const d = this._tooltipEl.nativeElement.getBoundingClientRect();
       this._tooltipEl.nativeElement.style.left = data.x - d.width / 2 + 'px';
       this._tooltipEl.nativeElement.style.top = data.y - (data.node.size / 2) * 7 * data.scale - d.height + 'px';
     });
 
-    graph.onEvent.on('nodeUnhover', () => {
+    this._graph.onEvent.on('nodeUnhover', () => {
       this._tooltipEl.nativeElement.style.left = -10000 + 'px';
     });
 
-    graph.onEvent.on('edgeHover', (data) => {
+    this._graph.onEvent.on('edgeHover', (data) => {
       this._tooltipEl.nativeElement.innerHTML = `
         ${data.edge.source.name || data.edge.source.id.split(':').pop()}
         -
@@ -87,7 +89,7 @@ export class AppComponent implements OnInit {
       this._tooltipEl.nativeElement.style.top = data.y - d.height - 20 + 'px';
     });
 
-    graph.onEvent.on('edgeUnhover', () => {
+    this._graph.onEvent.on('edgeUnhover', () => {
       this._tooltipEl.nativeElement.style.left = -10000 + 'px';
     });
 
@@ -102,7 +104,7 @@ export class AppComponent implements OnInit {
     this._agent.onEvent.on('end', (data) => {
       const { nodes, links } = data;
 
-      graph.setData({
+      this._graph.setData({
         nodes: nodes,
         links: links,
         center: 1044
@@ -134,7 +136,7 @@ export class AppComponent implements OnInit {
   }
 
   public fullscreen(): void {
-    this._graphContainer.nativeElement.webkitRequestFullscreen();
+    this._graph.getScreenshot();
   }
 
   private _prepareGraphData(data): any {

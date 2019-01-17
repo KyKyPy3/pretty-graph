@@ -61,6 +61,7 @@ export declare class PretyGraph {
     stopRenderLoop(): void;
     resumeRenderLoop(): void;
     getNodeByID(nodeID: string): any;
+    getScreenshot(): string;
     destroy(): void;
     private _onMouseMove;
     private _onMouseUp;

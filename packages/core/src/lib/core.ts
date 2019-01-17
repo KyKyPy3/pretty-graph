@@ -317,6 +317,16 @@ export class PretyGraph {
     };
   }
 
+  public getScreenshot(): string {
+    const d = this._container.getBoundingClientRect();
+    const renderer = new WebGLRenderer({ premultipliedAlpha: false, preserveDrawingBuffer: true, antialias: true, alpha: true });
+    renderer.setSize(d.width, d.height);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.render(this._scene, this._camera);
+
+    return renderer.domElement.toDataURL( 'image/png' );
+  }
+
   public destroy(): void {
     this._disposeMesh();
     this._disposeTextures();
@@ -999,8 +1009,7 @@ export class PretyGraph {
   private _setupRenderer(): void {
     this._renderer = new WebGLRenderer({
       alpha: true,
-      antialias: true,
-      // premultipliedAlpha: false
+      antialias: true
     });
 
     // Add support for retina displays
