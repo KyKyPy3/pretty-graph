@@ -4,7 +4,7 @@ import { PretyGraph } from '@pretty-graph/core';
 import { D3Layout } from '@pretty-graph/d3-layout';
 import { PrettyGraphControls } from '@pretty-graph/controls';
 
-import * as graphMini from '../data/graph_data.json';
+import * as graphMini from '../data/before.json';
 import * as graphSmall from '../data/after.json';
 
 @Component({
@@ -37,12 +37,20 @@ export class AppComponent implements OnInit {
       console.log(data);
     });
 
+    graph.onEvent.on('edgeContextMenu', (data) => {
+      console.log(data);
+    });
+
     graph.onEvent.on('nodeDblClick', (data) => {
       console.log('Double click', data);
     });
 
     graph.onEvent.on('workspaceClick', () => {
       console.log('Workspace click');
+    });
+
+    graph.onEvent.on('workspaceViewChanged', () => {
+      console.log('Workspace scale');
     });
 
     graph.onEvent.on('nodeMoving', (data) => {

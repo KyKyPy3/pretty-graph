@@ -195,6 +195,8 @@ export class PretyGraph {
     window.addEventListener('resize', () => {
       const d = this._container.getBoundingClientRect();
 
+      console.log(d);
+
       this._renderer.setSize(d.width, d.height);
       this._camera.aspect = d.width / d.height;
       this._camera.updateProjectionMatrix();
@@ -427,10 +429,15 @@ export class PretyGraph {
     }
   }
 
-  private _onContextMenu(): void {
-    if (this._hoveredNode !== null) {
+  private _onContextMenu(position: { x: number, y: number }): void {
+    if (this._hoveredNode) {
       const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
       this.onEvent.emit('nodeContextMenu', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
+    }
+
+    if (this._hoveredEdge) {
+      const coordinates = this._translateCoordinates(position.x, position.y);
+      this.onEvent.emit('edgeContextMenu', { edge: this._hoveredEdge, ...coordinates, scale: this._controls.scale });
     }
   }
 
@@ -455,6 +462,8 @@ export class PretyGraph {
       if (this._hoveredNode) {
         const coordinates = this._translateCoordinates(this._hoveredNode.x, this._hoveredNode.y);
         this.onEvent.emit('nodeScaling', { node: this._hoveredNode, ...coordinates, scale: this._controls.scale });
+      } else {
+        this.onEvent.emit('workspaceViewChanged', { scale: this._controls.scale });
       }
 
       this._render();
@@ -515,9 +524,9 @@ export class PretyGraph {
 
   private _disposeRenderer(): void {
     if (this._renderer) {
-      this._container.removeChild(this._renderer.domElement);
       this._renderer.clear();
       this._renderer.renderLists.dispose();
+      this._container.removeChild(this._renderer.domElement);
       this._renderer.dispose();
     }
   }
