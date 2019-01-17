@@ -338,8 +338,6 @@ export class PretyGraph {
     this._disposeRenderer();
 
     this._controls.dispose();
-
-    this._container.innerHTML = '';
   }
 
   private _onMouseMove({ position }: any): void {
@@ -537,7 +535,7 @@ export class PretyGraph {
     if (this._renderer) {
       this._renderer.clear();
       this._renderer.renderLists.dispose();
-      // this._container.removeChild(this._renderer.domElement);
+      this._container.removeChild(this._renderer.domElement);
       this._renderer.dispose();
     }
   }

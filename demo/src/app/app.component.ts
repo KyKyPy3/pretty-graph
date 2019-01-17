@@ -120,7 +120,6 @@ export class AppComponent implements OnInit {
       links: this._links
     });
     this._agent.calculate();
-    // agent.destroy();
   }
 
   public addNewData(): void {
@@ -136,7 +135,8 @@ export class AppComponent implements OnInit {
   }
 
   public fullscreen(): void {
-    this._graph.getScreenshot();
+    this._agent.destroy();
+    this._graph.destroy();
   }
 
   private _prepareGraphData(data): any {
