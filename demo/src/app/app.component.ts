@@ -147,11 +147,12 @@ export class AppComponent implements OnInit {
   }
 
   private _prepareGraphData(data): any {
-    this._links = data.links.map((link) => {
+    this._links = data.links.map((link, index) => {
       return {
         ...link,
         size: 2,
-        color: 0xdcdcdc
+        color: 0xdcdcdc,
+        type: index % 10 === 0 ? 'dashed' : 'solid'
       };
     });
     this._nodes = data.nodes.map((node) => {

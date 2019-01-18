@@ -52,21 +52,19 @@ ShaderLib[ 'line' ] = {
 
 		attribute vec3 instanceStart;
 		attribute vec3 instanceEnd;
-		attribute float linewidth;
+    attribute float linewidth;
+    attribute float dashed;
 
 		attribute vec3 instanceColorStart;
 		attribute vec3 instanceColorEnd;
 
-		varying vec2 vUv;
+    varying vec2 vUv;
+    varying float vDashed;
 
-		#ifdef USE_DASH
-
-			uniform float dashScale;
-			attribute float instanceDistanceStart;
-			attribute float instanceDistanceEnd;
-			varying float vLineDistance;
-
-		#endif
+    uniform float dashScale;
+    attribute float instanceDistanceStart;
+    attribute float instanceDistanceEnd;
+    varying float vLineDistance;
 
 		void trimSegment( const in vec4 start, inout vec4 end ) {
 
@@ -84,22 +82,22 @@ ShaderLib[ 'line' ] = {
 		}
 
 		void main() {
-
 			#ifdef USE_COLOR
 
 				vColor.xyz = ( position.y < 0.5 ) ? instanceColorStart : instanceColorEnd;
 
 			#endif
 
-			#ifdef USE_DASH
+			if (dashed > 0.5) {
 
 				vLineDistance = ( position.y < 0.5 ) ? dashScale * instanceDistanceStart : dashScale * instanceDistanceEnd;
 
-			#endif
+      }
 
 			float aspect = resolution.x / resolution.y;
 
-			vUv = uv;
+      vUv = uv;
+      vDashed = dashed;
 
 			// camera space
 			vec4 start = modelViewMatrix * vec4( instanceStart, 1.0 );
@@ -196,12 +194,8 @@ ShaderLib[ 'line' ] = {
 		uniform float opacity;
 		uniform float useColor;
 
-		#ifdef USE_DASH
-
-			uniform float dashSize;
-			uniform float gapSize;
-
-		#endif
+    uniform float dashSize;
+    uniform float gapSize;
 
 		varying float vLineDistance;
 
@@ -211,19 +205,20 @@ ShaderLib[ 'line' ] = {
 		#include <logdepthbuf_pars_fragment>
 		#include <clipping_planes_pars_fragment>
 
-		varying vec2 vUv;
+    varying vec2 vUv;
+    varying float vDashed;
 
 		void main() {
 
 			#include <clipping_planes_fragment>
 
-			#ifdef USE_DASH
+			if (vDashed > 0.5) {
 
 				if ( vUv.y < - 1.0 || vUv.y > 1.0 ) discard; // discard endcaps
 
 				if ( mod( vLineDistance, dashSize + gapSize ) > dashSize ) discard; // todo - FIX
 
-			#endif
+      }
 
 			if ( abs( vUv.y ) > 1.0 ) {
 

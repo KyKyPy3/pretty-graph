@@ -853,13 +853,16 @@ export class PretyGraph {
     this._lineGeometry.setColors(linesData.colors);
 
     this._lineGeometry.addAttribute('linewidth', new InstancedBufferAttribute(new Float32Array(linesData.sizes), 1));
+    this._lineGeometry.addAttribute('dashed', new InstancedBufferAttribute(new Float32Array(linesData.isDashed), 1));
 
     this._lineGeometry.attributes.instanceStart.data.dynamic = true;
     this._lineGeometry.attributes.instanceEnd.data.dynamic = true;
 
     this._lineMaterial = new LineMaterial({
-      dashed: false,
+      dashScale: 0.1,
+      dashSize: 2,
       depthTest: false,
+      gapSize: 1,
       scale: this._controls ? this._controls.scale : 1.0,
       vertexColors: VertexColors
     });
@@ -880,6 +883,7 @@ export class PretyGraph {
     this._linesPickingGeometry.setColors(linesData.pickingColors);
 
     this._linesPickingGeometry.addAttribute('linewidth', new InstancedBufferAttribute(new Float32Array(linesData.sizes), 1));
+    this._linesPickingGeometry.addAttribute('dashed', new InstancedBufferAttribute(new Float32Array(linesData.isDashed), 1));
 
     this._linesPickingGeometry.attributes.instanceStart.data.dynamic = true;
     this._linesPickingGeometry.attributes.instanceEnd.data.dynamic = true;
@@ -1032,6 +1036,7 @@ export class PretyGraph {
     const positions: any[] = [];
     const colors: any[] = [];
     const sizes: any[] = [];
+    const isDashed: any[] = [];
     const pickingColors: any[] = [];
 
     const color = new Color();
@@ -1078,6 +1083,12 @@ export class PretyGraph {
 
             sizes.push(link.size, link.size);
 
+            if (link.type === 'dashed') {
+              isDashed.push(1.0, 1.0);
+            } else {
+              isDashed.push(0.0, 0.0);
+            }
+
             colors.push(
               color.r, color.g, color.b, // color start
               color.r, color.g, color.b,  // color end
@@ -1098,6 +1109,11 @@ export class PretyGraph {
             );
 
             sizes.push(link.size);
+            if (link.type === 'dashed') {
+              isDashed.push(1.0);
+            } else {
+              isDashed.push(0.0);
+            }
 
             colors.push(
               color.r, color.g, color.b, // color start
@@ -1119,6 +1135,11 @@ export class PretyGraph {
 
         link._lineSizeRange = [sizes.length, sizes.length + 1];
         sizes.push(link.size);
+        if (link.type === 'dashed') {
+          isDashed.push(1.0);
+        } else {
+          isDashed.push(0.0);
+        }
 
         colors.push(
           color.r, color.g, color.b, // color start
@@ -1134,9 +1155,10 @@ export class PretyGraph {
 
     return {
       colors,
+      isDashed,
       pickingColors,
       positions,
-      sizes
+      sizes,
     }
   }
 
