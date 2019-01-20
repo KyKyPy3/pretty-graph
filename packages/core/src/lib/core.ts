@@ -1383,7 +1383,9 @@ export class PretyGraph {
 
     const start = Date.now();
     this._arrowMesh.visible = false;
-    this._labelsMesh.visible = false;
+    if (this.options.showLabels) {
+      this._labelsMesh.visible = false;
+    }
 
     const step = () => {
       let p = (Date.now() - start) / this.animationTime;
@@ -1400,7 +1402,9 @@ export class PretyGraph {
         this._moveNodes(true);
 
         this._arrowMesh.visible = true;
-        this._labelsMesh.visible = true;
+        if (this.options.showLabels) {
+          this._labelsMesh.visible = true;
+        }
 
         this._render();
       } else {
