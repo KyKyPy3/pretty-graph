@@ -377,7 +377,9 @@ export class PretyGraph {
         this._nodesGeometry.attributes.translation.setXYZ(this._hoveredNode.__positionIndex, newPos.x, newPos.y, 0)
         this._nodesPickingGeometry.attributes.translation.setXYZ(this._hoveredNode.__positionIndex, newPos.x, newPos.y, 0)
 
-        this._labelsGeometry.attributes.translation.setXYZ(this._hoveredNode.__labelIndex, newPos.x + this._textCanvas.textureWidth / 2, newPos.y, 0);
+        if (this.options.showLabels) {
+          this._labelsGeometry.attributes.translation.setXYZ(this._hoveredNode.__labelIndex, newPos.x + this._textCanvas.textureWidth / 2, newPos.y, 0);
+        }
       }
 
       this._hoveredNode.x = newPos.x;
@@ -388,7 +390,9 @@ export class PretyGraph {
 
       (this._nodesGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
       (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
-      (this._labelsGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+      if (this.options.showLabels) {
+        (this._labelsGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+      }
 
       const links = this._constructLines(this._edges);
       this._lineGeometry.setPositions(links.positions);
@@ -459,8 +463,10 @@ export class PretyGraph {
       this._nodesMaterial.needsUpdate = true;
       this._nodesPickingMaterial.uniforms.scale.value = event.scale;
       this._nodesPickingMaterial.needsUpdate = true;
-      this._labelsMaterial.uniforms.scale.value = event.scale;
-      this._labelsMaterial.needsUpdate = true;
+      if (this.options.showLabels) {
+        this._labelsMaterial.uniforms.scale.value = event.scale;
+        this._labelsMaterial.needsUpdate = true;
+      }
 
       this._lineMaterial.uniforms.scale.value = event.scale;
       this._lineMaterial.needsUpdate = true;
@@ -1320,8 +1326,10 @@ export class PretyGraph {
       this._nodes[i].__labelIndex = i;
     }
 
-    (this._labelsGeometry.attributes.translation as InstancedBufferAttribute).setArray(labelsTranslateArray);
-    (this._labelsGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+    if (this.options.showLabels) {
+      (this._labelsGeometry.attributes.translation as InstancedBufferAttribute).setArray(labelsTranslateArray);
+      (this._labelsGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+    }
 
     this._lineGeometry.dispose();
     const linesData = this._constructLines(this._edges);

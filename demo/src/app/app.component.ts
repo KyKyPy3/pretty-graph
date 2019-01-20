@@ -54,11 +54,13 @@ export class AppComponent implements OnInit {
     });
 
     this._graph.onEvent.on('workspaceViewChanged', () => {
-      const node = this._graph.getNodeByID(this._activeNode.id);
+      if (this._activeNode) {
+        const node = this._graph.getNodeByID(this._activeNode.id);
 
-      const d = this._tooltipEl.nativeElement.getBoundingClientRect();
-      this._tooltipEl.nativeElement.style.left = node.x - d.width / 2 + 'px';
-      this._tooltipEl.nativeElement.style.top = node.y - (node.node.size / 2) * 7 * node.scale - d.height + 'px';
+        const d = this._tooltipEl.nativeElement.getBoundingClientRect();
+        this._tooltipEl.nativeElement.style.left = node.x - d.width / 2 + 'px';
+        this._tooltipEl.nativeElement.style.top = node.y - (node.node.size / 2) * 7 * node.scale - d.height + 'px';
+      }
     });
 
     this._graph.onEvent.on('nodeMoving', (data) => {
@@ -161,7 +163,7 @@ export class AppComponent implements OnInit {
           ...node,
           img: 'assets/user.jpg',
           color: 0xdcdcdc,
-          label: null,
+          label: 'Test label',
           size: node.size || 5
         };
       } else {
@@ -170,7 +172,7 @@ export class AppComponent implements OnInit {
           size: node.size || 5,
           img: 'assets/user.jpg',
           color: 0xdcdcdc,
-          label: null
+          label: 'Test label'
         };
       }
     });
