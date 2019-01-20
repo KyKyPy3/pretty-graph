@@ -275,7 +275,9 @@ export class PretyGraph {
 
         this._drawEdges();
         this._drawArrows();
-        this._drawLabels();
+        if (this.options.showLabels) {
+          this._drawLabels();
+        }
         this._drawNodes();
 
         this._render();
@@ -284,7 +286,9 @@ export class PretyGraph {
     } else {
       this._drawEdges();
       this._drawArrows();
-      this._drawLabels();
+      if (this.options.showLabels) {
+        this._drawLabels();
+      }
       this._drawNodes();
 
       this._render();

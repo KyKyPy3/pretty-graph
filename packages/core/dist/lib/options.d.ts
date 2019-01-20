@@ -4,4 +4,5 @@ export interface GraphOptions {
     controls?: any;
     layout?: any;
     clearContainer?: boolean;
+    showLabels?: boolean;
 }

@@ -3,5 +3,6 @@ export interface GraphOptions {
   backgroundColor?: string,
   controls?: any,
   layout?: any,
-  clearContainer?: boolean
+  clearContainer?: boolean,
+  showLabels?: boolean;
 }
