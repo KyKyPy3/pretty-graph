@@ -18,8 +18,6 @@ export class ArrowsLayer extends EventDispatcher {
 
   private _scene: Scene;
 
-  // private _controls: any;
-
   private _arrowGeometry!: BufferGeometry;
 
   private _arrowMesh!: Mesh;
@@ -30,11 +28,10 @@ export class ArrowsLayer extends EventDispatcher {
 
   private _arrows: any[] = [];
 
-  constructor(scene: Scene, _controls: any, nodeScalingFactor: number) {
+  constructor(scene: Scene, nodeScalingFactor: number) {
     super();
 
     this._scene = scene;
-    // this._controls = controls;
     this._nodeScalingFactor = nodeScalingFactor;
   }
 
@@ -59,7 +56,7 @@ export class ArrowsLayer extends EventDispatcher {
     this._arrows = [];
   }
 
-  public reposition(): void {
+  public recalculate(): void {
     const { vertices, normals } = this._calculateArrowData();
 
     this._arrowGeometry.attributes.position.array = vertices;

@@ -174,20 +174,21 @@ export class PretyGraph {
     this._render();
 
     if (this.options.showLabels) {
-      this._labelsLayer = new LabelsLayer(this._scene, this._controls, this.nodeScalingFactor);
+      this._labelsLayer = new LabelsLayer(this._scene, this.nodeScalingFactor);
     }
-    this._arrowsLayer = new ArrowsLayer(this._scene, this._controls, this.nodeScalingFactor);
+    this._arrowsLayer = new ArrowsLayer(this._scene, this.nodeScalingFactor);
 
     window.addEventListener('resize', () => {
-      const d = this._container.getBoundingClientRect();
-
-      console.log(d);
-
-      this._renderer.setSize(d.width, d.height);
-      this._camera.aspect = d.width / d.height;
+      this._renderer.setSize(this._container.clientWidth, this._container.clientHeight);
+      this._camera.aspect = this._container.clientWidth / this._container.clientHeight;
       this._camera.updateProjectionMatrix();
 
-      this._pickingTexture = new WebGLRenderTarget(d.width, d.height);
+      if (this._lineMaterial) {
+        this._lineMaterial.resolution.set(this._container.clientWidth, this._container.clientHeight);
+        this._lineMaterial.needsUpdate = true;
+      }
+
+      this._pickingTexture = new WebGLRenderTarget(this._container.clientWidth, this._container.clientHeight);
 
       this._render();
     });
@@ -229,8 +230,7 @@ export class PretyGraph {
     this._renderer.clear();
     this._renderer.renderLists.dispose();
 
-    const dimensions = this._container.getBoundingClientRect();
-    this._pickingTexture = new WebGLRenderTarget(dimensions.width, dimensions.height);
+    this._pickingTexture = new WebGLRenderTarget(this._container.clientWidth, this._container.clientHeight);
     this._pickingTexture.texture.minFilter = LinearFilter;
 
     this._imageCanvas.addEventListener('imageLoaded', this._imageLoaded);
@@ -253,10 +253,10 @@ export class PretyGraph {
               this._indexedNodes[k].x = this._center.x;
               this._indexedNodes[k].y = this._center.y;
             } else {
-              this._indexedNodes[k].fromX = this._getRandomFromRange(-dimensions.width, dimensions.width);
-              this._indexedNodes[k].fromY = this._getRandomFromRange(-dimensions.height, dimensions.height);
-              this._indexedNodes[k].x = this._getRandomFromRange(-dimensions.width, dimensions.width);
-              this._indexedNodes[k].y = this._getRandomFromRange(-dimensions.height, dimensions.height);
+              this._indexedNodes[k].fromX = this._getRandomFromRange(-this._container.clientWidth, this._container.clientWidth);
+              this._indexedNodes[k].fromY = this._getRandomFromRange(-this._container.clientHeight, this._container.clientHeight);
+              this._indexedNodes[k].x = this._getRandomFromRange(-this._container.clientWidth, this._container.clientWidth);
+              this._indexedNodes[k].y = this._getRandomFromRange(-this._container.clientHeight, this._container.clientHeight);
             }
           }
         }
@@ -314,9 +314,8 @@ export class PretyGraph {
   }
 
   public getScreenshot(): string {
-    const d = this._container.getBoundingClientRect();
     const renderer = new WebGLRenderer({ premultipliedAlpha: false, preserveDrawingBuffer: true, antialias: true, alpha: true });
-    renderer.setSize(d.width, d.height);
+    renderer.setSize(this._container.clientWidth, this._container.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.render(this._scene, this._camera);
 
@@ -347,10 +346,9 @@ export class PretyGraph {
   private _onMouseMove({ position }: any): void {
     if (this._dragging) {
       // dragging node
-      const d = this._container.getBoundingClientRect();
       const mouse = new Vector3();
-      mouse.x = (position.x / d.width) * 2 - 1;
-      mouse.y = -(position.y / d.height) * 2 + 1;
+      mouse.x = (position.x / this._container.clientWidth) * 2 - 1;
+      mouse.y = -(position.y / this._container.clientHeight) * 2 + 1;
 
       let newPos = {
         x: this._hoveredNode.x,
@@ -399,7 +397,7 @@ export class PretyGraph {
       this._linesPickingGeometry.attributes.instanceStart.data.needsUpdate = true;
       this._linesPickingGeometry.attributes.instanceEnd.data.needsUpdate = true;
 
-      this._arrowsLayer.reposition();
+      this._arrowsLayer.recalculate();
 
       this._render();
     } else {
@@ -836,10 +834,8 @@ export class PretyGraph {
       vertexColors: VertexColors
     });
 
-    const dimensions = this._container.getBoundingClientRect();
-
     this._lineMaterial.useColor = 1.0;
-    this._lineMaterial.resolution.set(dimensions.width, dimensions.height);
+    this._lineMaterial.resolution.set(this._container.clientWidth, this._container.clientHeight);
 
     this._lineMesh = new Line2(this._lineGeometry, this._lineMaterial);
     this._lineMesh.computeLineDistances();
@@ -877,9 +873,7 @@ export class PretyGraph {
   }
 
   private _setupCamera(): void {
-    const dimensions = this._container.getBoundingClientRect();
-
-    this._camera = new PerspectiveCamera(this._fov, dimensions.width / dimensions.height, 0.1, this._far);
+    this._camera = new PerspectiveCamera(this._fov, this._container.clientWidth / this._container.clientHeight, 0.1, this._far);
     this._camera.lookAt(0, 0, 0);
   }
 
@@ -892,10 +886,8 @@ export class PretyGraph {
     // Add support for retina displays
     this._renderer.setPixelRatio(window.devicePixelRatio);
 
-    const dimensions = this._container.getBoundingClientRect();
-
     // Set canvas dimension
-    this._renderer.setSize(dimensions.width, dimensions.height);
+    this._renderer.setSize(this._container.clientWidth, this._container.clientHeight);
 
     // Add the canvas to the DOM
     this._container.appendChild(this._renderer.domElement);
@@ -1072,7 +1064,7 @@ export class PretyGraph {
     (this._nodesGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
 
     if (this._labelsLayer) {
-      this._labelsLayer.reposition();
+      this._labelsLayer.recalculate();
     }
 
     this._lineGeometry.dispose();
@@ -1088,7 +1080,7 @@ export class PretyGraph {
 
     this._lineMesh.geometry = this._lineGeometry;
 
-    this._arrowsLayer.reposition();
+    this._arrowsLayer.recalculate();
 
     if (last) {
       (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).setArray(translateArray);

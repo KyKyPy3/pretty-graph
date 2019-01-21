@@ -5,7 +5,6 @@ export const vertexShader: string = `
   uniform mat4 projectionMatrix;
   uniform vec2 spriteDim;
   uniform vec2 textureDim;
-  uniform float scale;
   uniform float nodeScalingFactor;
 
   attribute vec3 position;

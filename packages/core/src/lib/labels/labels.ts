@@ -29,30 +29,16 @@ export class LabelsLayer extends EventDispatcher {
 
   private _scene: Scene;
 
-  private _controls: any;
-
   private _labels: any[] = [];
 
   private _nodeScalingFactor: number = 1.0;
 
-  private _onScale: (event: any) => void;
-
-  constructor(scene: Scene, controls: any, nodeScalingFactor: number) {
+  constructor(scene: Scene, nodeScalingFactor: number) {
     super();
 
     this._scene = scene;
-    this._controls = controls;
     this._nodeScalingFactor = nodeScalingFactor;
     this._textCanvas = new TextCanvas();
-
-    this._onScale = (event) => {
-      if (this._labelsMaterial) {
-        this._labelsMaterial.uniforms.scale.value = event.scale;
-        this._labelsMaterial.needsUpdate = true;
-      }
-    };
-
-    this._controls.addEventListener('scale', this._onScale);
   }
 
   public addLabel(text: string, x: number, y: number, nodeSize: number): number {
@@ -100,8 +86,7 @@ export class LabelsLayer extends EventDispatcher {
 
       const labelIndex = this._textCanvas.drawText(this._labels[i].text, {
         color: 'black',
-        font: 'Arial',
-        fontSize: 30
+        font: 'Arial'
       });
       this._labels[i]._labelIndex = labelIndex;
       images[i] = labelIndex;
@@ -127,10 +112,6 @@ export class LabelsLayer extends EventDispatcher {
           type: 'f',
           value: this._nodeScalingFactor
         },
-        scale: {
-          type: 'f',
-          value: this._controls ? this._controls.scale : 1.0
-        },
         spriteDim: {
           value: new Vector2(this._textCanvas.textureWidth, this._textCanvas.textureHeight)
         },
@@ -151,7 +132,7 @@ export class LabelsLayer extends EventDispatcher {
     this._scene.add(this._labelsMesh);
   }
 
-  public reposition(): void {
+  public recalculate(): void {
     const translateArray = new Float32Array(this._labels.length * 3);
 
     for (let i = 0, i3 = 0, l = this._labels.length; i < l; i ++, i3 += 3 ) {
@@ -165,8 +146,6 @@ export class LabelsLayer extends EventDispatcher {
   }
 
   public dispose(): void {
-    this._controls.removeEventListener('scale', this._onScale);
-
     if (this._labelsMesh) {
       this._scene.remove(this._labelsMesh);
     }
