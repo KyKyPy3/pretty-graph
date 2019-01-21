@@ -1,18 +1,3 @@
-export const arrowVertexShader: string = `
-  precision mediump float;
-
-  attribute vec3 translation; // x y translation offsets for an instance
-
-  varying vec3 vColor;
-
-  void main() {
-    vColor = color;
-
-    vec3 pos = position + translation;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-  }
-`;
-
 export const vertexShader: string = `
   precision mediump float;
 
@@ -33,12 +18,14 @@ export const vertexShader: string = `
   varying float vScale;
   varying float vNodeScaleFactor;
   varying float vSize;
+  varying float vImage;
   varying highp vec4 v_sprite;
 
   void main() {
     vColor = color;
     vScale = scale;
     vSize = size;
+    vImage = image;
     vNodeScaleFactor = nodeScalingFactor;
 
     highp vec2 sp = vec2(mod((image * spriteDim.x), textureDim.x), floor((image * spriteDim.x) / textureDim.y) * spriteDim.y);
@@ -55,46 +42,6 @@ export const vertexShader: string = `
   }
 `;
 
-export const labelsVertexShader: string = `
-  precision mediump float;
-
-  uniform mat4 modelViewMatrix;
-  uniform mat4 projectionMatrix;
-  uniform vec2 spriteDim;
-  uniform vec2 textureDim;
-  uniform float scale;
-  uniform float nodeScalingFactor;
-
-  attribute vec3 position;    // blueprint's vertex positions
-  attribute vec3 translation; // x y translation offsets for an instance
-  attribute float image;
-  attribute float size;
-  attribute vec2 uv;
-
-  varying highp vec4 v_sprite;
-  varying vec2 vUv;
-
-  void main() {
-    vUv = uv;
-
-    highp vec2 sp = vec2(mod((image * spriteDim.x), textureDim.x), floor((image * spriteDim.x) / textureDim.y) * spriteDim.y);
-    v_sprite = vec4(sp.x / textureDim.x, sp.y / textureDim.y, spriteDim.x / textureDim.x, spriteDim.y / textureDim.y);
-
-    vec3 pos = position + translation;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos.x + nodeScalingFactor * (size / 2.0), pos.y, pos.z, 1.0);
-  }
-`;
-
-export const arrowFragmentShader: string = `
-  precision highp float;
-
-  varying vec3 vColor;
-
-  void main() {
-    gl_FragColor = vec4(vColor, 1.0);
-  }
-`;
-
 export const fragmentShader: string = `
   precision highp float;
 
@@ -104,6 +51,7 @@ export const fragmentShader: string = `
   varying float vNodeScaleFactor;
   varying float vSize;
   varying vec3 vColor;
+  varying float vImage;
   varying highp vec4 v_sprite;
 
   void main() {
@@ -130,7 +78,11 @@ export const fragmentShader: string = `
       float tm = smoothstep(border, border + distance, dist);
 
       if (dist > border)
-        gl_FragColor = vec4(texture2D(textureMap, vec2((v_sprite.s + v_sprite.p * uv.x), (v_sprite.t + v_sprite.q * uv.y))).rgb, tm);
+        if (vImage > 0.5) {
+          gl_FragColor = vec4(texture2D(textureMap, vec2((v_sprite.s + v_sprite.p * uv.x), (v_sprite.t + v_sprite.q * uv.y))).rgb, tm);
+        } else {
+          gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+        }
       else if (dist > 0.0)
         gl_FragColor = vec4(vColor, alpha);
       else discard;
@@ -156,24 +108,12 @@ export const fragmentShader: string = `
       float sm2 = smoothstep(border, border - distance, dist);
       float alpha = sm*sm2;
 
-      if (dist > border || dist > 0.0)
+      if (dist > border) {
+        gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+      } else if (dist > 0.0) {
         gl_FragColor = vec4(vColor, alpha);
-      else discard;
+      } else discard;
     }
-  }
-`;
-
-export const labelsFragmentShader: string = `
-  precision highp float;
-
-  uniform sampler2D textureMap;
-
-  varying highp vec4 v_sprite;
-  varying vec2 vUv;
-
-  void main() {
-    vec2 uv = vec2( vUv.x, 1.0 - vUv.y );
-    gl_FragColor = texture2D(textureMap, vec2((v_sprite.s + v_sprite.p * uv.x), (v_sprite.t + v_sprite.q * uv.y)));
   }
 `;
 

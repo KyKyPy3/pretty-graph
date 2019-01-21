@@ -1,23 +1,18 @@
 import {
-  BackSide,
   BufferAttribute,
   BufferGeometry,
   Color,
   CubicBezierCurve3,
   Event as ThreeEvent,
-  Float32BufferAttribute,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
   LinearFilter,
-  Mesh,
   PerspectiveCamera,
   Plane,
-  PlaneBufferGeometry,
   Points,
   RawShaderMaterial,
   Raycaster,
   Scene,
-  ShaderMaterial,
   Vector2,
   Vector3,
   VertexColors,
@@ -29,16 +24,14 @@ import { EventEmitter } from './emitter';
 import { ImageCanvas } from './imageCanvas';
 import { GraphOptions } from './options';
 import {
-  arrowFragmentShader,
-  arrowVertexShader,
   fragmentShader,
-  labelsFragmentShader,
-  labelsVertexShader,
   pickingFragmentShader,
   pickingVertexShader,
   vertexShader,
 } from './shaders';
-import { TextCanvas } from './textCanvas';
+
+import { ArrowsLayer } from './arrows/arrows';
+import { LabelsLayer } from './labels/labels';
 
 import { Line2 } from '../../externals/lines/Line2.js';
 import { LineMaterial } from '../../externals/lines/LineMaterial.js';
@@ -130,25 +123,13 @@ export class PretyGraph {
 
   private _imageLoaded: (event: ThreeEvent) => void;
 
-  private _textCanvas: TextCanvas;
-
-  private _labelsGeometry!: InstancedBufferGeometry;
-
-  private _labelsTranslateAttribute!: InstancedBufferAttribute;
-
-  private _labelsMesh!: Mesh;
-
-  private _labelsMaterial!: RawShaderMaterial;
-
-  private _arrowGeometry!: BufferGeometry;
-
-  private _arrowMesh!: Mesh;
-
-  private _arrowMaterial!: ShaderMaterial;
-
   private _indexedNodes: { [id: string]: any; } = {};
 
   private _colorToNodeID: { [id: number]: string; } = {};
+
+  private _labelsLayer: LabelsLayer | null = null;
+
+  private _arrowsLayer!: ArrowsLayer;
 
   constructor(options: GraphOptions) {
     this.options = options;
@@ -165,6 +146,7 @@ export class PretyGraph {
     this._setupScene();
     this._setupCamera();
     this._setupRenderer();
+    this._setupPickingScene();
 
     this._controls = new options.controls(this._camera, this._container);
     this._controls.init();
@@ -188,9 +170,13 @@ export class PretyGraph {
     };
 
     this._imageCanvas = new ImageCanvas();
-    this._textCanvas = new TextCanvas();
 
     this._render();
+
+    if (this.options.showLabels) {
+      this._labelsLayer = new LabelsLayer(this._scene, this._controls, this.nodeScalingFactor);
+    }
+    this._arrowsLayer = new ArrowsLayer(this._scene, this._controls, this.nodeScalingFactor);
 
     window.addEventListener('resize', () => {
       const d = this._container.getBoundingClientRect();
@@ -235,11 +221,13 @@ export class PretyGraph {
     this._disposeGeometries();
     this._disposeTextures();
 
+    if (this._labelsLayer) {
+      this._labelsLayer.dispose();
+    }
+    this._arrowsLayer.dispose();
+
     this._renderer.clear();
     this._renderer.renderLists.dispose();
-
-    this._setupScene();
-    this._setupPickingScene();
 
     const dimensions = this._container.getBoundingClientRect();
     this._pickingTexture = new WebGLRenderTarget(dimensions.width, dimensions.height);
@@ -274,22 +262,26 @@ export class PretyGraph {
         }
 
         this._drawEdges();
-        this._drawArrows();
-        if (this.options.showLabels) {
-          this._drawLabels();
-        }
+        this._arrowsLayer.draw();
+
         this._drawNodes();
+
+        if (this._labelsLayer) {
+          this._labelsLayer.draw();
+        }
 
         this._render();
 
         requestAnimationFrame(this._animate.bind(this));
     } else {
       this._drawEdges();
-      this._drawArrows();
-      if (this.options.showLabels) {
-        this._drawLabels();
-      }
+      this._arrowsLayer.draw();
+
       this._drawNodes();
+
+      if (this._labelsLayer) {
+        this._labelsLayer.draw();
+      }
 
       this._render();
     }
@@ -339,6 +331,14 @@ export class PretyGraph {
 
     this.stopRenderLoop();
 
+    if (this._labelsLayer) {
+      this._labelsLayer.dispose();
+    }
+
+    if (this._arrowsLayer) {
+      this._arrowsLayer.dispose();
+    }
+
     this._disposeRenderer();
 
     this._controls.dispose();
@@ -377,8 +377,8 @@ export class PretyGraph {
         this._nodesGeometry.attributes.translation.setXYZ(this._hoveredNode.__positionIndex, newPos.x, newPos.y, 0)
         this._nodesPickingGeometry.attributes.translation.setXYZ(this._hoveredNode.__positionIndex, newPos.x, newPos.y, 0)
 
-        if (this.options.showLabels) {
-          this._labelsGeometry.attributes.translation.setXYZ(this._hoveredNode.__labelIndex, newPos.x + this._textCanvas.textureWidth / 2, newPos.y, 0);
+        if (this._labelsLayer && this._hoveredNode.__labelIndex) {
+          this._labelsLayer.setLabelPosition(this._hoveredNode.__labelIndex, { x: newPos.x, y: newPos.y, z: 0 });
         }
       }
 
@@ -390,9 +390,6 @@ export class PretyGraph {
 
       (this._nodesGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
       (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
-      if (this.options.showLabels) {
-        (this._labelsGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
-      }
 
       const links = this._constructLines(this._edges);
       this._lineGeometry.setPositions(links.positions);
@@ -402,11 +399,7 @@ export class PretyGraph {
       this._linesPickingGeometry.attributes.instanceStart.data.needsUpdate = true;
       this._linesPickingGeometry.attributes.instanceEnd.data.needsUpdate = true;
 
-      const { vertices, normals } = this._calculateArrowData();
-      this._arrowGeometry.attributes.position.array = vertices;
-      this._arrowGeometry.attributes.normal.array = normals;
-      (this._arrowGeometry.attributes.position as BufferAttribute).needsUpdate = true;
-      (this._arrowGeometry.attributes.normal as BufferAttribute).needsUpdate = true;
+      this._arrowsLayer.reposition();
 
       this._render();
     } else {
@@ -463,19 +456,9 @@ export class PretyGraph {
       this._nodesMaterial.needsUpdate = true;
       this._nodesPickingMaterial.uniforms.scale.value = event.scale;
       this._nodesPickingMaterial.needsUpdate = true;
-      if (this.options.showLabels) {
-        this._labelsMaterial.uniforms.scale.value = event.scale;
-        this._labelsMaterial.needsUpdate = true;
-      }
 
       this._lineMaterial.uniforms.scale.value = event.scale;
       this._lineMaterial.needsUpdate = true;
-
-      const { vertices, normals } = this._calculateArrowData();
-      this._arrowGeometry.attributes.position.array = vertices;
-      this._arrowGeometry.attributes.normal.array = normals;
-      (this._arrowGeometry.attributes.position as BufferAttribute).needsUpdate = true;
-      (this._arrowGeometry.attributes.normal as BufferAttribute).needsUpdate = true;
 
       this._render();
 
@@ -493,16 +476,8 @@ export class PretyGraph {
       this._scene.remove(this._lineMesh);
     }
 
-    if (this._arrowMesh) {
-      this._scene.remove(this._arrowMesh);
-    }
-
     if (this._nodeMesh) {
       this._scene.remove(this._nodeMesh);
-    }
-
-    if (this._labelsMesh) {
-      this._scene.remove(this._labelsMesh);
     }
 
     if (this._nodesPickingsMesh) {
@@ -530,14 +505,6 @@ export class PretyGraph {
     if (this._linesPickingGeometry) {
       this._linesPickingGeometry.dispose();
     }
-
-    if (this._arrowGeometry) {
-      this._arrowGeometry.dispose();
-    }
-
-    if (this._labelsGeometry) {
-      this._labelsGeometry.dispose();
-    }
   }
 
   private _disposeRenderer(): void {
@@ -561,14 +528,6 @@ export class PretyGraph {
     if (this._lineMaterial) {
       this._lineMaterial.dispose();
     }
-
-    if (this._arrowMaterial) {
-      this._arrowMaterial.dispose();
-    }
-
-    if (this._labelsMaterial) {
-      this._labelsMaterial.dispose();
-    }
   }
 
   private _disposeTextures(): void {
@@ -576,10 +535,6 @@ export class PretyGraph {
 
     if (this._imageCanvas) {
       this._imageCanvas.dispose();
-    }
-
-    if (this._textCanvas) {
-      this._textCanvas.dispose();
     }
 
     if (this._pickingTexture) {
@@ -768,6 +723,10 @@ export class PretyGraph {
       }
 
       this._nodes[i].__positionIndex = i;
+
+      if (this._labelsLayer && this._nodes[i].label) {
+        this._nodes[i].__labelIndex = this._labelsLayer.addLabel(this._nodes[i].label, this._nodes[i].x, this._nodes[i].y, this._nodes[i].size);
+      }
     }
 
     const nodesGeometry = new BufferGeometry();
@@ -904,100 +863,6 @@ export class PretyGraph {
     this._pickingLineScene.updateMatrixWorld(true);
   }
 
-  private _drawArrows(): void {
-    this._arrowGeometry = new BufferGeometry();
-
-    const { vertices, normals, colors } = this._calculateArrowData();
-
-    this._arrowGeometry.addAttribute('position', new BufferAttribute(vertices, 3).setDynamic(true));
-    this._arrowGeometry.addAttribute('normal', new Float32BufferAttribute( normals, 3 ).setDynamic(true));
-    this._arrowGeometry.addAttribute('color', new Float32BufferAttribute( colors, 3 ).setDynamic(true));
-
-    this._arrowGeometry.computeBoundingSphere();
-
-    this._arrowMaterial = new ShaderMaterial({
-      depthTest: false,
-      fragmentShader: arrowFragmentShader,
-      side: BackSide,
-      transparent: false,
-      vertexColors: VertexColors,
-      vertexShader: arrowVertexShader
-    });
-
-    this._arrowMesh = new Mesh(this._arrowGeometry, this._arrowMaterial);
-    this._scene.add(this._arrowMesh);
-  }
-
-  private _drawLabels(): void {
-    const translateArray = new Float32Array(this._nodes.length * 3);
-    const images = new Float32Array(this._nodes.length);
-    const sizes = new Float32Array(this._nodes.length);
-
-    for (let i = 0, i3 = 0, l = this._nodes.length; i < l; i ++, i3 += 3 ) {
-      translateArray[ i3 + 0 ] = this._nodes[i].x + this._textCanvas.textureWidth / 2;
-      translateArray[ i3 + 1 ] = this._nodes[i].y;
-      translateArray[ i3 + 2 ] = 0;
-
-      sizes[i] = this._nodes[i].size;
-
-      if (this._nodes[i].label) {
-        const labelIndex = this._textCanvas.drawText(this._nodes[i].label, {
-          color: 'black',
-          font: 'Arial',
-          fontSize: 30
-        });
-        this._nodes[i]._labelIndex = labelIndex;
-        images[i] = labelIndex;
-      } else {
-        images[i] = -1;
-      }
-
-      this._nodes[i].__labelIndex = i;
-    }
-
-    const labelsGeometry = new PlaneBufferGeometry(this._textCanvas.textureWidth, this._textCanvas.textureHeight);
-    this._labelsGeometry = new InstancedBufferGeometry();
-    this._labelsGeometry.index = labelsGeometry.index;
-    this._labelsGeometry.attributes = labelsGeometry.attributes;
-
-    this._labelsTranslateAttribute = new InstancedBufferAttribute(translateArray, 3);
-
-    this._labelsGeometry.addAttribute('translation', this._labelsTranslateAttribute);
-    this._labelsGeometry.addAttribute('size', new InstancedBufferAttribute(sizes, 1));
-    this._labelsGeometry.addAttribute('image', new InstancedBufferAttribute(images, 1));
-
-    this._labelsMaterial = new RawShaderMaterial({
-      depthTest: false,
-      fragmentShader: labelsFragmentShader,
-      transparent: true,
-      uniforms: {
-        nodeScalingFactor: {
-          type: 'f',
-          value: this.nodeScalingFactor
-        },
-        scale: {
-          type: 'f',
-          value: this._controls ? this._controls.scale : 1.0
-        },
-        spriteDim: {
-          value: new Vector2(this._textCanvas.textureWidth, this._textCanvas.textureHeight)
-        },
-        textureDim: {
-          value: new Vector2(this._textCanvas.canvasWidth, this._textCanvas.canvasHeight)
-        },
-        textureMap: {
-          type: 't',
-          value: this._textCanvas.textureMap
-        }
-      },
-      vertexShader: labelsVertexShader
-    });
-
-    this._labelsMesh = new Mesh(this._labelsGeometry, this._labelsMaterial);
-    this._labelsMesh.frustumCulled = false;
-    this._scene.add(this._labelsMesh);
-  }
-
   private _setupScene(): void {
     this._scene = new Scene();
     this._scene.background = new Color(this.options.backgroundColor || 'white');
@@ -1051,6 +916,8 @@ export class PretyGraph {
 
     const color = new Color();
     const pickingColor = new Color();
+
+    this._arrowsLayer.reset();
 
     links.forEach((link, index) => {
       const angle = Math.atan2(link.target.y - link.source.y, link.target.x - link.source.x);
@@ -1160,6 +1027,8 @@ export class PretyGraph {
           pickingColor.r, pickingColor.g, pickingColor.b,
           pickingColor.r, pickingColor.g, pickingColor.b,
         );
+
+        this._arrowsLayer.addArrow(link.source, link.target, link.size, link.color);
       }
     });
 
@@ -1170,125 +1039,6 @@ export class PretyGraph {
       positions,
       sizes,
     }
-  }
-
-  private _calculateArrowVertices(edge, sourcePoint, targetPoint): any {
-    const radius = (targetPoint.size / 2) * this.nodeScalingFactor - 0.4;
-
-    const dx = sourcePoint.x - targetPoint.x;
-    const dy = sourcePoint.y - targetPoint.y;
-
-    const angle = Math.atan2(dy, dx);
-    const vNorm = Math.sqrt(dx * dx + dy * dy);
-
-    const sourceX = targetPoint.x + radius * Math.cos(angle);
-    const sourceY = targetPoint.y + radius * Math.sin(angle);
-
-    const scalingCornerFactor = edge.size < 6 ? 6 : edge.size;
-    const scalingOnLineFactor = edge.size < 6 ? 12 : 2 * edge.size;
-
-    // point on line at distance
-    const pointOnLine = [sourceX + scalingOnLineFactor * dx / vNorm, sourceY + scalingOnLineFactor * dy / vNorm]
-
-    // endpoints of arrows at length above point (the distance from the original line
-    const pointBelow = [pointOnLine[0] - scalingCornerFactor * -dy / vNorm, pointOnLine[1] - scalingCornerFactor * dx / vNorm, ]
-    const pointAbove = [pointOnLine[0] + scalingCornerFactor * -dy / vNorm, pointOnLine[1] + scalingCornerFactor * dx / vNorm, ]
-
-    return {
-      pointAbove,
-      pointBelow,
-      pointOnLine: [sourceX, sourceY]
-    }
-  }
-
-  private _calculateNormals(arrowVertices): any {
-    const pA = new Vector3();
-    const pB = new Vector3();
-    const pC = new Vector3();
-
-    const cb = new Vector3();
-    const ab = new Vector3();
-
-    pA.set(arrowVertices.pointBelow[0], arrowVertices.pointBelow[1], 0);
-    pB.set(arrowVertices.pointAbove[0], arrowVertices.pointAbove[1], 0);
-    pC.set(arrowVertices.pointOnLine[0], arrowVertices.pointOnLine[1], 0);
-
-    cb.subVectors( pC, pB );
-    ab.subVectors( pA, pB );
-    cb.cross(ab);
-
-    cb.normalize();
-
-    return {
-      nx: cb.x,
-      ny: cb.y,
-      nz: cb.z
-    }
-  }
-
-  private _calculateArrowData(): any {
-    const vertices = new Float32Array(this._edges.length * 9);
-    const normals = new Float32Array(this._edges.length * 9);
-    const colors = new Float32Array(this._edges.length * 9);
-
-    const color = new Color();
-    for ( let i = 0, i3 = 0, l = this._edges.length; i < l; i ++, i3 += 9 ) {
-      color.setHex(this._edges[i].color);
-
-      if (this._edges[i].target.id === this._edges[i].source.id) {
-        // Если это нода сама на себя, то пока сикпаем такую связь
-        continue;
-      }
-
-      const arrowVertices = this._calculateArrowVertices(this._edges[i], this._edges[i].source, this._edges[i].target);
-
-      // Add vertices
-      vertices[i3 + 0] = arrowVertices.pointBelow[0] || 0;
-      vertices[i3 + 1] = arrowVertices.pointBelow[1] || 0;
-      vertices[i3 + 2] = 0;
-
-      vertices[i3 + 3] = arrowVertices.pointOnLine[0] || 0;
-      vertices[i3 + 4] = arrowVertices.pointOnLine[1] || 0;
-      vertices[i3 + 5] = 0;
-
-      vertices[i3 + 6] = arrowVertices.pointAbove[0] || 0;
-      vertices[i3 + 7] = arrowVertices.pointAbove[1] || 0;
-      vertices[i3 + 8] = 0;
-
-      // Add normals
-      const n = this._calculateNormals(arrowVertices);
-
-      normals[i3 + 0] = n.nx;
-      normals[i3 + 1] = n.ny;
-      normals[i3 + 2] = n.nz;
-
-      normals[i3 + 3] = n.nx;
-      normals[i3 + 4] = n.ny;
-      normals[i3 + 5] = n.nz;
-
-      normals[i3 + 6] = n.nx;
-      normals[i3 + 7] = n.ny;
-      normals[i3 + 8] = n.nz;
-
-      // colors
-      colors[i3 + 0] = color.r;
-      colors[i3 + 1] = color.g;
-      colors[i3 + 2] = color.b;
-
-      colors[i3 + 3] = color.r;
-      colors[i3 + 4] = color.g;
-      colors[i3 + 5] = color.b;
-
-      colors[i3 + 6] = color.r;
-      colors[i3 + 7] = color.g;
-      colors[i3 + 8] = color.b;
-    }
-
-    return {
-      colors,
-      normals,
-      vertices,
-    };
   }
 
   private _indexingNodes(): void {
@@ -1312,23 +1062,17 @@ export class PretyGraph {
       translateArray[ i3 + 2 ] = 0;
 
       this._nodes[i].__positionIndex = i;
+
+      if (this._labelsLayer) {
+        this._labelsLayer.setLabelPosition(this._nodes[i].__labelIndex, { x: this._nodes[i].x, y: this._nodes[i].y, z: 0}, false);
+      }
     }
 
     (this._nodesGeometry.attributes.translation as InstancedBufferAttribute).setArray(translateArray);
     (this._nodesGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
 
-    const labelsTranslateArray = new Float32Array(this._nodes.length * 3);
-    for (let i = 0, i3 = 0, l = this._nodes.length; i < l; i ++, i3 += 3 ) {
-      labelsTranslateArray[ i3 + 0 ] = this._nodes[i].x + this._textCanvas.textureWidth / 2;
-      labelsTranslateArray[ i3 + 1 ] = this._nodes[i].y;
-      labelsTranslateArray[ i3 + 2 ] = 0;
-
-      this._nodes[i].__labelIndex = i;
-    }
-
-    if (this.options.showLabels) {
-      (this._labelsGeometry.attributes.translation as InstancedBufferAttribute).setArray(labelsTranslateArray);
-      (this._labelsGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+    if (this._labelsLayer) {
+      this._labelsLayer.reposition();
     }
 
     this._lineGeometry.dispose();
@@ -1344,11 +1088,7 @@ export class PretyGraph {
 
     this._lineMesh.geometry = this._lineGeometry;
 
-    const { vertices, normals } = this._calculateArrowData();
-    this._arrowGeometry.attributes.position.array = vertices;
-    this._arrowGeometry.attributes.normal.array = normals;
-    (this._arrowGeometry.attributes.position as BufferAttribute).needsUpdate = true;
-    (this._arrowGeometry.attributes.normal as BufferAttribute).needsUpdate = true;
+    this._arrowsLayer.reposition();
 
     if (last) {
       (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).setArray(translateArray);
@@ -1382,9 +1122,9 @@ export class PretyGraph {
     };
 
     const start = Date.now();
-    this._arrowMesh.visible = false;
-    if (this.options.showLabels) {
-      this._labelsMesh.visible = false;
+    this._arrowsLayer.hide();
+    if (this._labelsLayer) {
+      this._labelsLayer.hide();
     }
 
     const step = () => {
@@ -1400,10 +1140,9 @@ export class PretyGraph {
 
         // ADD change node positions
         this._moveNodes(true);
-
-        this._arrowMesh.visible = true;
-        if (this.options.showLabels) {
-          this._labelsMesh.visible = true;
+        this._arrowsLayer.show();
+        if (this._labelsLayer) {
+          this._labelsLayer.show();
         }
 
         this._render();

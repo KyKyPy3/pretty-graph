@@ -170,7 +170,7 @@ export class AppComponent implements OnInit {
         return {
           ...node,
           size: node.size || 5,
-          img: 'assets/user.jpg',
+          // img: 'assets/user.jpg',
           color: 0xdcdcdc,
           label: 'Test label'
         };

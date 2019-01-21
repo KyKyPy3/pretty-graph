@@ -43,16 +43,10 @@ export declare class PretyGraph {
     private _linePickingMesh;
     private _imageCanvas;
     private _imageLoaded;
-    private _textCanvas;
-    private _labelsGeometry;
-    private _labelsTranslateAttribute;
-    private _labelsMesh;
-    private _labelsMaterial;
-    private _arrowGeometry;
-    private _arrowMesh;
-    private _arrowMaterial;
     private _indexedNodes;
     private _colorToNodeID;
+    private _labelsLayer;
+    private _arrowsLayer;
     constructor(options: GraphOptions);
     options: GraphOptions;
     setData(data: any, options?: {
@@ -83,17 +77,12 @@ export declare class PretyGraph {
     private _translateCoordinates;
     private _drawNodes;
     private _drawEdges;
-    private _drawArrows;
-    private _drawLabels;
     private _setupScene;
     private _setupPickingScene;
     private _setupCamera;
     private _setupRenderer;
     private _render;
     private _constructLines;
-    private _calculateArrowVertices;
-    private _calculateNormals;
-    private _calculateArrowData;
     private _indexingNodes;
     private _moveNodes;
     private _getRandomFromRange;
