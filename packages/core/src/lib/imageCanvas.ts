@@ -32,7 +32,7 @@ export class ImageCanvas extends EventDispatcher {
     this._ctx = this.canvas.getContext('2d');
     if (this._ctx) {
       this._ctx.fillStyle = 'white';
-      this._ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this._ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
     this.textureMap = new CanvasTexture(this.canvas);
@@ -63,8 +63,8 @@ export class ImageCanvas extends EventDispatcher {
             img,
             0, 0,
             img.width, img.height,
-            x, y,
-            this.textureWidth, this.textureHeight
+            x + 10, y + 10,
+            this.textureWidth - 20, this.textureHeight - 20
           );
         }
 

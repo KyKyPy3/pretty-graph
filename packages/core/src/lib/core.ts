@@ -746,6 +746,7 @@ export class PretyGraph {
 
     this._nodesMaterial = new RawShaderMaterial({
       depthTest: false,
+      depthWrite: false,
       fragmentShader,
       transparent: false,
       uniforms: {
@@ -768,7 +769,8 @@ export class PretyGraph {
           value: this._imageCanvas.textureMap
         }
       },
-      vertexShader
+      vertexColors: VertexColors,
+      vertexShader,
     });
 
     this._nodeMesh = new Points(this._nodesGeometry, this._nodesMaterial);

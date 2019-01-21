@@ -158,7 +158,7 @@ export class AppComponent implements OnInit {
       };
     });
     this._nodes = data.nodes.map((node) => {
-      if (+node.id === 373) {
+      if (+node.id === 1044) {
         return {
           ...node,
           img: 'assets/user.jpg',
@@ -171,6 +171,7 @@ export class AppComponent implements OnInit {
           ...node,
           size: node.size || 5,
           // img: 'assets/user.jpg',
+          img: 'assets/16_mail_c.svg',
           color: 0xdcdcdc,
           label: 'Test label'
         };

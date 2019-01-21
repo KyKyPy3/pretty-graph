@@ -78,7 +78,7 @@ export const fragmentShader: string = `
       float tm = smoothstep(border, border + distance, dist);
 
       if (dist > border)
-        if (vImage > 0.5) {
+        if (vImage > -1.0) {
           gl_FragColor = vec4(texture2D(textureMap, vec2((v_sprite.s + v_sprite.p * uv.x), (v_sprite.t + v_sprite.q * uv.y))).rgb, tm);
         } else {
           gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
