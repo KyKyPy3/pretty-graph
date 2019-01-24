@@ -154,21 +154,32 @@ export class PrettyGraphControls extends EventDispatcher {
     if (!this.enabled) {
       return;
     }
-
-    const scale = transform.k;
-    this.scale = scale;
     const dimensions = this._selection.node().getBoundingClientRect();
 
-    const x = -(transform.x - dimensions.width / 2) / scale;
-    const y = (transform.y - dimensions.height / 2) / scale;
-    const z = this._getZFromScale(scale);
+    if (transform.k !== this.scale) {
+      this.scale = transform.k;
+      const x = -(transform.x - dimensions.width / 2) / this.scale;
+      const y = (transform.y - dimensions.height / 2) / this.scale;
+      const z = this._getZFromScale(this.scale);
 
-    this._camera.position.set(x, y, z);
+      this._camera.position.set(x, y, z);
 
-    this.dispatchEvent({
-      scale,
-      type: 'scale'
-    })
+      this.dispatchEvent({
+        scale: this.scale,
+        type: 'scale'
+      });
+    } else {
+      const x = -(transform.x - dimensions.width / 2) / this.scale;
+      const y = (transform.y - dimensions.height / 2) / this.scale;
+      const z = this._getZFromScale(this.scale);
+
+      this._camera.position.set(x, y, z);
+
+      this.dispatchEvent({
+        scale: this.scale,
+        type: 'pan'
+      });
+    }
   }
 
   private _getScaleFromZ (z: number): number {

@@ -8,9 +8,9 @@ export const vertexShader: string = `
   uniform vec2 spriteDim;
   uniform vec2 textureDim;
 
-  attribute vec3 position;    // blueprint's vertex positions
-  attribute vec3 color;       // only used for raycasting
-  attribute vec3 translation; // x y translation offsets for an instance
+  attribute vec3 position;
+  attribute vec3 color;
+  attribute vec3 translation;
   attribute float size;
   attribute float image;
 

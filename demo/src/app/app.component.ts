@@ -29,6 +29,10 @@ export class AppComponent implements OnInit {
   private _activeNode: any;
 
   ngOnInit() {
+
+  }
+
+  public initGraph(): void {
     this._prepareGraphData({ nodes: graphMini.nodes, links: graphMini.links });
     const dimensions = this._graphContainer.nativeElement.getBoundingClientRect();
 
@@ -118,7 +122,7 @@ export class AppComponent implements OnInit {
         links: links,
         center: 1044
       }, {
-        animate: false
+        animate: true
       });
     });
 
@@ -129,6 +133,11 @@ export class AppComponent implements OnInit {
       links: this._links
     });
     this._agent.calculate();
+  }
+
+  public destroyGraph(): void {
+    this._graph.destroy();
+    this._agent.destroy();
   }
 
   public addNewData(): void {

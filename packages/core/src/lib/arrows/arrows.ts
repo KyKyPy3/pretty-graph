@@ -6,17 +6,15 @@ import {
   EventDispatcher,
   Float32BufferAttribute,
   Mesh,
-  Scene,
   ShaderMaterial,
-  Vector3,
-  VertexColors
+  Sphere,
+  Vector2,
+  VertexColors,
 } from 'three';
 
 import { fragmentShader, vertexShader } from './shaders';
 
 export class ArrowsLayer extends EventDispatcher {
-
-  private _scene: Scene;
 
   private _arrowGeometry!: BufferGeometry;
 
@@ -24,24 +22,12 @@ export class ArrowsLayer extends EventDispatcher {
 
   private _arrowMaterial!: ShaderMaterial;
 
-  private _nodeScalingFactor: number = 1.0;
+  private _graph: any;
 
-  private _arrows: any[] = [];
-
-  constructor(scene: Scene, nodeScalingFactor: number) {
+  constructor(graph: any) {
     super();
 
-    this._scene = scene;
-    this._nodeScalingFactor = nodeScalingFactor;
-  }
-
-  public addArrow(source: any, target: any, size: number, color: any): void {
-    this._arrows.push({
-      color,
-      size,
-      source,
-      target
-    });
+    this._graph = graph;
   }
 
   public hide(): void {
@@ -52,30 +38,28 @@ export class ArrowsLayer extends EventDispatcher {
     this._arrowMesh.visible = true;
   }
 
-  public reset(): void {
-    this._arrows = [];
-  }
-
   public recalculate(): void {
-    const { vertices, normals } = this._calculateArrowData();
+    if (!this._arrowGeometry) {
+      return;
+    }
+    const { vertices } = this._calculateArrowData();
 
-    this._arrowGeometry.attributes.position.array = vertices;
-    this._arrowGeometry.attributes.normal.array = normals;
+    this._arrowGeometry.boundingSphere = this._computeBoundingSphere(vertices);
 
+    (this._arrowGeometry.attributes.position as BufferAttribute).setArray(vertices);
     (this._arrowGeometry.attributes.position as BufferAttribute).needsUpdate = true;
-    (this._arrowGeometry.attributes.normal as BufferAttribute).needsUpdate = true;
   }
 
   public draw(): void {
     this._arrowGeometry = new BufferGeometry();
 
-    const { vertices, normals, colors } = this._calculateArrowData();
+    const { vertices, colors } = this._calculateArrowData();
 
-    this._arrowGeometry.addAttribute('position', new BufferAttribute(vertices, 3).setDynamic(true));
-    this._arrowGeometry.addAttribute('normal', new Float32BufferAttribute( normals, 3 ).setDynamic(true));
+    this._arrowGeometry.addAttribute('position', new BufferAttribute(vertices, 2).setDynamic(true));
     this._arrowGeometry.addAttribute('color', new Float32BufferAttribute( colors, 3 ).setDynamic(true));
 
-    // this._arrowGeometry.computeBoundingSphere();
+    this._arrowGeometry.computeVertexNormals();
+    this._arrowGeometry.boundingSphere = this._computeBoundingSphere(vertices);
 
     this._arrowMaterial = new ShaderMaterial({
       depthTest: false,
@@ -83,16 +67,18 @@ export class ArrowsLayer extends EventDispatcher {
       side: BackSide,
       transparent: false,
       vertexColors: VertexColors,
-      vertexShader
+      vertexShader,
     });
 
+    this._arrowMaterial.name = 'ArrowMaterial';
+
     this._arrowMesh = new Mesh(this._arrowGeometry, this._arrowMaterial);
-    this._scene.add(this._arrowMesh);
+    this._graph._scene.add(this._arrowMesh);
   }
 
   public dispose(): void {
     if (this._arrowMesh) {
-      this._scene.remove(this._arrowMesh);
+      this._graph._scene.remove(this._arrowMesh);
     }
 
     if (this._arrowMaterial) {
@@ -105,67 +91,48 @@ export class ArrowsLayer extends EventDispatcher {
   }
 
   private _calculateArrowData(): any {
-    const vertices = new Float32Array(this._arrows.length * 9);
-    const normals = new Float32Array(this._arrows.length * 9);
-    const colors = new Float32Array(this._arrows.length * 9);
+    const edges = this._graph.edges;
+    const vertices = new Float32Array(edges.length * 6);
+    const colors = new Float32Array(edges.length * 9);
 
     const color = new Color();
-    for ( let i = 0, i3 = 0, l = this._arrows.length; i < l; i ++, i3 += 9 ) {
-      color.setHex(this._arrows[i].color);
+    for ( let i = 0, i2 = 0, c3 = 0, l = edges.length; i < l; i ++, i2 += 6, c3 += 9 ) {
+      color.setHex(edges[i].color);
 
-      const arrowVertices = this._calculateArrowVertices(this._arrows[i].size, this._arrows[i].source, this._arrows[i].target);
+      const arrowVertices = this._calculateArrowVertices(edges[i].size, edges[i].source, edges[i].target);
 
       // Add vertices
-      vertices[i3 + 0] = arrowVertices.pointBelow[0] || 0;
-      vertices[i3 + 1] = arrowVertices.pointBelow[1] || 0;
-      vertices[i3 + 2] = 0;
+      vertices[i2 + 0] = arrowVertices.pointBelow[0] || 0;
+      vertices[i2 + 1] = arrowVertices.pointBelow[1] || 0;
 
-      vertices[i3 + 3] = arrowVertices.pointOnLine[0] || 0;
-      vertices[i3 + 4] = arrowVertices.pointOnLine[1] || 0;
-      vertices[i3 + 5] = 0;
+      vertices[i2 + 2] = arrowVertices.pointOnLine[0] || 0;
+      vertices[i2 + 3] = arrowVertices.pointOnLine[1] || 0;
 
-      vertices[i3 + 6] = arrowVertices.pointAbove[0] || 0;
-      vertices[i3 + 7] = arrowVertices.pointAbove[1] || 0;
-      vertices[i3 + 8] = 0;
-
-      // Add normals
-      const n = this._calculateNormals(arrowVertices);
-
-      normals[i3 + 0] = n.nx;
-      normals[i3 + 1] = n.ny;
-      normals[i3 + 2] = n.nz;
-
-      normals[i3 + 3] = n.nx;
-      normals[i3 + 4] = n.ny;
-      normals[i3 + 5] = n.nz;
-
-      normals[i3 + 6] = n.nx;
-      normals[i3 + 7] = n.ny;
-      normals[i3 + 8] = n.nz;
+      vertices[i2 + 4] = arrowVertices.pointAbove[0] || 0;
+      vertices[i2 + 5] = arrowVertices.pointAbove[1] || 0;
 
       // colors
-      colors[i3 + 0] = color.r;
-      colors[i3 + 1] = color.g;
-      colors[i3 + 2] = color.b;
+      colors[c3 + 0] = color.r;
+      colors[c3 + 1] = color.g;
+      colors[c3 + 2] = color.b;
 
-      colors[i3 + 3] = color.r;
-      colors[i3 + 4] = color.g;
-      colors[i3 + 5] = color.b;
+      colors[c3 + 3] = color.r;
+      colors[c3 + 4] = color.g;
+      colors[c3 + 5] = color.b;
 
-      colors[i3 + 6] = color.r;
-      colors[i3 + 7] = color.g;
-      colors[i3 + 8] = color.b;
+      colors[c3 + 6] = color.r;
+      colors[c3 + 7] = color.g;
+      colors[c3 + 8] = color.b;
     }
 
     return {
       colors,
-      normals,
       vertices,
     };
   }
 
   private _calculateArrowVertices(size, sourcePoint, targetPoint): any {
-    const radius = (targetPoint.size / 2) * this._nodeScalingFactor - 0.4;
+    const radius = (targetPoint.size / 2) * this._graph.nodeScalingFactor - 0.4;
 
     const dx = sourcePoint.x - targetPoint.x;
     const dy = sourcePoint.y - targetPoint.y;
@@ -193,29 +160,30 @@ export class ArrowsLayer extends EventDispatcher {
     }
   }
 
-  private _calculateNormals(arrowVertices): any {
-    const pA = new Vector3();
-    const pB = new Vector3();
-    const pC = new Vector3();
+  private _computeBoundingSphere(positions: any): Sphere {
+    const boundingSphere = new Sphere();
 
-    const cb = new Vector3();
-    const ab = new Vector3();
+    if ( positions ) {
+      const vector = new Vector2();
+      const center = new Vector2(boundingSphere.center.x, boundingSphere.center.y);
 
-    pA.set(arrowVertices.pointBelow[0], arrowVertices.pointBelow[1], 0);
-    pB.set(arrowVertices.pointAbove[0], arrowVertices.pointAbove[1], 0);
-    pC.set(arrowVertices.pointOnLine[0], arrowVertices.pointOnLine[1], 0);
+      let maxRadiusSq = 0;
 
-    cb.subVectors( pC, pB );
-    ab.subVectors( pA, pB );
-    cb.cross(ab);
+      for ( let i = 0, il = positions.length; i < il; i += 2 ) {
 
-    cb.normalize();
+        vector.fromArray( positions, i );
+        maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( vector ) );
 
-    return {
-      nx: cb.x,
-      ny: cb.y,
-      nz: cb.z
+      }
+
+      boundingSphere.radius = Math.sqrt(maxRadiusSq);
+
+      if ( isNaN( boundingSphere.radius ) ) {
+        console.error( 'THREE.BufferGeometry.computeBoundingSphere(): Computed radius is NaN. The "position" attribute is likely to have NaN values.', this );
+      }
     }
-  }
+
+    return boundingSphere;
+	}
 
 }

@@ -1,7 +1,7 @@
 export const vertexShader: string = `
   precision mediump float;
 
-  attribute vec3 translation; // x y translation offsets for an instance
+  attribute vec3 translation;
 
   varying vec3 vColor;
 
