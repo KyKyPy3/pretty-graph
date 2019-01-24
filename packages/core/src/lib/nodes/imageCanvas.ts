@@ -20,6 +20,8 @@ export class ImageCanvas extends EventDispatcher {
 
   private _textureIndex: number = 0;
 
+  private _enabled: boolean = true;
+
   constructor() {
     super();
 
@@ -37,6 +39,14 @@ export class ImageCanvas extends EventDispatcher {
 
     this.textureMap = new CanvasTexture(this.canvas);
     this.textureMap.flipY = false;
+  }
+
+  public disable(): void {
+    this._enabled = false;
+  }
+
+  public enable(): void {
+    this._enabled = true;
   }
 
   public dispose(): void {
@@ -69,10 +79,12 @@ export class ImageCanvas extends EventDispatcher {
         }
 
         this.textureMap.needsUpdate = true;
-        this.dispatchEvent({
-          index,
-          type: 'imageLoaded'
-        });
+        if (this._enabled) {
+          this.dispatchEvent({
+            index,
+            type: 'imageLoaded'
+          });
+        }
       };
 
       img.src = imageUrl;

@@ -3,7 +3,8 @@ export declare class NodesLayer {
     private _color;
     private _colorToNodeID;
     private _graph;
-    private _nodesGeometry;
+    private _nodesInstancedGeometry;
+    private _nodesBufferGeometry;
     private _nodesMaterial;
     private _pickingNodesScene;
     private _nodeMesh;
@@ -15,7 +16,9 @@ export declare class NodesLayer {
     private _nodeColorAttribute;
     private _pickingTexture;
     private _imageLoaded;
+    private _silent;
     constructor(graph: any);
+    setSilent(silent: boolean): void;
     draw(): void;
     setNodeColor(nodeColor: any): void;
     setNodePosition(newPos: any): void;

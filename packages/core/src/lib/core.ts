@@ -507,6 +507,7 @@ export class PretyGraph {
     if (this._labelsLayer) {
       this._labelsLayer.hide();
     }
+    this._nodesLayer.setSilent(true);
 
     const step = () => {
       let p = (Date.now() - start) / this.animationTime;
@@ -526,6 +527,7 @@ export class PretyGraph {
         if (this._labelsLayer) {
           this._labelsLayer.show();
         }
+        this._nodesLayer.setSilent(false);
 
         this._render();
       } else {

@@ -46,7 +46,9 @@ export class NodesLayer {
 
   private _graph: any;
 
-  private _nodesGeometry!: InstancedBufferGeometry;
+  private _nodesInstancedGeometry!: InstancedBufferGeometry;
+
+  private _nodesBufferGeometry!: BufferGeometry;
 
   private _nodesMaterial!: RawShaderMaterial;
 
@@ -70,11 +72,15 @@ export class NodesLayer {
 
   private _imageLoaded: (event: ThreeEvent) => void;
 
+  private _silent: boolean = false;
+
   constructor(graph: any) {
     this._graph = graph;
 
     this._imageLoaded = throttle(() => {
-      this._graph._render();
+      if (!this._silent) {
+        this._graph._render();
+      }
     }, 800);
 
     this._imageCanvas = new ImageCanvas();
@@ -87,6 +93,10 @@ export class NodesLayer {
     this._pickingNodesScene.background = new Color(0x000000);
 
     this._color = new Color();
+  }
+
+  public setSilent(silent: boolean): void {
+    this._silent = silent;
   }
 
   public draw(): void {
@@ -128,22 +138,22 @@ export class NodesLayer {
       }
     }
 
-    const nodesGeometry = new BufferGeometry();
-    this._nodesGeometry = new InstancedBufferGeometry();
-    this._nodesGeometry.index = nodesGeometry.index;
-    this._nodesGeometry.attributes = nodesGeometry.attributes;
+    this._nodesBufferGeometry = new BufferGeometry();
+    this._nodesInstancedGeometry = new InstancedBufferGeometry();
+    this._nodesInstancedGeometry.index = this._nodesBufferGeometry.index;
+    this._nodesInstancedGeometry.attributes = this._nodesBufferGeometry.attributes;
 
-    this._nodesGeometry.addAttribute('position', new BufferAttribute(new Float32Array([0, 0, 0]), 3));
+    this._nodesInstancedGeometry.addAttribute('position', new BufferAttribute(new Float32Array([0, 0, 0]), 3));
 
     this._nodeTranslateAttribute = new InstancedBufferAttribute(translateArray, 3);
     this._nodeTranslateAttribute.setDynamic(true);
     this._nodeColorAttribute = new InstancedBufferAttribute(colors, 3);
     this._nodeColorAttribute.setDynamic(true);
 
-    this._nodesGeometry.addAttribute('translation', this._nodeTranslateAttribute);
-    this._nodesGeometry.addAttribute('color', this._nodeColorAttribute);
-    this._nodesGeometry.addAttribute('size', new InstancedBufferAttribute(sizes, 1));
-    this._nodesGeometry.addAttribute('image', new InstancedBufferAttribute(images, 1));
+    this._nodesInstancedGeometry.addAttribute('translation', this._nodeTranslateAttribute);
+    this._nodesInstancedGeometry.addAttribute('color', this._nodeColorAttribute);
+    this._nodesInstancedGeometry.addAttribute('size', new InstancedBufferAttribute(sizes, 1));
+    this._nodesInstancedGeometry.addAttribute('image', new InstancedBufferAttribute(images, 1));
 
     this._nodesMaterial = new RawShaderMaterial({
       depthTest: false,
@@ -174,7 +184,7 @@ export class NodesLayer {
       vertexShader,
     });
 
-    this._nodeMesh = new Points(this._nodesGeometry, this._nodesMaterial);
+    this._nodeMesh = new Points(this._nodesInstancedGeometry, this._nodesMaterial);
     this._nodeMesh.frustumCulled = false;
     this._nodeMesh.renderOrder = 10;
     this._graph._scene.add(this._nodeMesh);
@@ -227,10 +237,10 @@ export class NodesLayer {
   }
 
   public setNodePosition(newPos): void {
-    this._nodesGeometry.attributes.translation.setXYZ(this.hoveredNode.__positionIndex, newPos.x, newPos.y, 0);
+    this._nodesInstancedGeometry.attributes.translation.setXYZ(this.hoveredNode.__positionIndex, newPos.x, newPos.y, 0);
     this._nodesPickingGeometry.attributes.translation.setXYZ(this.hoveredNode.__positionIndex, newPos.x, newPos.y, 0);
 
-    (this._nodesGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+    (this._nodesInstancedGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
     (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
   }
 
@@ -286,8 +296,8 @@ export class NodesLayer {
       }
     }
 
-    (this._nodesGeometry.attributes.translation as InstancedBufferAttribute).setArray(translateArray);
-    (this._nodesGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+    (this._nodesInstancedGeometry.attributes.translation as InstancedBufferAttribute).setArray(translateArray);
+    (this._nodesInstancedGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
   }
 
   public recalculatePicking(): void {
@@ -325,8 +335,12 @@ export class NodesLayer {
       this._pickingNodesScene.remove(this._nodesPickingsMesh);
     }
 
-    if (this._nodesGeometry) {
-      this._nodesGeometry.dispose();
+    if (this._nodesInstancedGeometry) {
+      this._nodesInstancedGeometry.dispose();
+    }
+
+    if (this._nodesBufferGeometry) {
+      this._nodesBufferGeometry.dispose();
     }
 
     if (this._nodesPickingGeometry) {

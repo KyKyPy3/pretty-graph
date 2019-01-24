@@ -9,7 +9,10 @@ export declare class ImageCanvas extends EventDispatcher {
     private _ctx;
     private _nodeImageToIndex;
     private _textureIndex;
+    private _enabled;
     constructor();
+    disable(): void;
+    enable(): void;
     dispose(): void;
     loadImage(imageUrl: string): number;
 }
