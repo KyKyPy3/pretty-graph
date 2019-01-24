@@ -142,7 +142,7 @@ export class PretyGraph {
     return this._options;
   }
 
-  public setData(data: any, options = { animate: false, locate: false }): void {
+  public setData(data: any, options: any = { animate: false, locate: false }): void {
     this._nodes = data.nodes;
     this.edges = data.links;
 

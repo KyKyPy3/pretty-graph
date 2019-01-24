@@ -28,10 +28,7 @@ export declare class PretyGraph {
     private _nodesLayer;
     constructor(options: GraphOptions);
     options: GraphOptions;
-    setData(data: any, options?: {
-        animate: boolean;
-        locate: boolean;
-    }): void;
+    setData(data: any, options?: any): void;
     getNodeByID(nodeID: string): any;
     getScreenshot(): string;
     destroy(): void;
