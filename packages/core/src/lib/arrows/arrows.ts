@@ -97,9 +97,23 @@ export class ArrowsLayer extends EventDispatcher {
 
     const color = new Color();
     for ( let i = 0, i2 = 0, c3 = 0, l = edges.length; i < l; i ++, i2 += 6, c3 += 9 ) {
+      if (edges[i].arrow === 'none') {
+        continue;
+      }
+      let source;
+      let target;
+
+      if (edges[i].arrow === 'target') {
+        source = edges[i].source;
+        target = edges[i].target;
+      } else {
+        source = edges[i].target;
+        target = edges[i].source;
+      }
+
       color.setHex(edges[i].color);
 
-      const arrowVertices = this._calculateArrowVertices(edges[i].size, edges[i].source, edges[i].target);
+      const arrowVertices = this._calculateArrowVertices(edges[i].size, source, target);
 
       // Add vertices
       vertices[i2 + 0] = arrowVertices.pointBelow[0] || 0;

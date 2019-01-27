@@ -7,4 +7,5 @@ export interface Edge {
     size?: number;
     color?: string | number;
     style?: 'solid' | 'dashed';
+    arrow?: 'none' | 'source' | 'target';
 }
