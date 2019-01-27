@@ -266,8 +266,15 @@ export class EdgesLayer extends EventDispatcher {
       const sourceX = link.source.x + ((link.source.size / 2) * this._graph.nodeScalingFactor) * Math.cos(angle);
       const sourceY = link.source.y + ((link.source.size / 2) * this._graph.nodeScalingFactor) * Math.sin(angle);
 
-      const targetX = link.target.x - (((link.target.size / 2) * this._graph.nodeScalingFactor) + link.size * 2) * Math.cos(angle);
-      const targetY = link.target.y - (((link.target.size / 2) * this._graph.nodeScalingFactor) + link.size * 2) * Math.sin(angle);
+      let targetX;
+      let targetY;
+      if (link.arrow === 'none') {
+        targetX = link.target.x - ((link.target.size / 2) * this._graph.nodeScalingFactor) * Math.cos(angle);
+        targetY = link.target.y - ((link.target.size / 2) * this._graph.nodeScalingFactor) * Math.sin(angle);
+      } else {
+        targetX = link.target.x - (((link.target.size / 2) * this._graph.nodeScalingFactor) + link.size * 2) * Math.cos(angle);
+        targetY = link.target.y - (((link.target.size / 2) * this._graph.nodeScalingFactor) + link.size * 2) * Math.sin(angle);
+      }
 
       color.setHex(link.color);
       pickingColor.setHex(index + 1);
