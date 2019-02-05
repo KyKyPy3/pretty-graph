@@ -23,6 +23,7 @@ export declare class EdgesLayer extends EventDispatcher {
     testEdge(position: any): void;
     recalculate(): void;
     recalculatePicking(): void;
+    private _setPickingLineSize;
     private _constructMesh;
     private _constructPickingMesh;
     private _constructLines;

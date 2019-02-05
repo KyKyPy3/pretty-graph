@@ -119,26 +119,16 @@ export class EdgesLayer extends EventDispatcher {
         this._lineGeometry.attributes.linewidth.setX(this._hoveredEdge._lineSizeRange[0], size);
       }
 
-      this._lineGeometry.attributes.linewidth.updateRange = { offset: this._hoveredEdge._lineSizeRange[0], count };
+      // this._lineGeometry.attributes.linewidth.updateRange = { offset: this._hoveredEdge._lineSizeRange[0], count };
       this._lineGeometry.attributes.linewidth.needsUpdate = true;
-
-      if (count > 1) {
-        for (let i = this._hoveredEdge._lineSizeRange[0]; i < this._hoveredEdge._lineSizeRange[1] / 2 + 2; i++) {
-          this._linesPickingGeometry.attributes.linewidth.setX(i, size);
-        }
-      } else {
-        this._linesPickingGeometry.attributes.linewidth.setX(this._hoveredEdge._lineSizeRange[0], size);
-      }
-
-      this._linesPickingGeometry.attributes.linewidth.updateRange = { offset: this._hoveredEdge._lineSizeRange[0], count };
-      this._linesPickingGeometry.attributes.linewidth.needsUpdate = true;
     }
   }
 
   public resetHoverEdge(): void {
-    if (this._hoveredEdge !== null) {
+    if (this._hoveredEdge) {
       this._setEdgeColor(this._hoveredEdge.color);
       this._setEdgeSize(this._hoveredEdge.size);
+      this._setPickingLineSize(this._hoveredEdge.size);
 
       this._graph.onEvent.emit('edgeUnhover', { edge: this._hoveredEdge });
       this._hoveredEdge = null;
@@ -160,7 +150,9 @@ export class EdgesLayer extends EventDispatcher {
           this._hoveredEdge = this._graph.edges[id - 1];
           this._hoveredEdgeID = id - 1;
           this._setEdgeColor(0xff0000);
-          this._setEdgeSize(this._hoveredEdge.size < 3 ? 3 : this._hoveredEdge.size);
+
+          this._setEdgeSize(Math.max(3, this._hoveredEdge.size));
+          this._setPickingLineSize(Math.max(8, this._hoveredEdge.size));
 
           // ToDo: отсылать надо центр ребра?
           this._graph.onEvent.emit('edgeHover', { edge: this._hoveredEdge, ...position });
@@ -179,6 +171,22 @@ export class EdgesLayer extends EventDispatcher {
   public recalculatePicking(): void {
     const linesData = this._constructLines(this._graph.edges);
     this._linesPickingGeometry.setPositions(linesData.positions);
+  }
+
+  private _setPickingLineSize(size: number): void {
+    if (this._hoveredEdge._lineSizeRange) {
+      const count = this._hoveredEdge._lineSizeRange[1] - this._hoveredEdge._lineSizeRange[0];
+      if (count > 1) {
+        for (let i = this._hoveredEdge._lineSizeRange[0]; i < this._hoveredEdge._lineSizeRange[1] / 2 + 2; i++) {
+          this._linesPickingGeometry.attributes.linewidth.setX(i, size);
+        }
+      } else {
+        this._linesPickingGeometry.attributes.linewidth.setX(this._hoveredEdge._lineSizeRange[0], size);
+      }
+
+      this._linesPickingGeometry.attributes.linewidth.updateRange = { offset: this._hoveredEdge._lineSizeRange[0], count };
+      this._linesPickingGeometry.attributes.linewidth.needsUpdate = true;
+    }
   }
 
   private _constructMesh(linesData): void {
