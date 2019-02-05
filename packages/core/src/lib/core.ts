@@ -316,9 +316,10 @@ export class PretyGraph {
 
       this._arrowsLayer.recalculate();
     } else {
-      this._edgesLayer.resetHoverEdge();
       if (!this._nodesLayer.testNode(position)) {
         this._edgesLayer.testEdge(position);
+      } else {
+        this._edgesLayer.resetHoverEdge();
       }
     }
 

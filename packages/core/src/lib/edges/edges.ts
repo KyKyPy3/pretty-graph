@@ -136,9 +136,13 @@ export class EdgesLayer extends EventDispatcher {
   }
 
   public resetHoverEdge(): void {
-    if (this._hoveredEdge) {
+    if (this._hoveredEdge !== null) {
       this._setEdgeColor(this._hoveredEdge.color);
       this._setEdgeSize(this._hoveredEdge.size);
+
+      this._graph.onEvent.emit('edgeUnhover', { edge: this._hoveredEdge });
+      this._hoveredEdge = null;
+      this._hoveredEdgeID = -1;
     }
   }
 
@@ -151,10 +155,7 @@ export class EdgesLayer extends EventDispatcher {
       const id = (pixelBuffer[0]<<16)|(pixelBuffer[1]<<8)|(pixelBuffer[2]);
       if (id) {
         if (this._hoveredEdgeID !== id - 1) {
-          if (this._hoveredEdge !== null) {
-            this._setEdgeColor(this._hoveredEdge.color);
-            this._setEdgeSize(this._hoveredEdge.size);
-          }
+          this.resetHoverEdge();
 
           this._hoveredEdge = this._graph.edges[id - 1];
           this._hoveredEdgeID = id - 1;
@@ -165,14 +166,7 @@ export class EdgesLayer extends EventDispatcher {
           this._graph.onEvent.emit('edgeHover', { edge: this._hoveredEdge, ...position });
         }
       } else {
-        if (this._hoveredEdge !== null) {
-          this._setEdgeColor(this._hoveredEdge.color);
-          this._setEdgeSize(this._hoveredEdge.size);
-
-          this._graph.onEvent.emit('edgeUnhover', { edge: this._hoveredEdge });
-          this._hoveredEdge = null;
-          this._hoveredEdgeID = -1;
-        }
+        this.resetHoverEdge();
       }
     }
   }
