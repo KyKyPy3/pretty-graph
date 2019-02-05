@@ -67,7 +67,7 @@ export const fragmentShader: string = `
     vec2 m = uv - vec2(0.5, 0.5);
     float dist = radius - sqrt(dot(m, m));
 
-    if (vSize * vNodeScaleFactor * vScale > 40.0) {
+    if (vSize * vNodeScaleFactor * vScale > 30.0) {
       distance = 0.025;
       if (0.08 - vSize * (vScale / 1000.0) > 0.04) {
         border = 0.08 - vSize * (vScale / 1000.0) / 2.0;
@@ -134,7 +134,9 @@ export const fragmentShader: string = `
         alpha = 1.0 - smoothstep(1.0 - delta, 1.0 + delta, r);
       #endif
 
-      gl_FragColor = vec4(vColor, alpha);
+      if (dist > 0.0)
+        gl_FragColor = vec4(vColor, alpha);
+      else discard;
     }
   }
 `;
