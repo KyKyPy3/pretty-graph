@@ -19,6 +19,7 @@ export declare class EdgesLayer extends EventDispatcher {
     _setEdgeColor(edgeColor: any): void;
     dispose(): void;
     _setEdgeSize(size: number): void;
+    resetHoverEdge(): void;
     testEdge(position: any): void;
     recalculate(): void;
     recalculatePicking(): void;

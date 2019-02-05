@@ -135,6 +135,13 @@ export class EdgesLayer extends EventDispatcher {
     }
   }
 
+  public resetHoverEdge(): void {
+    if (this._hoveredEdge) {
+      this._setEdgeColor(this._hoveredEdge.color);
+      this._setEdgeSize(this._hoveredEdge.size);
+    }
+  }
+
   public testEdge(position: any): void {
     if (this._pickingTexture) {
       this._graph._renderer.render(this._pickingLineScene, this._graph._camera, this._pickingTexture);
