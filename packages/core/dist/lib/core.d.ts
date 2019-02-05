@@ -26,6 +26,7 @@ export declare class PretyGraph {
     private _arrowsLayer;
     private _edgesLayer;
     private _nodesLayer;
+    private _resizeHandler;
     constructor(options: GraphOptions);
     options: GraphOptions;
     setData(data: any, options?: any): void;

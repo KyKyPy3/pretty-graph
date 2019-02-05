@@ -161,8 +161,8 @@ export class AppComponent implements OnInit {
     this._links = data.links.map((link, index) => {
       return {
         ...link,
-        size: 2,
-        color: 0xdcdcdc,
+        size: 1,
+        color: 0x99A3A4,
         type: index % 10 === 0 ? 'dashed' : 'solid'
       };
     });
@@ -171,7 +171,7 @@ export class AppComponent implements OnInit {
         return {
           ...node,
           img: 'assets/user.jpg',
-          color: 0xdcdcdc,
+          color: 0x99A3A4,
           label: 'Test label',
           size: node.size || 5
         };
@@ -181,7 +181,7 @@ export class AppComponent implements OnInit {
           size: node.size || 5,
           // img: 'assets/user.jpg',
           img: 'assets/16_mail_c.svg',
-          color: 0xdcdcdc,
+          color: 0x99A3A4,
           label: 'Test label'
         };
       }

@@ -34,15 +34,19 @@ export const vertexShader: string = `
     vec3 pos = position + translation;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
 
-    if (size * scale * nodeScalingFactor > 12.0) {
+    if (size * scale * nodeScalingFactor > 5.0) {
       gl_PointSize = size * scale * nodeScalingFactor;
     } else {
-      gl_PointSize = 12.0;
+      gl_PointSize = 5.0;
     }
   }
 `;
 
 export const fragmentShader: string = `
+  #ifdef GL_OES_standard_derivatives
+  #extension GL_OES_standard_derivatives : enable
+  #endif
+
   precision highp float;
 
   uniform sampler2D textureMap;
@@ -86,7 +90,7 @@ export const fragmentShader: string = `
       else if (dist > 0.0)
         gl_FragColor = vec4(vColor, alpha);
       else discard;
-    } else {
+    } else if (vSize * vNodeScaleFactor * vScale > 12.0) {
       distance = 0.1;
       border = 0.15;
       float l = vColor.r * 0.3 + vColor.g * 0.59 + vColor.b * 0.11;
@@ -99,7 +103,7 @@ export const fragmentShader: string = `
           border = 0.05;
           distance = 0.016;
         } else {
-          border = 0.3 - vScale / 50.0;
+          border = 0.2 - vScale / 50.0;
           distance = border / 2.5;
         }
       }
@@ -108,11 +112,29 @@ export const fragmentShader: string = `
       float sm2 = smoothstep(border, border - distance, dist);
       float alpha = sm*sm2;
 
-      if (dist > border) {
-        gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+      if (dist > border + 0.02) {
+        float r = 0.0, delta = 0.0, alpha2 = 1.0;
+        vec2 cxy = 2.0 * gl_PointCoord - 1.0;
+        r = dot(cxy, cxy);
+        #ifdef GL_OES_standard_derivatives
+          delta = fwidth(r);
+          alpha2 = 1.0 - smoothstep(0.2 - delta, 0.2 + delta, r);
+        #endif
+
+        gl_FragColor = vec4(vColor, alpha2);
       } else if (dist > 0.0) {
         gl_FragColor = vec4(vColor, alpha);
       } else discard;
+    } else {
+      float r = 0.0, delta = 0.0, alpha = 1.0;
+      vec2 cxy = 2.0 * gl_PointCoord - 1.0;
+      r = dot(cxy, cxy);
+      #ifdef GL_OES_standard_derivatives
+        delta = fwidth(r);
+        alpha = 1.0 - smoothstep(1.0 - delta, 1.0 + delta, r);
+      #endif
+
+      gl_FragColor = vec4(vColor, alpha);
     }
   }
 `;

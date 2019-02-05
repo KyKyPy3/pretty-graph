@@ -20,7 +20,7 @@ export class PretyGraph {
 
   public onEvent: EventEmitter = new EventEmitter();
 
-  public nodeScalingFactor: number = 7.0;
+  public nodeScalingFactor: number = 5.0;
 
   public animationTime: number = 500;
 
@@ -68,6 +68,8 @@ export class PretyGraph {
 
   private _nodesLayer!: NodesLayer;
 
+  private _resizeHandler: any;
+
   constructor(options: GraphOptions) {
     this.options = options;
 
@@ -112,7 +114,7 @@ export class PretyGraph {
     this._edgesLayer = new EdgesLayer(this);
     this._nodesLayer = new NodesLayer(this);
 
-    window.addEventListener('resize', () => {
+    this._resizeHandler = () => {
       this._renderer.setSize(this._container.clientWidth, this._container.clientHeight);
       this._camera.aspect = this._container.clientWidth / this._container.clientHeight;
       this._camera.updateProjectionMatrix();
@@ -130,7 +132,9 @@ export class PretyGraph {
       }
 
       this._render();
-    });
+    };
+
+    window.addEventListener('resize', this._resizeHandler);
   }
 
   set options(options: GraphOptions) {
@@ -238,6 +242,8 @@ export class PretyGraph {
   }
 
   public destroy(): void {
+    window.removeEventListener('resize', this._resizeHandler);
+
     if (this._labelsLayer) {
       this._labelsLayer.dispose();
     }
