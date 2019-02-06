@@ -173,7 +173,8 @@ export class AppComponent implements OnInit {
           img: 'assets/user.jpg',
           color: 0x99A3A4,
           label: 'Test label',
-          size: node.size || 5
+          size: node.size || 5,
+          showDot: true
         };
       } else {
         return {
@@ -182,7 +183,8 @@ export class AppComponent implements OnInit {
           // img: 'assets/user.jpg',
           img: 'assets/16_mail_c.svg',
           color: 0x99A3A4,
-          label: 'Test label'
+          label: 'Test label',
+          showDot: node.name ? true : false
         };
       }
     });

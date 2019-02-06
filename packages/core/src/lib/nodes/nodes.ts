@@ -104,6 +104,7 @@ export class NodesLayer {
     const colors = new Float32Array(this._graph._nodes.length * 3);
     const sizes = new Float32Array(this._graph._nodes.length);
     const images = new Float32Array(this._graph._nodes.length);
+    const showDot = new Float32Array(this._graph._nodes.length);
 
     for (let i = 0, i3 = 0, l = this._graph._nodes.length; i < l; i ++, i3 += 3 ) {
       translateArray[ i3 + 0 ] = this._graph._nodes[i].x;
@@ -127,6 +128,12 @@ export class NodesLayer {
       }
 
       this._graph._nodes[i].__positionIndex = i;
+
+      if (this._graph._nodes[i].showDot) {
+        showDot[i] = 1.0;
+      } else {
+        showDot[i] = 0.0;
+      }
 
       if (this._graph._labelsLayer && this._graph._nodes[i].label) {
         this._graph._nodes[i].__labelIndex = this._graph._labelsLayer.addLabel(
@@ -154,6 +161,7 @@ export class NodesLayer {
     this._nodesInstancedGeometry.addAttribute('color', this._nodeColorAttribute);
     this._nodesInstancedGeometry.addAttribute('size', new InstancedBufferAttribute(sizes, 1));
     this._nodesInstancedGeometry.addAttribute('image', new InstancedBufferAttribute(images, 1));
+    this._nodesInstancedGeometry.addAttribute('showDot', new InstancedBufferAttribute(showDot, 1));
 
     this._nodesMaterial = new RawShaderMaterial({
       depthTest: false,

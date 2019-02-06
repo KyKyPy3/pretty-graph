@@ -13,6 +13,7 @@ export const vertexShader: string = `
   attribute vec3 translation;
   attribute float size;
   attribute float image;
+  attribute float showDot;
 
   varying vec3 vColor;
   varying float vScale;
@@ -20,12 +21,14 @@ export const vertexShader: string = `
   varying float vSize;
   varying float vImage;
   varying highp vec4 v_sprite;
+  varying float vShowDot;
 
   void main() {
     vColor = color;
     vScale = scale;
     vSize = size;
     vImage = image;
+    vShowDot = showDot;
     vNodeScaleFactor = nodeScalingFactor;
 
     highp vec2 sp = vec2(mod((image * spriteDim.x), textureDim.x), floor((image * spriteDim.x) / textureDim.y) * spriteDim.y);
@@ -56,6 +59,7 @@ export const fragmentShader: string = `
   varying float vSize;
   varying vec3 vColor;
   varying float vImage;
+  varying float vShowDot;
   varying highp vec4 v_sprite;
 
   void main() {
@@ -112,7 +116,7 @@ export const fragmentShader: string = `
       float sm2 = smoothstep(border, border - distance, dist);
       float alpha = sm*sm2;
 
-      if (dist > border + 0.02) {
+      if (dist > border + 0.02 && vShowDot > 0.0) {
         float r = 0.0, delta = 0.0, alpha2 = 1.0;
         vec2 cxy = 2.0 * gl_PointCoord - 1.0;
         r = dot(cxy, cxy);
