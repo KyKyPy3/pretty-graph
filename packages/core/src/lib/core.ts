@@ -450,8 +450,6 @@ export class PretyGraph {
   }
 
   private _render(): void {
-    /* tslint:disable-next-line */
-    console.log('Render draw calls: ', this._renderer.info);
     this._renderer.render(this._scene, this._camera);
   }
 
@@ -460,6 +458,7 @@ export class PretyGraph {
 
     this._nodes.forEach((node) => {
       if (this._indexedNodes[node.id]) {
+        /* tslint:disable-next-line no-console */
         console.error(`Node with id ${node.id} already exists`);
       }
 
@@ -502,6 +501,7 @@ export class PretyGraph {
   private _interpolate(val: number): number {
     let newValue = val;
 
+    /* tslint:disable-next-line no-conditional-assignment */
     if ((newValue *= 2) < 1) {
       return 0.5 * newValue * newValue;
     }

@@ -105,6 +105,8 @@ export class LabelsLayer extends EventDispatcher {
 
     this._labelsMaterial = new RawShaderMaterial({
       depthTest: false,
+      depthWrite: false,
+      fog: false,
       fragmentShader,
       transparent: true,
       uniforms: {

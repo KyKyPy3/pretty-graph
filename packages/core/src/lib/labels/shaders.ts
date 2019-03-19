@@ -23,7 +23,7 @@ export const vertexShader: string = `
     v_sprite = vec4(sp.x / textureDim.x, sp.y / textureDim.y, spriteDim.x / textureDim.x, spriteDim.y / textureDim.y);
 
     vec3 pos = position + translation;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos.x + nodeScalingFactor * (size / 2.0), pos.y, pos.z, 1.0);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos.x + nodeScalingFactor * (size / 2.0), pos.y, 1.0, 1.0);
   }
 `;
 

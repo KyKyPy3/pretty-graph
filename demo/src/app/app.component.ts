@@ -38,7 +38,8 @@ export class AppComponent implements OnInit {
 
     this._graph = new PretyGraph({
       container: this._graphContainer.nativeElement,
-      controls: PrettyGraphControls
+      controls: PrettyGraphControls,
+      showLabels: true
     });
 
     this._graph.onEvent.on('nodeContextMenu', (data) => {

@@ -193,6 +193,7 @@ export class ArrowsLayer extends EventDispatcher {
       boundingSphere.radius = Math.sqrt(maxRadiusSq);
 
       if ( isNaN( boundingSphere.radius ) ) {
+        /* tslint:disable-next-line no-console */
         console.error( 'THREE.BufferGeometry.computeBoundingSphere(): Computed radius is NaN. The "position" attribute is likely to have NaN values.', this );
       }
     }

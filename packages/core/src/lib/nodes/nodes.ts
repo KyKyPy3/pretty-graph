@@ -23,14 +23,14 @@ import {
 
 import { ImageCanvas } from './imageCanvas';
 
-function throttle(callback, limit) {
+function throttle(callback, limit): () => void {
   let wait = false;
   return () => {
     if (!wait) {
       callback.call();
       wait = true;
       setTimeout(() => {
-          wait = false;
+        wait = false;
       }, limit);
     }
   }
