@@ -16,7 +16,7 @@
     "url": "https://github.com/KyKyPy3"
   },
   "bugs": {
-    "url": "https://github.com/vasturiano/three-render-objects/issues"
+    "url": "https://github.com/KyKyPy3/pretty-graph/issues"
   },
   "license": "MIT",
   "scripts": {
@@ -26,15 +26,15 @@
     "tslint": "tslint -c tslint.json \"packages/**/*.ts\""
   },
   "devDependencies": {
-    "jest": "23.6.0",
-    "lerna": "3.10.5",
+    "jest": "24.5.0",
+    "lerna": "3.13.1",
     "npm-run-all": "4.1.5",
-    "prettier": "1.15.3",
+    "prettier": "1.16.4",
     "rimraf": "2.6.3",
-    "tslint": "5.12.1",
-    "tslint-config-prettier": "1.17.0",
+    "tslint": "5.14.0",
+    "tslint-config-prettier": "1.18.0",
     "typescript": "3.2.2",
-    "webpack": "4.28.4"
+    "webpack": "4.29.6"
   },
   "workspaces": [
     "packages/*"

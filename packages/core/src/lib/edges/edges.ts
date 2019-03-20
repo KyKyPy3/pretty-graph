@@ -138,7 +138,9 @@ export class EdgesLayer extends EventDispatcher {
 
   public testEdge(position: any): void {
     if (this._pickingTexture) {
-      this._graph._renderer.render(this._pickingLineScene, this._graph._camera, this._pickingTexture);
+      this._graph._renderer.setRenderTarget(this._pickingTexture);
+      this._graph._renderer.render(this._pickingLineScene, this._graph._camera);
+      this._graph._renderer.setRenderTarget(null);
       const pixelBuffer = new Uint8Array(4);
       this._graph._renderer.readRenderTargetPixels(this._pickingTexture, position.x, this._pickingTexture.height - position.y, 1, 1, pixelBuffer);
       /* tslint:disable-next-line */

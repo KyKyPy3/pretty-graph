@@ -20,12 +20,12 @@
     "build:prod": "webpack --profile --progress --env.production"
   },
   "dependencies": {
-    "d3-force": "2.0.0"
+    "d3-force": "2.0.1"
   },
   "devDependencies": {
     "ts-loader": "5.3.3",
-    "webpack": "4.28.4",
-    "webpack-cli": "3.2.1",
+    "webpack": "4.29.6",
+    "webpack-cli": "3.3.0",
     "worker-loader": "2.0.0"
   },
   "gitHead": "ee0b8028acc1d64c4e5864ee38cd66935e95b6fd"

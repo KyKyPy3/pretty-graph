@@ -16,6 +16,11 @@
       "node_modules/@types",
       "node_modules"
     ],
+    "paths": {
+      "core-js/es7/reflect": [
+        "node_modules/core-js/proposals/reflect-metadata"
+      ]
+    },
     "lib": [
       "es2018",
       "dom"

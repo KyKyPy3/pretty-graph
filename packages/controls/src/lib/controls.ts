@@ -156,8 +156,11 @@ export class PrettyGraphControls extends EventDispatcher {
     }
     const dimensions = this._selection.node().getBoundingClientRect();
 
+    console.log(transform);
+
     if (transform.k !== this.scale) {
       this.scale = transform.k;
+
       const x = -(transform.x - dimensions.width / 2) / this.scale;
       const y = (transform.y - dimensions.height / 2) / this.scale;
       const z = this._getZFromScale(this.scale);
