@@ -33,6 +33,7 @@ export declare class PretyGraph {
     getNodeByID(nodeID: string): any;
     getScreenshot(): string;
     destroy(): void;
+    private _onRotate;
     private _onMouseMove;
     private _onMouseUp;
     private _onMouseDown;

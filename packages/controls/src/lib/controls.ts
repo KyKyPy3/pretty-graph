@@ -31,7 +31,7 @@ export class PrettyGraphControls extends EventDispatcher {
   public init(): void {
     this._zoom = zoom()
       .scaleExtent([this._getScaleFromZ(this._camera.far), this._getScaleFromZ(10)])
-      .filter(() => this.enabled)
+      .filter(() => this.enabled && !event.ctrlKey)
       .on('zoom', () => this._zoomHandler(event.transform));
 
     this._selection
@@ -42,6 +42,7 @@ export class PrettyGraphControls extends EventDispatcher {
       .on('dblclick', this._onDblClick.bind(this))
       .on('click', this._onClick.bind(this))
       .call(this._zoom)
+      .on('wheel', this._onRotate.bind(this))
       .on('dblclick.zoom', null);
 
     this.scale = this._getScaleFromZ(1000);
@@ -81,6 +82,8 @@ export class PrettyGraphControls extends EventDispatcher {
       .on('click', null)
       .on('.zoom', null);
   }
+
+  private _onRotate() {}
 
   private _onContextMenu(): void {
     event.preventDefault();
@@ -156,21 +159,26 @@ export class PrettyGraphControls extends EventDispatcher {
     }
     const dimensions = this._selection.node().getBoundingClientRect();
 
-    console.log(transform);
-
     if (transform.k !== this.scale) {
-      this.scale = transform.k;
+      if (!event.sourceEvent.ctrlKey) {
+        this.scale = transform.k;
 
-      const x = -(transform.x - dimensions.width / 2) / this.scale;
-      const y = (transform.y - dimensions.height / 2) / this.scale;
-      const z = this._getZFromScale(this.scale);
+        const x = -(transform.x - dimensions.width / 2) / this.scale;
+        const y = (transform.y - dimensions.height / 2) / this.scale;
+        const z = this._getZFromScale(this.scale);
 
-      this._camera.position.set(x, y, z);
+        this._camera.position.set(x, y, z);
 
-      this.dispatchEvent({
-        scale: this.scale,
-        type: 'scale'
-      });
+        this.dispatchEvent({
+          scale: transform.k,
+          type: 'scale'
+        });
+      } else {
+        this.dispatchEvent({
+          delta: event.sourceEvent.deltaY,
+          type: 'rotate'
+        });
+      }
     } else {
       const x = -(transform.x - dimensions.width / 2) / this.scale;
       const y = (transform.y - dimensions.height / 2) / this.scale;

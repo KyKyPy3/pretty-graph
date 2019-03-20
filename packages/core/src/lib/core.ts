@@ -105,6 +105,8 @@ export class PretyGraph {
 
     this._controls.addEventListener('mouseup', this._onMouseUp.bind(this));
 
+    this._controls.addEventListener('rotate', this._onRotate.bind(this));
+
     this._render();
 
     if (this.options.showLabels) {
@@ -267,6 +269,11 @@ export class PretyGraph {
     this._nodes = [];
     this.edges = [];
     this._indexedNodes = {};
+  }
+
+  private _onRotate({ delta }): void {
+    this._scene.rotation.z += delta * 0.001;
+    this._render();
   }
 
   private _onMouseMove({ position }: any): void {
