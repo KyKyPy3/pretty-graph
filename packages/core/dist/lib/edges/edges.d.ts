@@ -26,5 +26,6 @@ export declare class EdgesLayer extends EventDispatcher {
     private _setPickingLineSize;
     private _constructMesh;
     private _constructPickingMesh;
+    private _disposeInternal;
     private _constructLines;
 }

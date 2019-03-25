@@ -1,7 +1,7 @@
 import { CanvasTexture, EventDispatcher } from 'three';
 export declare class ImageCanvas extends EventDispatcher {
-    canvas: HTMLCanvasElement;
-    textureMap: CanvasTexture;
+    canvas: HTMLCanvasElement | null;
+    textureMap: CanvasTexture | null;
     textureWidth: number;
     textureHeight: number;
     canvasHeight: number;

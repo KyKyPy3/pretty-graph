@@ -2,9 +2,9 @@ import { CanvasTexture, EventDispatcher } from 'three';
 
 export class ImageCanvas extends EventDispatcher {
 
-  public canvas: HTMLCanvasElement;
+  public canvas: HTMLCanvasElement | null;
 
-  public textureMap: CanvasTexture;
+  public textureMap: CanvasTexture | null;
 
   public textureWidth: number = 0;
 
@@ -50,7 +50,17 @@ export class ImageCanvas extends EventDispatcher {
   }
 
   public dispose(): void {
-    this.textureMap.dispose();
+    this._nodeImageToIndex = {};
+
+    if (this.textureMap) {
+      this.textureMap.dispose();
+      this.textureMap = null;
+    }
+
+    if (this._ctx) {
+      this._ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+    }
+    this.canvas = null;
   }
 
   public loadImage(imageUrl: string): number {
@@ -78,7 +88,10 @@ export class ImageCanvas extends EventDispatcher {
           );
         }
 
-        this.textureMap.needsUpdate = true;
+        if (this.textureMap) {
+          this.textureMap.needsUpdate = true;
+        }
+
         if (this._enabled) {
           this.dispatchEvent({
             index,

@@ -40,27 +40,27 @@ export class NodesLayer {
 
   public hoveredNode: any = null;
 
-  private _color!: Color;
+  private _color!: Color | null;
 
   private _colorToNodeID: { [id: number]: string; } = {};
 
   private _graph: any;
 
-  private _nodesInstancedGeometry!: InstancedBufferGeometry;
+  private _nodesInstancedGeometry!: InstancedBufferGeometry | null;
 
-  private _nodesBufferGeometry!: BufferGeometry;
+  private _nodesBufferGeometry!: BufferGeometry | null;
 
-  private _nodesMaterial!: RawShaderMaterial;
+  private _nodesMaterial!: RawShaderMaterial | null;
 
-  private _pickingNodesScene!: Scene;
+  private _pickingNodesScene!: Scene | null;
 
-  private _nodeMesh!: Points;
+  private _nodeMesh!: Points | null;
 
-  private _nodesPickingMaterial!: RawShaderMaterial;
+  private _nodesPickingMaterial!: RawShaderMaterial | null;
 
-  private _nodesPickingGeometry!: BufferGeometry;
+  private _nodesPickingGeometry!: BufferGeometry | null;
 
-  private _nodesPickingsMesh!: Points;
+  private _nodesPickingsMesh!: Points | null;
 
   private _imageCanvas: ImageCanvas;
 
@@ -68,7 +68,7 @@ export class NodesLayer {
 
   private _nodeColorAttribute!: InstancedBufferAttribute;
 
-  private _pickingTexture!: WebGLRenderTarget;
+  private _pickingTexture!: WebGLRenderTarget | null;
 
   private _imageLoaded: (event: ThreeEvent) => void;
 
@@ -111,11 +111,13 @@ export class NodesLayer {
       translateArray[ i3 + 1 ] = this._graph._nodes[i].y;
       translateArray[ i3 + 2 ] = 0;
 
-      this._color.setHex(this._graph._nodes[i].color);
+      if (this._color) {
+        this._color.setHex(this._graph._nodes[i].color);
 
-      colors[ i3 + 0 ] = this._color.r;
-      colors[ i3 + 1 ] = this._color.g;
-      colors[ i3 + 2 ] = this._color.b;
+        colors[ i3 + 0 ] = this._color.r;
+        colors[ i3 + 1 ] = this._color.g;
+        colors[ i3 + 2 ] = this._color.b;
+      }
 
       sizes[i] = this._graph._nodes[i].size;
 
@@ -200,11 +202,13 @@ export class NodesLayer {
     // Add duplicates for GPU picking
     const pickingColors = new Float32Array(this._graph._nodes.length * 3);
     for (let i = 0, i3 = 0, l = this._graph._nodes.length; i < l; i ++, i3 += 3 ) {
-      this._color.setHex(i + 1);
+      if (this._color) {
+        this._color.setHex(i + 1);
 
-      pickingColors[ i3 + 0 ] = this._color.r;
-      pickingColors[ i3 + 1 ] = this._color.g;
-      pickingColors[ i3 + 2 ] = this._color.b;
+        pickingColors[ i3 + 0 ] = this._color.r;
+        pickingColors[ i3 + 1 ] = this._color.g;
+        pickingColors[ i3 + 2 ] = this._color.b;
+      }
 
       this._colorToNodeID[i + 1] = this._graph._nodes[i].id;
     }
@@ -224,13 +228,15 @@ export class NodesLayer {
       vertexShader: pickingVertexShader,
     });
 
-    const clone = this._nodeMesh.clone();
-    this._nodesPickingGeometry = clone.geometry.clone() as BufferGeometry;
+    this._nodesPickingGeometry = this._nodeMesh.geometry.clone() as BufferGeometry;
     this._nodesPickingGeometry.addAttribute('color', new InstancedBufferAttribute(pickingColors, 3));
     this._nodesPickingsMesh = new Points(this._nodesPickingGeometry, this._nodesPickingMaterial);
     this._nodesPickingsMesh.frustumCulled = false;
-    this._pickingNodesScene.add(this._nodesPickingsMesh);
-    this._pickingNodesScene.updateMatrixWorld(true);
+
+    if (this._pickingNodesScene) {
+      this._pickingNodesScene.add(this._nodesPickingsMesh);
+      this._pickingNodesScene.updateMatrixWorld(true);
+    }
   }
 
   public setNodeColor(nodeColor: any): void {
@@ -245,11 +251,13 @@ export class NodesLayer {
   }
 
   public setNodePosition(newPos): void {
-    this._nodesInstancedGeometry.attributes.translation.setXYZ(this.hoveredNode.__positionIndex, newPos.x, newPos.y, 0);
-    this._nodesPickingGeometry.attributes.translation.setXYZ(this.hoveredNode.__positionIndex, newPos.x, newPos.y, 0);
+    if (this._nodesInstancedGeometry && this._nodesPickingGeometry) {
+      this._nodesInstancedGeometry.attributes.translation.setXYZ(this.hoveredNode.__positionIndex, newPos.x, newPos.y, 0);
+      this._nodesPickingGeometry.attributes.translation.setXYZ(this.hoveredNode.__positionIndex, newPos.x, newPos.y, 0);
 
-    (this._nodesInstancedGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
-    (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+      (this._nodesInstancedGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+      (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+    }
   }
 
   public testNode(position): boolean {
@@ -306,8 +314,10 @@ export class NodesLayer {
       }
     }
 
-    (this._nodesInstancedGeometry.attributes.translation as InstancedBufferAttribute).setArray(translateArray);
-    (this._nodesInstancedGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+    if (this._nodesInstancedGeometry) {
+      (this._nodesInstancedGeometry.attributes.translation as InstancedBufferAttribute).setArray(translateArray);
+      (this._nodesInstancedGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+    }
   }
 
   public recalculatePicking(): void {
@@ -319,12 +329,14 @@ export class NodesLayer {
       translateArray[ i3 + 2 ] = 0;
     }
 
-    (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).setArray(translateArray);
-    (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+    if (this._nodesPickingGeometry) {
+      (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).setArray(translateArray);
+      (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+    }
   }
 
   public onScale(scale: number): void {
-    if (this._nodesMaterial) {
+    if (this._nodesMaterial && this._nodesPickingMaterial) {
       this._nodesMaterial.uniforms.scale.value = scale;
       this._nodesMaterial.needsUpdate = true;
       this._nodesPickingMaterial.uniforms.scale.value = scale;
@@ -333,46 +345,69 @@ export class NodesLayer {
   }
 
   public onResize(): void {
-    this._pickingTexture.setSize(this._graph._container.clientWidth, this._graph._container.clientHeight);
+    if (this._pickingTexture) {
+      this._pickingTexture.setSize(this._graph._container.clientWidth, this._graph._container.clientHeight);
+    }
   }
 
   public dispose(): void {
-    if (this._nodeMesh) {
-      this._graph._scene.remove(this._nodeMesh);
-    }
-
-    if (this._nodesPickingsMesh) {
-      this._pickingNodesScene.remove(this._nodesPickingsMesh);
-    }
-
-    if (this._nodesInstancedGeometry) {
-      this._nodesInstancedGeometry.dispose();
-    }
-
-    if (this._nodesBufferGeometry) {
-      this._nodesBufferGeometry.dispose();
-    }
-
-    if (this._nodesPickingGeometry) {
-      this._nodesPickingGeometry.dispose();
-    }
-
-    if (this._nodesMaterial) {
-      this._nodesMaterial.dispose();
-    }
-
-    if (this._nodesPickingMaterial) {
-      this._nodesPickingMaterial.dispose();
-    }
+    this._disposeInternal();
 
     if (this._imageCanvas) {
       this._imageCanvas.dispose();
+    }
+
+    if (this._pickingNodesScene) {
+      (this._pickingNodesScene as any).dispose();
+      this._pickingNodesScene = null;
     }
 
     this._imageCanvas.removeEventListener('imageLoaded', this._imageLoaded);
 
     if (this._pickingTexture) {
       this._pickingTexture.dispose();
+      this._pickingTexture = null;
+    }
+
+    this.hoveredNode = null;
+    this._color = null;
+    this._colorToNodeID = {};
+  }
+
+  private _disposeInternal(): void {
+    if (this._nodesBufferGeometry) {
+      this._nodesBufferGeometry.dispose();
+      this._nodesBufferGeometry = null;
+    }
+
+    if (this._nodesInstancedGeometry) {
+      this._nodesInstancedGeometry.dispose();
+      this._nodesInstancedGeometry = null;
+    }
+
+    if (this._nodesMaterial) {
+      this._nodesMaterial.dispose();
+      this._nodesMaterial = null;
+    }
+
+    if (this._nodeMesh) {
+      this._graph._scene.remove(this._nodeMesh);
+      this._nodeMesh = null;
+    }
+
+    if (this._nodesPickingGeometry) {
+      this._nodesPickingGeometry.dispose();
+      this._nodesPickingGeometry = null;
+    }
+
+    if (this._nodesPickingMaterial) {
+      this._nodesPickingMaterial.dispose();
+      this._nodesPickingMaterial = null;
+    }
+
+    if (this._nodesPickingsMesh && this._pickingNodesScene) {
+      this._pickingNodesScene.remove(this._nodesPickingsMesh);
+      this._nodesPickingsMesh = null;
     }
   }
 

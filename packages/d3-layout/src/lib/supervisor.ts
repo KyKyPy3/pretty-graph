@@ -9,9 +9,9 @@ export class D3Layout {
 
   public onEvent: EventEmitter = new EventEmitter();
 
-  private _worker!: Worker;
+  private _worker!: Worker | null;
 
-  private _layout!: Layout;
+  private _layout!: Layout | null;
 
   private _options: LayoutOptions;
 
@@ -26,7 +26,7 @@ export class D3Layout {
   }
 
   public init(data: any): void {
-    if (this._options.useWorker) {
+    if (this._options.useWorker && this._worker) {
       this._worker.postMessage({
         height: data.height || 0,
         links: data.links || [],
@@ -46,30 +46,34 @@ export class D3Layout {
         }
       }
     } else {
-      this._layout.init({
-        height: data.height || 0,
-        links: data.links || [],
-        nodes: data.nodes || [],
-        width: data.width || 0
-      });
+      if (this._layout) {
+        this._layout.init({
+          height: data.height || 0,
+          links: data.links || [],
+          nodes: data.nodes || [],
+          width: data.width || 0
+        });
 
-      this._layout.onEvent.on('tick', (percent) => {
-        this.onEvent.emit('tick', percent);
-      });
+        this._layout.onEvent.on('tick', (percent) => {
+          this.onEvent.emit('tick', percent);
+        });
 
-      this._layout.onEvent.on('end', (d) => {
-        this.onEvent.emit('end', d);
-      });
+        this._layout.onEvent.on('end', (d) => {
+          this.onEvent.emit('end', d);
+        });
+      }
     }
   }
 
   public calculate(): void {
-    if (this._options.useWorker) {
+    if (this._options.useWorker && this._worker) {
       this._worker.postMessage({
         name: 'calculate'
       });
     } else {
-      this._layout.calculate();
+      if (this._layout) {
+        this._layout.calculate();
+      }
     }
   }
 
@@ -79,9 +83,13 @@ export class D3Layout {
         name: 'destroy'
       });
       this._worker.terminate();
+      this._worker = null;
     } else {
-      this._layout.onEvent.removeAllListeners();
-      this._layout.destroy();
+      if (this._layout) {
+        this._layout.onEvent.removeAllListeners();
+        this._layout.destroy();
+      }
+      this._layout = null;
     }
   }
 }

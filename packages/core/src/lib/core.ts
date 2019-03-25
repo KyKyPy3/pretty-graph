@@ -26,13 +26,13 @@ export class PretyGraph {
 
   public edges: any[] = [];
 
-  private _camera!: PerspectiveCamera;
+  private _camera!: PerspectiveCamera | null;
 
-  private _scene!: Scene;
+  private _scene!: Scene | null;
 
   private _options: GraphOptions = {};
 
-  private _renderer!: WebGLRenderer;
+  private _renderer!: WebGLRenderer | null;
 
   private _container: HTMLElement = document.body;
 
@@ -62,11 +62,11 @@ export class PretyGraph {
 
   private _labelsLayer: LabelsLayer | null = null;
 
-  private _arrowsLayer!: ArrowsLayer;
+  private _arrowsLayer: ArrowsLayer | null = null;
 
-  private _edgesLayer!: EdgesLayer;
+  private _edgesLayer: EdgesLayer | null = null;
 
-  private _nodesLayer!: NodesLayer;
+  private _nodesLayer: NodesLayer | null = null;
 
   private _resizeHandler: any;
 
@@ -109,7 +109,7 @@ export class PretyGraph {
 
     this._render();
 
-    if (this.options.showLabels) {
+    if (this.options.showLabels && this._scene) {
       this._labelsLayer = new LabelsLayer(this._scene, this.nodeScalingFactor);
     }
     this._arrowsLayer = new ArrowsLayer(this);
@@ -117,9 +117,11 @@ export class PretyGraph {
     this._nodesLayer = new NodesLayer(this);
 
     this._resizeHandler = () => {
-      this._renderer.setSize(this._container.clientWidth, this._container.clientHeight);
-      this._camera.aspect = this._container.clientWidth / this._container.clientHeight;
-      this._camera.updateProjectionMatrix();
+      if (this._renderer && this._camera) {
+        this._renderer.setSize(this._container.clientWidth, this._container.clientHeight);
+        this._camera.aspect = this._container.clientWidth / this._container.clientHeight;
+        this._camera.updateProjectionMatrix();
+      }
 
       if (this._edgesLayer) {
         this._edgesLayer.onResize();
@@ -157,20 +159,15 @@ export class PretyGraph {
 
     if (data.center) {
       this._center = this._indexedNodes[data.center];
-      if (this._center && options.locate) {
+      if (this._center && options.locate && this._controls) {
         this._controls.setTransform(this._center);
       }
     }
 
-    if (this._labelsLayer) {
-      this._labelsLayer.dispose();
+    if (this._renderer) {
+      this._renderer.clear();
+      this._renderer.renderLists.dispose();
     }
-    this._arrowsLayer.dispose();
-    this._edgesLayer.dispose();
-    this._nodesLayer.dispose();
-
-    this._renderer.clear();
-    this._renderer.renderLists.dispose();
 
     if (options.animate) {
         for (const k in this._indexedNodes) {
@@ -198,9 +195,15 @@ export class PretyGraph {
           }
         }
 
-        this._edgesLayer.draw();
-        this._arrowsLayer.draw();
-        this._nodesLayer.draw();
+        if (this._edgesLayer) {
+          this._edgesLayer.draw();
+        }
+        if (this._arrowsLayer) {
+          this._arrowsLayer.draw();
+        }
+        if (this._nodesLayer) {
+          this._nodesLayer.draw();
+        }
 
         if (this._labelsLayer) {
           this._labelsLayer.draw();
@@ -210,9 +213,15 @@ export class PretyGraph {
 
         requestAnimationFrame(this._animate.bind(this));
     } else {
-      this._edgesLayer.draw();
-      this._arrowsLayer.draw();
-      this._nodesLayer.draw();
+      if (this._edgesLayer) {
+        this._edgesLayer.draw();
+      }
+      if (this._arrowsLayer) {
+        this._arrowsLayer.draw();
+      }
+      if (this._nodesLayer) {
+        this._nodesLayer.draw();
+      }
 
       if (this._labelsLayer) {
         this._labelsLayer.draw();
@@ -236,9 +245,12 @@ export class PretyGraph {
 
   public getScreenshot(): string {
     const renderer = new WebGLRenderer({ premultipliedAlpha: false, preserveDrawingBuffer: true, antialias: true, alpha: true });
-    renderer.setSize(this._container.clientWidth, this._container.clientHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.render(this._scene, this._camera);
+
+    if (this._scene && this._camera) {
+      renderer.setSize(this._container.clientWidth, this._container.clientHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.render(this._scene, this._camera);
+    }
 
     return renderer.domElement.toDataURL( 'image/png' );
   }
@@ -248,85 +260,125 @@ export class PretyGraph {
 
     if (this._labelsLayer) {
       this._labelsLayer.dispose();
+      this._labelsLayer = null;
     }
 
     if (this._arrowsLayer) {
       this._arrowsLayer.dispose();
+      this._arrowsLayer = null;
     }
 
     if (this._edgesLayer) {
       this._edgesLayer.dispose();
+      this._edgesLayer = null;
     }
 
     if (this._nodesLayer) {
       this._nodesLayer.dispose();
+      this._nodesLayer = null;
+    }
+
+    if (this._scene) {
+      // while (this._scene.children.length > 0) {
+      //   const obj = this._scene.children[0];
+      //   this._scene.remove(obj);
+      //   this.disposeHierarchy(obj, this.disposeNode);
+      // }
+
+      (this._scene as any).dispose();
     }
 
     this._disposeRenderer();
 
-    this._controls.dispose();
+    this._camera = null;
+
+    if (this._controls) {
+      this._controls.dispose();
+      this._controls = null;
+    }
 
     this._nodes = [];
     this.edges = [];
+    this._center = null;
     this._indexedNodes = {};
+    this._scene = null;
   }
 
   private _onRotate({ delta }): void {
-    this._scene.rotation.z += delta * 0.001;
+    if (this._scene) {
+      this._scene.rotation.z += delta * 0.001;
+    }
+
     this._render();
   }
 
   private _onMouseMove({ position }: any): void {
-    if (this._dragging) {
+    if (this._dragging && this._camera) {
       // dragging node
       const mouse = new Vector3();
       mouse.x = (position.x / this._container.clientWidth) * 2 - 1;
       mouse.y = -(position.y / this._container.clientHeight) * 2 + 1;
-
       let newPos = {
-        x: this._nodesLayer.hoveredNode.x,
-        y: this._nodesLayer.hoveredNode.y
+        x: 0,
+        y: 0
       };
 
-      if (!this._dragInProgress) {
-        const worldVector = new Vector3();
-        this._camera.getWorldDirection(worldVector);
-        this._plane.setFromNormalAndCoplanarPoint(worldVector, new Vector3(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y, 0));
-        this._raycaster.setFromCamera(mouse, this._camera);
-        this._raycaster.ray.intersectPlane(this._plane, this._intersection);
-        this._offset.copy(this._intersection).sub(new Vector3(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y, 0));
-        newPos = this._intersection.sub(this._offset).clone();
+      if (this._nodesLayer) {
+        newPos = {
+          x: this._nodesLayer.hoveredNode.x,
+          y: this._nodesLayer.hoveredNode.y
+        };
 
-        this._dragInProgress = true;
-      } else {
-        this._raycaster.setFromCamera(mouse, this._camera);
-        this._raycaster.ray.intersectPlane(this._plane, this._intersection);
-        newPos = this._intersection.sub(this._offset).clone();
-      }
 
-      if (this._nodesLayer.hoveredNode !== null) {
-        this._nodesLayer.setNodePosition(newPos);
+        if (!this._dragInProgress) {
+          const worldVector = new Vector3();
+          this._camera.getWorldDirection(worldVector);
+          this._plane.setFromNormalAndCoplanarPoint(worldVector, new Vector3(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y, 0));
+          this._raycaster.setFromCamera(mouse, this._camera);
+          this._raycaster.ray.intersectPlane(this._plane, this._intersection);
+          this._offset.copy(this._intersection).sub(new Vector3(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y, 0));
+          newPos = this._intersection.sub(this._offset).clone();
 
-        if (this._labelsLayer && this._nodesLayer.hoveredNode.__labelIndex) {
-          this._labelsLayer.setLabelPosition(this._nodesLayer.hoveredNode.__labelIndex, { x: newPos.x, y: newPos.y, z: 0 });
+          this._dragInProgress = true;
+        } else {
+          this._raycaster.setFromCamera(mouse, this._camera);
+          this._raycaster.ray.intersectPlane(this._plane, this._intersection);
+          newPos = this._intersection.sub(this._offset).clone();
         }
+
+        if (this._nodesLayer.hoveredNode !== null) {
+          this._nodesLayer.setNodePosition(newPos);
+
+          if (this._labelsLayer && this._nodesLayer.hoveredNode.__labelIndex) {
+            this._labelsLayer.setLabelPosition(this._nodesLayer.hoveredNode.__labelIndex, { x: newPos.x, y: newPos.y, z: 0 });
+          }
+        }
+
+
+        this._nodesLayer.hoveredNode.x = newPos.x;
+        this._nodesLayer.hoveredNode.y = newPos.y;
+
+        const coordinates = this._translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
+        this.onEvent.emit('nodeMoving', { node: this._nodesLayer.hoveredNode, ...coordinates, scale: this._controls.scale });
       }
 
-      this._nodesLayer.hoveredNode.x = newPos.x;
-      this._nodesLayer.hoveredNode.y = newPos.y;
+      if (this._edgesLayer) {
+        this._edgesLayer.recalculate();
+        this._edgesLayer.recalculatePicking();
+      }
 
-      const coordinates = this._translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
-      this.onEvent.emit('nodeMoving', { node: this._nodesLayer.hoveredNode, ...coordinates, scale: this._controls.scale });
-
-      this._edgesLayer.recalculate();
-      this._edgesLayer.recalculatePicking();
-
-      this._arrowsLayer.recalculate();
+      if (this._arrowsLayer) {
+        this._arrowsLayer.recalculate();
+      }
     } else {
-      if (!this._nodesLayer.testNode(position)) {
-        this._edgesLayer.testEdge(position);
+      if (this._nodesLayer && !this._nodesLayer.testNode(position)) {
+        if (this._edgesLayer) {
+          this._edgesLayer.testEdge(position);
+        }
       } else {
-        this._edgesLayer.resetHoverEdge();
+        if (this._edgesLayer) {
+          this._edgesLayer.resetHoverEdge();
+        }
       }
     }
 
@@ -340,35 +392,35 @@ export class PretyGraph {
   }
 
   private _onMouseDown({ event }): void {
-    if (this._nodesLayer.hoveredNode !== null && event.buttons === 1) {
+    if (this._nodesLayer && this._nodesLayer.hoveredNode !== null && event.buttons === 1) {
       this._controls.enabled = false;
       this._dragging = true;
     }
   }
 
   private _onClick(): void {
-    if (this._nodesLayer.hoveredNode) {
+    if (this._nodesLayer && this._nodesLayer.hoveredNode) {
       const coordinates = this._translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
       this.onEvent.emit('nodeClick', { node: this._nodesLayer.hoveredNode, ...coordinates, scale: this._controls.scale });
     }
 
-    if (!this._nodesLayer.hoveredNode && !this._edgesLayer.hoveredEdge) {
+    if (this._nodesLayer && !this._nodesLayer.hoveredNode && this._edgesLayer && !this._edgesLayer.hoveredEdge) {
       this.onEvent.emit('workspaceClick');
     }
   }
 
   private _onDblClick(): void {
-    if (this._nodesLayer.hoveredNode !== null) {
+    if (this._nodesLayer && this._nodesLayer.hoveredNode !== null) {
       const coordinates = this._translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
       this.onEvent.emit('nodeDblClick', { node: this._nodesLayer.hoveredNode, ...coordinates, scale: this._controls.scale });
     }
   }
 
   private _onContextMenu(position: { x: number, y: number }): void {
-    if (this._nodesLayer.hoveredNode) {
+    if (this._nodesLayer && this._nodesLayer.hoveredNode) {
       const coordinates = this._translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
       this.onEvent.emit('nodeContextMenu', { node: this._nodesLayer.hoveredNode, ...coordinates, scale: this._controls.scale });
-    } else if (this._edgesLayer.hoveredEdge) {
+    } else if (this._edgesLayer && this._edgesLayer.hoveredEdge) {
       this.onEvent.emit('edgeContextMenu', { edge: this._edgesLayer.hoveredEdge, coordinates: position, scale: this._controls.scale });
     }
 
@@ -377,7 +429,7 @@ export class PretyGraph {
   private _onPan(): void {
     this._render();
 
-    if (this._nodesLayer.hoveredNode) {
+    if (this._nodesLayer && this._nodesLayer.hoveredNode) {
       const coordinates = this._translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
       this.onEvent.emit('nodeScaling', { node: this._nodesLayer.hoveredNode, ...coordinates, scale: this._controls.scale });
     } else {
@@ -396,7 +448,7 @@ export class PretyGraph {
 
     this._render();
 
-    if (this._nodesLayer.hoveredNode) {
+    if (this._nodesLayer && this._nodesLayer.hoveredNode) {
       const coordinates = this._translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
       this.onEvent.emit('nodeScaling', { node: this._nodesLayer.hoveredNode, ...coordinates, scale: this._controls.scale });
     } else {
@@ -406,23 +458,28 @@ export class PretyGraph {
 
   private _disposeRenderer(): void {
     if (this._renderer) {
-      this._renderer.clear();
+      // this._renderer.clear();
       this._renderer.renderLists.dispose();
-      this._container.removeChild(this._renderer.domElement);
+      if (this._renderer.domElement) {
+        this._container.removeChild(this._renderer.domElement);
+      }
       this._renderer.dispose();
+      this._renderer = null;
     }
   }
 
   private _translateCoordinates(x: number, y: number): any {
     const vector = new Vector3(x, y, 0);
 
-    const widthHalf = 0.5 * this._renderer.context.canvas.width;
-    const heightHalf = 0.5 * this._renderer.context.canvas.height;
+    if (this._camera && this._renderer) {
+      const widthHalf = 0.5 * this._renderer.context.canvas.width;
+      const heightHalf = 0.5 * this._renderer.context.canvas.height;
 
-    vector.project(this._camera);
+      vector.project(this._camera);
 
-    vector.x = ( vector.x * widthHalf ) + widthHalf;
-    vector.y = - ( vector.y * heightHalf ) + heightHalf;
+      vector.x = ( vector.x * widthHalf ) + widthHalf;
+      vector.y = - ( vector.y * heightHalf ) + heightHalf;
+    }
 
     return {
       x: vector.x,
@@ -457,7 +514,9 @@ export class PretyGraph {
   }
 
   private _render(): void {
-    this._renderer.render(this._scene, this._camera);
+    if (this._scene && this._camera && this._renderer) {
+      this._renderer.render(this._scene, this._camera);
+    }
   }
 
   private _indexingNodes(): void {
@@ -518,11 +577,15 @@ export class PretyGraph {
   private _animate(): void {
     const start = Date.now();
 
-    this._arrowsLayer.hide();
+    if (this._arrowsLayer) {
+      this._arrowsLayer.hide();
+    }
     if (this._labelsLayer) {
       this._labelsLayer.hide();
     }
-    this._nodesLayer.setSilent(true);
+    if (this._nodesLayer) {
+      this._nodesLayer.setSilent(true);
+    }
 
     const step = () => {
       let p = (Date.now() - start) / this.animationTime;
@@ -538,11 +601,15 @@ export class PretyGraph {
         // ADD change node positions
         this._moveNodes(true);
 
-        this._arrowsLayer.show();
+        if (this._arrowsLayer) {
+          this._arrowsLayer.show();
+        }
         if (this._labelsLayer) {
           this._labelsLayer.show();
         }
-        this._nodesLayer.setSilent(false);
+        if (this._nodesLayer) {
+          this._nodesLayer.setSilent(false);
+        }
 
         this._render();
       } else {

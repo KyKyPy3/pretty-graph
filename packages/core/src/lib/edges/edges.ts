@@ -30,9 +30,9 @@ export class EdgesLayer extends EventDispatcher {
 
   private _linePickingMesh!: Line2;
 
-  private _pickingLineScene!: Scene;
+  private _pickingLineScene!: Scene | null;
 
-  private _pickingTexture!: WebGLRenderTarget;
+  private _pickingTexture!: WebGLRenderTarget | null;
 
   private _hoveredEdge: any = null;
 
@@ -59,7 +59,9 @@ export class EdgesLayer extends EventDispatcher {
       this._lineMaterial.needsUpdate = true;
     }
 
-    this._pickingTexture.setSize(this._graph._container.clientWidth, this._graph._container.clientHeight);
+    if (this._pickingTexture) {
+      this._pickingTexture.setSize(this._graph._container.clientWidth, this._graph._container.clientHeight);
+    }
   }
 
   public onScale(scale: number): void {
@@ -68,6 +70,7 @@ export class EdgesLayer extends EventDispatcher {
   }
 
   public draw(): void {
+    this._disposeInternal();
     const linesData = this._constructLines(this._graph.edges);
 
     this._constructMesh(linesData);
@@ -82,29 +85,21 @@ export class EdgesLayer extends EventDispatcher {
   }
 
   public dispose(): void {
-    if (this._lineMesh) {
-      this._graph._scene.remove(this._lineMesh);
-    }
+    this._disposeInternal();
 
-    if (this._linePickingMesh) {
-      this._pickingLineScene.remove(this._linePickingMesh);
-    }
-
-    if (this._lineMaterial) {
-      this._lineMaterial.dispose();
-    }
-
-    if (this._lineGeometry) {
-      this._lineGeometry.dispose();
-    }
-
-    if (this._linesPickingGeometry) {
-      this._linesPickingGeometry.dispose();
+    if (this._pickingLineScene) {
+      (this._pickingLineScene as any).dispose();
+      this._pickingLineScene = null;
     }
 
     if (this._pickingTexture) {
       this._pickingTexture.dispose();
+      this._pickingTexture = null;
     }
+
+    this._graph = null;
+    this._hoveredEdge = null;
+    this._hoveredEdgeID = -1;
   }
 
   public _setEdgeSize(size: number): void {
@@ -257,8 +252,42 @@ export class EdgesLayer extends EventDispatcher {
     this._linePickingMesh = new Line2(this._linesPickingGeometry, this._linePickingMaterial);
     this._linePickingMesh.computeLineDistances();
 
-    this._pickingLineScene.add(this._linePickingMesh);
-    this._pickingLineScene.updateMatrixWorld(true);
+    if (this._pickingLineScene) {
+      this._pickingLineScene.add(this._linePickingMesh);
+      this._pickingLineScene.updateMatrixWorld(true);
+    }
+  }
+
+  private _disposeInternal(): void {
+    if (this._lineGeometry) {
+      this._lineGeometry.dispose();
+      this._lineGeometry = null;
+    }
+
+    if (this._linesPickingGeometry) {
+      this._linesPickingGeometry.dispose();
+      this._linesPickingGeometry = null;
+    }
+
+    if (this._linePickingMaterial) {
+      this._linePickingMaterial.dispose();
+      this._linePickingMaterial = null;
+    }
+
+    if (this._lineMaterial) {
+      this._lineMaterial.dispose();
+      this._lineMaterial = null;
+    }
+
+    if (this._linePickingMesh && this._pickingLineScene) {
+      this._pickingLineScene.remove(this._linePickingMesh);
+      this._linePickingMesh = null;
+    }
+
+    if (this._lineMesh && this._graph) {
+      this._graph._scene.remove(this._lineMesh);
+      this._lineMesh = null;
+    }
   }
 
   private _constructLines(links: any[]): any {

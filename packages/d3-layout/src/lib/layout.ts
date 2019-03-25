@@ -38,5 +38,8 @@ export class Layout {
 
   public destroy(): void {
     this._simulation.stop();
+    this._simulation = null;
+    this._links = [];
+    this._nodes = [];
   }
 }

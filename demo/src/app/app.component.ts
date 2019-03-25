@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, OnInit } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnInit, NgZone } from '@angular/core';
 
 import { PretyGraph } from '@pretty-graph/core';
 import { D3Layout } from '@pretty-graph/d3-layout';
@@ -28,112 +28,118 @@ export class AppComponent implements OnInit {
 
   private _activeNode: any;
 
+  constructor(
+    private _zone: NgZone
+  ) {}
+
   ngOnInit() {
 
   }
 
   public initGraph(): void {
-    this._prepareGraphData({ nodes: graphMini.nodes, links: graphMini.links });
-    const dimensions = this._graphContainer.nativeElement.getBoundingClientRect();
+    this._zone.runOutsideAngular(() => {
+      this._prepareGraphData({ nodes: graphMini.nodes, links: graphMini.links });
+      const dimensions = this._graphContainer.nativeElement.getBoundingClientRect();
 
-    this._graph = new PretyGraph({
-      container: this._graphContainer.nativeElement,
-      controls: PrettyGraphControls,
-      // showLabels: true
-    });
-
-    this._graph.onEvent.on('nodeContextMenu', (data) => {
-      console.log(data);
-    });
-
-    this._graph.onEvent.on('edgeContextMenu', (data) => {
-      console.log(data);
-    });
-
-    this._graph.onEvent.on('nodeDblClick', (data) => {
-      console.log('Double click', data);
-    });
-
-    this._graph.onEvent.on('workspaceClick', () => {
-      console.log('Workspace click');
-    });
-
-    this._graph.onEvent.on('workspaceViewChanged', () => {
-      if (this._activeNode) {
-        const node = this._graph.getNodeByID(this._activeNode.id);
-
-        const d = this._tooltipEl.nativeElement.getBoundingClientRect();
-        this._tooltipEl.nativeElement.style.left = node.x - d.width / 2 + 'px';
-        this._tooltipEl.nativeElement.style.top = node.y - (node.node.size / 2) * 7 * node.scale - d.height + 'px';
-      }
-    });
-
-    this._graph.onEvent.on('nodeMoving', (data) => {
-      const d = this._tooltipEl.nativeElement.getBoundingClientRect();
-      this._tooltipEl.nativeElement.style.left = data.x - d.width / 2 + 'px';
-      this._tooltipEl.nativeElement.style.top = data.y - (data.node.size / 2) * 7 * data.scale - d.height + 'px';
-    });
-
-    this._graph.onEvent.on('nodeScaling', (data) => {
-      const d = this._tooltipEl.nativeElement.getBoundingClientRect();
-      this._tooltipEl.nativeElement.style.left = data.x - d.width / 2 + 'px';
-      this._tooltipEl.nativeElement.style.top = data.y - (data.node.size / 2) * 7 * data.scale - d.height + 'px';
-    });
-
-    this._graph.onEvent.on('nodeHover', (data) => {
-      this._activeNode = data.node;
-      this._tooltipEl.nativeElement.innerHTML = data.node.name || data.node.id.split(':').pop();
-      const d = this._tooltipEl.nativeElement.getBoundingClientRect();
-      this._tooltipEl.nativeElement.style.left = data.x - d.width / 2 + 'px';
-      this._tooltipEl.nativeElement.style.top = data.y - (data.node.size / 2) * 7 * data.scale - d.height + 'px';
-    });
-
-    this._graph.onEvent.on('nodeUnhover', () => {
-      this._tooltipEl.nativeElement.style.left = -10000 + 'px';
-    });
-
-    this._graph.onEvent.on('edgeHover', (data) => {
-      this._tooltipEl.nativeElement.innerHTML = `
-        ${data.edge.source.name || data.edge.source.id.split(':').pop()}
-        -
-        ${data.edge.target.name || data.edge.target.id.split(':').pop()}
-      `;
-      const d = this._tooltipEl.nativeElement.getBoundingClientRect();
-      this._tooltipEl.nativeElement.style.left = data.x - d.width / 2 + 'px';
-      this._tooltipEl.nativeElement.style.top = data.y - d.height - 20 + 'px';
-    });
-
-    this._graph.onEvent.on('edgeUnhover', () => {
-      this._tooltipEl.nativeElement.style.left = -10000 + 'px';
-    });
-
-    this._agent = new D3Layout({
-      useWorker: true
-    });
-
-    this._agent.onEvent.on('tick', (progress) => {
-      console.log(progress);
-    });
-
-    this._agent.onEvent.on('end', (data) => {
-      const { nodes, links } = data;
-
-      this._graph.setData({
-        nodes: nodes,
-        links: links,
-        center: 1044
-      }, {
-        animate: true
+      this._graph = new PretyGraph({
+        container: this._graphContainer.nativeElement,
+        controls: PrettyGraphControls,
+        // showLabels: true
       });
-    });
 
-    this._agent.init({
-      height: dimensions.height,
-      width: dimensions.width,
-      nodes: this._nodes,
-      links: this._links
+      this._graph.onEvent.on('nodeContextMenu', (data) => {
+        console.log(data);
+      });
+
+      this._graph.onEvent.on('edgeContextMenu', (data) => {
+        console.log(data);
+      });
+
+      this._graph.onEvent.on('nodeDblClick', (data) => {
+        console.log('Double click', data);
+      });
+
+      this._graph.onEvent.on('workspaceClick', () => {
+        console.log('Workspace click');
+      });
+
+      this._graph.onEvent.on('workspaceViewChanged', () => {
+        if (this._activeNode) {
+          const node = this._graph.getNodeByID(this._activeNode.id);
+
+          const d = this._tooltipEl.nativeElement.getBoundingClientRect();
+          this._tooltipEl.nativeElement.style.left = node.x - d.width / 2 + 'px';
+          this._tooltipEl.nativeElement.style.top = node.y - (node.node.size / 2) * 7 * node.scale - d.height + 'px';
+        }
+      });
+
+      this._graph.onEvent.on('nodeMoving', (data) => {
+        const d = this._tooltipEl.nativeElement.getBoundingClientRect();
+        this._tooltipEl.nativeElement.style.left = data.x - d.width / 2 + 'px';
+        this._tooltipEl.nativeElement.style.top = data.y - (data.node.size / 2) * 7 * data.scale - d.height + 'px';
+      });
+
+      this._graph.onEvent.on('nodeScaling', (data) => {
+        const d = this._tooltipEl.nativeElement.getBoundingClientRect();
+        this._tooltipEl.nativeElement.style.left = data.x - d.width / 2 + 'px';
+        this._tooltipEl.nativeElement.style.top = data.y - (data.node.size / 2) * 7 * data.scale - d.height + 'px';
+      });
+
+      this._graph.onEvent.on('nodeHover', (data) => {
+        this._activeNode = data.node;
+        this._tooltipEl.nativeElement.innerHTML = data.node.name || data.node.id.split(':').pop();
+        const d = this._tooltipEl.nativeElement.getBoundingClientRect();
+        this._tooltipEl.nativeElement.style.left = data.x - d.width / 2 + 'px';
+        this._tooltipEl.nativeElement.style.top = data.y - (data.node.size / 2) * 7 * data.scale - d.height + 'px';
+      });
+
+      this._graph.onEvent.on('nodeUnhover', () => {
+        this._tooltipEl.nativeElement.style.left = -10000 + 'px';
+      });
+
+      this._graph.onEvent.on('edgeHover', (data) => {
+        this._tooltipEl.nativeElement.innerHTML = `
+          ${data.edge.source.name || data.edge.source.id.split(':').pop()}
+          -
+          ${data.edge.target.name || data.edge.target.id.split(':').pop()}
+        `;
+        const d = this._tooltipEl.nativeElement.getBoundingClientRect();
+        this._tooltipEl.nativeElement.style.left = data.x - d.width / 2 + 'px';
+        this._tooltipEl.nativeElement.style.top = data.y - d.height - 20 + 'px';
+      });
+
+      this._graph.onEvent.on('edgeUnhover', () => {
+        this._tooltipEl.nativeElement.style.left = -10000 + 'px';
+      });
+
+      this._agent = new D3Layout({
+        useWorker: true
+      });
+
+      this._agent.onEvent.on('tick', (progress) => {
+        console.log(progress);
+      });
+
+      this._agent.onEvent.on('end', (data) => {
+        const { nodes, links } = data;
+
+        this._graph.setData({
+          nodes: nodes,
+          links: links,
+          center: 1044
+        }, {
+          // animate: true
+        });
+      });
+
+      this._agent.init({
+        height: dimensions.height,
+        width: dimensions.width,
+        nodes: this._nodes,
+        links: this._links
+      });
+      this._agent.calculate();
     });
-    this._agent.calculate();
   }
 
   public destroyGraph(): void {
@@ -142,20 +148,27 @@ export class AppComponent implements OnInit {
   }
 
   public addNewData(): void {
-    const dimensions = this._graphContainer.nativeElement.getBoundingClientRect();
-    this._prepareGraphData({ nodes: graphSmall.nodes, links: graphSmall.links });
-    this._agent.init({
-      height: dimensions.height,
-      width: dimensions.width,
-      nodes: this._nodes,
-      links: this._links
+    this._zone.runOutsideAngular(() => {
+      const dimensions = this._graphContainer.nativeElement.getBoundingClientRect();
+      this._prepareGraphData({ nodes: graphSmall.nodes, links: graphSmall.links });
+      this._agent.init({
+        height: dimensions.height,
+        width: dimensions.width,
+        nodes: this._nodes,
+        links: this._links
+      });
+      this._agent.calculate();
     });
-    this._agent.calculate();
   }
 
   public fullscreen(): void {
+    debugger
     this._agent.destroy();
     this._graph.destroy();
+    // this._agent = null;
+    // this._graph = null;
+    this._links = [];
+    this._nodes = [];
   }
 
   private _prepareGraphData(data): any {

@@ -80,10 +80,13 @@ export class PrettyGraphControls extends EventDispatcher {
       .on('mouseup', null)
       .on('dblclick', null)
       .on('click', null)
+      .on('wheel', null)
       .on('.zoom', null);
   }
 
-  private _onRotate() {}
+  private _onRotate(): void {
+    console.log('rotate');
+  }
 
   private _onContextMenu(): void {
     event.preventDefault();

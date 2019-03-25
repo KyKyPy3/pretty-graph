@@ -13,6 +13,7 @@ export declare class PrettyGraphControls extends EventDispatcher {
         y: number;
     }): void;
     dispose(): void;
+    private _onRotate;
     private _onContextMenu;
     private _onMouseMove;
     private _onMouseDown;

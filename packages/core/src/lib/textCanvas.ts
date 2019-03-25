@@ -2,7 +2,7 @@ import { CanvasTexture, EventDispatcher } from 'three';
 
 export class TextCanvas extends EventDispatcher {
 
-  public canvas: HTMLCanvasElement;
+  public canvas: HTMLCanvasElement | null;
 
   public textureMap: CanvasTexture;
 
@@ -40,7 +40,12 @@ export class TextCanvas extends EventDispatcher {
   }
 
   public dispose(): void {
+    this._textOptionsToIndex = {};
     this.textureMap.dispose();
+    if (this._ctx) {
+      this._ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+    }
+    this.canvas = null;
   }
 
   public drawText(text: string, options: any): number {

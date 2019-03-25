@@ -28,4 +28,5 @@ export declare class NodesLayer {
     onScale(scale: number): void;
     onResize(): void;
     dispose(): void;
+    private _disposeInternal;
 }

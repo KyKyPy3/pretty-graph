@@ -16,11 +16,11 @@ import { fragmentShader, vertexShader } from './shaders';
 
 export class ArrowsLayer extends EventDispatcher {
 
-  private _arrowGeometry!: BufferGeometry;
+  private _arrowGeometry!: BufferGeometry | null;
 
-  private _arrowMesh!: Mesh;
+  private _arrowMesh!: Mesh | null;
 
-  private _arrowMaterial!: ShaderMaterial;
+  private _arrowMaterial!: ShaderMaterial | null;
 
   private _graph: any;
 
@@ -31,11 +31,15 @@ export class ArrowsLayer extends EventDispatcher {
   }
 
   public hide(): void {
-    this._arrowMesh.visible = false;
+    if (this._arrowMesh) {
+      this._arrowMesh.visible = false;
+    }
   }
 
   public show(): void {
-    this._arrowMesh.visible = true;
+    if (this._arrowMesh) {
+      this._arrowMesh.visible = true;
+    }
   }
 
   public recalculate(): void {
@@ -51,6 +55,8 @@ export class ArrowsLayer extends EventDispatcher {
   }
 
   public draw(): void {
+    this._clearInternalState();
+
     this._arrowGeometry = new BufferGeometry();
 
     const { vertices, colors } = this._calculateArrowData();
@@ -77,16 +83,25 @@ export class ArrowsLayer extends EventDispatcher {
   }
 
   public dispose(): void {
+    this._clearInternalState();
+
+    this._graph = null;
+  }
+
+  private _clearInternalState(): void {
     if (this._arrowMesh) {
       this._graph._scene.remove(this._arrowMesh);
+      this._arrowMesh = null;
     }
 
     if (this._arrowMaterial) {
       this._arrowMaterial.dispose();
+      this._arrowMaterial = null;
     }
 
     if (this._arrowGeometry) {
       this._arrowGeometry.dispose();
+      this._arrowGeometry = null;
     }
   }
 

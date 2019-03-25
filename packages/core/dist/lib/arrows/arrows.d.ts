@@ -10,6 +10,7 @@ export declare class ArrowsLayer extends EventDispatcher {
     recalculate(): void;
     draw(): void;
     dispose(): void;
+    private _clearInternalState;
     private _calculateArrowData;
     private _calculateArrowVertices;
     private _computeBoundingSphere;
