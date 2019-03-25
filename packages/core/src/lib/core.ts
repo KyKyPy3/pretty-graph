@@ -70,6 +70,26 @@ export class PretyGraph {
 
   private _resizeHandler: any;
 
+  // Listeners
+
+  private _onScaleListener: any;
+
+  private _onPanListener: any;
+
+  private _onMouseMoveListener: any;
+
+  private _onContextMenuListener: any;
+
+  private _onDblClickListener: any;
+
+  private _onClickListener: any;
+
+  private _onMouseDownListener: any;
+
+  private _onMouseUpListener: any;
+
+  private _onRotateListener: any;
+
   constructor(options: GraphOptions) {
     this.options = options;
 
@@ -89,23 +109,7 @@ export class PretyGraph {
     this._controls = new options.controls(this._camera, this._container);
     this._controls.init();
 
-    this._controls.addEventListener('scale', this._onScale.bind(this));
-
-    this._controls.addEventListener('pan', this._onPan.bind(this));
-
-    this._controls.addEventListener('mousemove', this._onMouseMove.bind(this));
-
-    this._controls.addEventListener('contextmenu', this._onContextMenu.bind(this));
-
-    this._controls.addEventListener('dblclick', this._onDblClick.bind(this));
-
-    this._controls.addEventListener('click', this._onClick.bind(this));
-
-    this._controls.addEventListener('mousedown', this._onMouseDown.bind(this));
-
-    this._controls.addEventListener('mouseup', this._onMouseUp.bind(this));
-
-    this._controls.addEventListener('rotate', this._onRotate.bind(this));
+    this._addControlsListeners();
 
     this._render();
 
@@ -258,6 +262,8 @@ export class PretyGraph {
   public destroy(): void {
     window.removeEventListener('resize', this._resizeHandler);
 
+    this._removeControlsListeners();
+
     if (this._labelsLayer) {
       this._labelsLayer.dispose();
       this._labelsLayer = null;
@@ -279,12 +285,6 @@ export class PretyGraph {
     }
 
     if (this._scene) {
-      // while (this._scene.children.length > 0) {
-      //   const obj = this._scene.children[0];
-      //   this._scene.remove(obj);
-      //   this.disposeHierarchy(obj, this.disposeNode);
-      // }
-
       (this._scene as any).dispose();
     }
 
@@ -302,6 +302,47 @@ export class PretyGraph {
     this._center = null;
     this._indexedNodes = {};
     this._scene = null;
+  }
+
+  private _addControlsListeners(): void {
+    this._onScaleListener = this._onScale.bind(this);
+    this._controls.addEventListener('scale', this._onScaleListener);
+
+    this._onPanListener = this._onPan.bind(this);
+    this._controls.addEventListener('pan', this._onPanListener);
+
+    this._onMouseMoveListener = this._onMouseMove.bind(this);
+    this._controls.addEventListener('mousemove', this._onMouseMoveListener);
+
+    this._onContextMenuListener = this._onContextMenu.bind(this);
+    this._controls.addEventListener('contextmenu', this._onContextMenuListener);
+
+    this._onDblClickListener = this._onDblClick.bind(this);
+    this._controls.addEventListener('dblclick', this._onDblClickListener);
+
+    this._onClickListener = this._onClick.bind(this);
+    this._controls.addEventListener('click', this._onClickListener);
+
+    this._onMouseDownListener = this._onMouseDown.bind(this);
+    this._controls.addEventListener('mousedown', this._onMouseDownListener);
+
+    this._onMouseUpListener = this._onMouseUp.bind(this);
+    this._controls.addEventListener('mouseup', this._onMouseUpListener);
+
+    this._onRotateListener = this._onRotate.bind(this);
+    this._controls.addEventListener('rotate', this._onRotateListener);
+  }
+
+  private _removeControlsListeners(): void {
+    this._controls.removeEventListener('scale', this._onScaleListener);
+    this._controls.removeEventListener('pan', this._onPanListener);
+    this._controls.removeEventListener('mousemove', this._onMouseMoveListener);
+    this._controls.removeEventListener('contextmenu', this._onContextMenuListener);
+    this._controls.removeEventListener('dblclick', this._onDblClickListener);
+    this._controls.removeEventListener('click', this._onClickListener);
+    this._controls.removeEventListener('mousedown', this._onMouseDownListener);
+    this._controls.removeEventListener('mouseup', this._onMouseUpListener);
+    this._controls.removeEventListener('rotate', this._onRotateListener);
   }
 
   private _onRotate({ delta }): void {

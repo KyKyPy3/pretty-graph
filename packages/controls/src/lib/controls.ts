@@ -71,7 +71,7 @@ export class PrettyGraphControls extends EventDispatcher {
   }
 
   public dispose(): void {
-    this.removeEventListener('resize', this._onResize);
+    window.removeEventListener('resize', this._onResize);
 
     this._selection
       .on('contextmenu', null)
