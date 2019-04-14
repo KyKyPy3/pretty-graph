@@ -34,13 +34,12 @@
   "dependencies": {
     "d3-selection": "1.4.0",
     "d3-zoom": "1.7.3",
-    "three": "0.102.1"
+    "three": "0.103.0"
   },
   "devDependencies": {
     "@types/d3-selection": "1.4.1",
-    "@types/three": "0.93.27",
     "ts-loader": "5.3.3",
-    "webpack": "4.29.6",
+    "webpack": "4.30.0",
     "webpack-cli": "3.3.0"
   },
   "gitHead": "ee0b8028acc1d64c4e5864ee38cd66935e95b6fd"

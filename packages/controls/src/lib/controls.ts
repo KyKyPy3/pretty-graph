@@ -85,7 +85,9 @@ export class PrettyGraphControls extends EventDispatcher {
   }
 
   private _onRotate(): void {
-    console.log('rotate');
+    this.dispatchEvent({
+      type: 'rotate'
+    });
   }
 
   private _onContextMenu(): void {
