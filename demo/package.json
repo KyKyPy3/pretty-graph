@@ -19,9 +19,9 @@
     "@angular/platform-browser": "7.2.13",
     "@angular/platform-browser-dynamic": "7.2.13",
     "@angular/router": "7.2.13",
-    "@pretty-graph/controls": "0.0.20",
-    "@pretty-graph/core": "0.0.37",
-    "@pretty-graph/d3-layout": "0.0.17",
+    "@pretty-graph/controls": "0.0.23",
+    "@pretty-graph/core": "0.0.41",
+    "@pretty-graph/d3-layout": "0.0.19",
     "d3-selection": "1.4.0",
     "core-js": "3.0.1",
     "rxjs": "6.4.0",
@@ -48,6 +48,6 @@
     "protractor": "5.4.2",
     "ts-node": "8.0.3",
     "tslint": "5.15.0",
-    "typescript": "3.3.4000"
+    "typescript": "3.2.2"
   }
 }
