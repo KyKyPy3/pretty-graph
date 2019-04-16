@@ -18,7 +18,7 @@ export class Layout {
 
     this._simulation = forceSimulation(this._nodes)
       .force('charge', forceManyBody().strength(-1000))
-      .force('link', forceLink(this._links).id((d: any) => d.id).distance(300))
+      .force('link', forceLink(this._links).id((d: any) => d.id).distance(options.linkDistance || 300))
       .force('center', forceCenter())
       .force('collision', forceCollide().radius((d: any) => {
         return d.size;

@@ -38,6 +38,7 @@
   },
   "devDependencies": {
     "@types/d3-selection": "1.4.1",
+    "@types/three": "0.103.2",
     "ts-loader": "5.3.3",
     "webpack": "4.30.0",
     "webpack-cli": "3.3.0"
