@@ -19,7 +19,7 @@
     "build:prod": "webpack --profile --progress --env.production"
   },
   "dependencies": {
-    "three": "0.103.0"
+    "three": "0.102.1"
   },
   "devDependencies": {
     "ts-loader": "5.3.3",
