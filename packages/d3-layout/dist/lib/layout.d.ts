@@ -4,6 +4,7 @@ export declare class Layout {
     private _simulation;
     private _nodes;
     private _links;
+    private _options;
     init(options: any): void;
     calculate(): void;
     destroy(): void;

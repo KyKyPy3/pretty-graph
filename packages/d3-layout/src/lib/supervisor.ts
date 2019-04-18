@@ -29,6 +29,7 @@ export class D3Layout {
     if (this._options.useWorker && this._worker) {
       this._worker.postMessage({
         height: data.height || 0,
+        layoutOptions: this._options.layoutOptions,
         links: data.links || [],
         name: 'init',
         nodes: data.nodes || [],
@@ -49,9 +50,10 @@ export class D3Layout {
       if (this._layout) {
         this._layout.init({
           height: data.height || 0,
+          layoutOptions: this._options.layoutOptions,
           links: data.links || [],
           nodes: data.nodes || [],
-          width: data.width || 0
+          width: data.width || 0,
         });
 
         this._layout.onEvent.on('tick', (percent) => {

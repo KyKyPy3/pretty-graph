@@ -12,13 +12,16 @@ export class Layout {
 
   private _links: any[] = [];
 
+  private _options: any = {};
+
   public init(options: any): void {
     this._nodes = options.nodes;
     this._links = options.links;
+    this._options = options.layoutOptions;
 
     this._simulation = forceSimulation(this._nodes)
-      .force('charge', forceManyBody().strength(-1000))
-      .force('link', forceLink(this._links).id((d: any) => d.id).distance(options.linkDistance || 300))
+      .force('charge', forceManyBody().strength(this._options.mainBodyStrength))
+      .force('link', forceLink(this._links).id((d: any) => d.id).distance(this._options.linkDistance))
       .force('center', forceCenter())
       .force('collision', forceCollide().radius((d: any) => {
         return d.size;
