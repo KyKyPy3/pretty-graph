@@ -1,6 +1,6 @@
 {
   "name": "@pretty-graph/d3-layout",
-  "version": "0.0.20",
+  "version": "0.0.21",
   "description": "Pretty graph d3 force layout package",
   "author": "Efremenko Roman <Roman.Efremenko@infowatch.com>",
   "keywords": [
