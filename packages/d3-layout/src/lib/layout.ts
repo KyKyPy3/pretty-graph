@@ -20,6 +20,7 @@ export class Layout {
     this._options = options.layoutOptions;
 
     let mainBody = forceManyBody();
+    let fLink = forceLink(this._links).id((d: any) => d.id);
 
     if (this._options.mainBody.strength) {
       mainBody = mainBody.strength(this._options.mainBody.strength);
@@ -33,9 +34,13 @@ export class Layout {
       mainBody = mainBody.distanceMax(this._options.mainBody.distanceMax)
     }
 
+    if (this._options.linkDistance) {
+      fLink = fLink.distance(this._options.linkDistance)
+    }
+
     this._simulation = forceSimulation(this._nodes)
       .force('charge', mainBody)
-      .force('link', forceLink(this._links).id((d: any) => d.id).distance(this._options.linkDistance))
+      .force('link', fLink)
       .force('center', forceCenter())
       .force('collision', forceCollide().radius((d: any) => {
         return d.size;
