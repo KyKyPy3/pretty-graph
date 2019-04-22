@@ -2,14 +2,21 @@ export interface LayoutOptions {
   useWorker?: boolean;
   layoutOptions?: {
     linkDistance?: number;
-    mainBodyStrength?: number;
+    mainBody: {
+      strength?: number;
+      distanceMin?: number;
+      distanceMax?: number;
+    }
   }
 }
 
 export const defaultOptions = {
   layoutOptions: {
     linkDistance: 300,
-    mainBodyStrength: -1000
+    mainBody: {
+      distanceMin: 1,
+      strength: -1000
+    }
   },
   useWebworker: true
 }
