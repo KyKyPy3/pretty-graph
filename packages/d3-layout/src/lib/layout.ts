@@ -19,12 +19,22 @@ export class Layout {
     this._links = options.links;
     this._options = options.layoutOptions;
 
+    let mainBody = forceManyBody();
+
+    if (this._options.mainBody.strength) {
+      mainBody = mainBody.strength(this._options.mainBody.strength);
+    }
+
+    if (this._options.mainBody.distanceMin) {
+      mainBody = mainBody.distanceMin(this._options.mainBody.distanceMin);
+    }
+
+    if (this._options.mainBody.distanceMax) {
+      mainBody = mainBody.distanceMax(this._options.mainBody.distanceMax)
+    }
+
     this._simulation = forceSimulation(this._nodes)
-      .force('charge', forceManyBody()
-        .strength(this._options.mainBody.strength)
-        .distanceMin(this._options.mainBody.distanceMin)
-        .distanceMax(this._options.mainBody.distanceMax)
-      )
+      .force('charge', mainBody)
       .force('link', forceLink(this._links).id((d: any) => d.id).distance(this._options.linkDistance))
       .force('center', forceCenter())
       .force('collision', forceCollide().radius((d: any) => {
