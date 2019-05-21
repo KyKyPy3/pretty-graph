@@ -236,26 +236,21 @@ export class PretyGraph {
 
     if (this._camera && this._nodesLayer) {
       const size = this._nodesLayer.getSize();
-      console.log(size);
 
-      const maxDim = Math.max(size.x, size.y);
+      const maxDim = Math.max(size.y, size.x);
 
-      console.log(maxDim);
-      console.log("near: ", maxDim / 100);
-      console.log("far: ", maxDim * 10);
-
-      this._camera.near = 100;
+      this._camera.near = 150;
       this._camera.far = maxDim * 10;
       this._camera.updateProjectionMatrix();
 
-      const fov = this._camera.fov / 2 * Math.PI / 180;
+      // const fov = this._camera.fov / 2 * Math.PI / 180;
 
-      const cameraZ = Math.abs(maxDim / (2 * Math.tan(fov)));
+      // const cameraZ = Math.abs(maxDim / (2 * Math.tan(fov) * (this._container.clientWidth / this._container.clientHeight)));
 
-      console.log(this._camera.position.z);
-      console.log(cameraZ);
+      // console.log("Camera z", this._camera.position.z);
+      // console.log("New canera z", cameraZ);
 
-      this._controls.setCameraPosition(cameraZ);
+      this._controls.setCameraPosition(1000);
     }
   }
 

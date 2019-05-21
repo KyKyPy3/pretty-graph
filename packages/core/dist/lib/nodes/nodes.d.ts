@@ -1,3 +1,4 @@
+import { Vector3 } from "three";
 export declare class NodesLayer {
     hoveredNode: any;
     private _color;
@@ -17,9 +18,11 @@ export declare class NodesLayer {
     private _pickingTexture;
     private _imageLoaded;
     private _silent;
+    private _size;
     constructor(graph: any);
     setSilent(silent: boolean): void;
     draw(): void;
+    getSize(): Vector3;
     setNodeColor(nodeColor: any): void;
     setNodePosition(newPos: any): void;
     testNode(position: any): boolean;
