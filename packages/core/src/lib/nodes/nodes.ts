@@ -1,4 +1,5 @@
 import {
+  Box3,
   BufferAttribute,
   BufferGeometry,
   Color,
@@ -10,6 +11,7 @@ import {
   RawShaderMaterial,
   Scene,
   Vector2,
+  Vector3,
   VertexColors,
   WebGLRenderTarget
 } from "three";
@@ -73,6 +75,8 @@ export class NodesLayer {
   private _imageLoaded: (event: ThreeEvent) => void;
 
   private _silent: boolean = false;
+
+  private _size: Vector3 = new Vector3();
 
   constructor(graph: any) {
     this._graph = graph;
@@ -148,6 +152,10 @@ export class NodesLayer {
         );
       }
     }
+
+    const boundingBox = new Box3();
+    boundingBox.setFromArray(translateArray);
+    boundingBox.getSize(this._size);
 
     this._nodesBufferGeometry = new BufferGeometry();
     this._nodesInstancedGeometry = new InstancedBufferGeometry();
@@ -239,6 +247,10 @@ export class NodesLayer {
       this._pickingNodesScene.add(this._nodesPickingsMesh);
       this._pickingNodesScene.updateMatrixWorld(true);
     }
+  }
+
+  public getSize(): Vector3 {
+    return this._size;
   }
 
   public setNodeColor(nodeColor: any): void {

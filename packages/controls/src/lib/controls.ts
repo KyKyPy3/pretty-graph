@@ -30,7 +30,6 @@ export class PrettyGraphControls extends EventDispatcher {
 
   public init(): void {
     this._zoom = zoom()
-      .scaleExtent([this._getScaleFromZ(this._camera.far), this._getScaleFromZ(10)])
       .filter(() => this.enabled && !event.ctrlKey)
       .on('zoom', () => this._zoomHandler(event.transform));
 
@@ -45,20 +44,29 @@ export class PrettyGraphControls extends EventDispatcher {
       .on('wheel', this._onRotate.bind(this))
       .on('dblclick.zoom', null);
 
-    this.scale = this._getScaleFromZ(1000);
-    const dimensions = this._selection.node().getBoundingClientRect();
-    const initialTransform = zoomIdentity.translate(dimensions.width / 2, dimensions.height / 2).scale(this.scale);
-    this._zoom.transform(this._selection, initialTransform);
-
-    // Set camera position
-    this._camera.position.set(0, 1, 1000);
-    this._camera.lookAt(0, 0, 0);
-
     this._onResize = () => {
       this._zoomHandler(zoomTransform(this._selection.node()));
     }
 
     window.addEventListener('resize', this._onResize, false);
+  }
+
+  public setCameraPosition(z: number): void {
+    // Set camera position
+    this._camera.position.set(0, 0, z);
+    this._camera.lookAt(0, 0, 0);
+
+    this._zoom.scaleExtent([this._getScaleFromZ(this._camera.far), this._getScaleFromZ(this._camera.near + 1)])
+
+    this.scale = this._getScaleFromZ(z);
+    const dimensions = this._selection.node().getBoundingClientRect();
+    const initialTransform = zoomIdentity.translate(dimensions.width / 2, dimensions.height / 2).scale(this.scale);
+    this._zoom.transform(this._selection, initialTransform);
+
+    this.dispatchEvent({
+      scale: this.scale,
+      type: 'scale'
+    });
   }
 
   public setTransform(position: { x: number, y: number }): void {
@@ -171,6 +179,8 @@ export class PrettyGraphControls extends EventDispatcher {
         const x = -(transform.x - dimensions.width / 2) / this.scale;
         const y = (transform.y - dimensions.height / 2) / this.scale;
         const z = this._getZFromScale(this.scale);
+
+        console.log(z);
 
         this._camera.position.set(x, y, z);
 

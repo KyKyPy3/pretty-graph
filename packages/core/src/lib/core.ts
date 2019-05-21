@@ -233,6 +233,30 @@ export class PretyGraph {
 
       this._render();
     }
+
+    if (this._camera && this._nodesLayer) {
+      const size = this._nodesLayer.getSize();
+      console.log(size);
+
+      const maxDim = Math.max(size.x, size.y);
+
+      console.log(maxDim);
+      console.log("near: ", maxDim / 100);
+      console.log("far: ", maxDim * 10);
+
+      this._camera.near = 100;
+      this._camera.far = maxDim * 10;
+      this._camera.updateProjectionMatrix();
+
+      const fov = this._camera.fov / 2 * Math.PI / 180;
+
+      const cameraZ = Math.abs(maxDim / (2 * Math.tan(fov)));
+
+      console.log(this._camera.position.z);
+      console.log(cameraZ);
+
+      this._controls.setCameraPosition(cameraZ);
+    }
   }
 
   public getNodeByID(nodeID: string): any {
