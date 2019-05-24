@@ -239,8 +239,14 @@ export class PretyGraph {
 
       const maxDim = Math.max(size.y, size.x);
 
-      this._camera.near = 150;
-      this._camera.far = maxDim * 10;
+      if (maxDim) {
+        this._camera.near = 150;
+        this._camera.far = maxDim * 10;
+      } else {
+        this._camera.near = 150;
+        this._camera.far = 1000;
+      }
+
       this._camera.updateProjectionMatrix();
 
       // const fov = this._camera.fov / 2 * Math.PI / 180;
