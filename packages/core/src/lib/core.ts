@@ -143,6 +143,8 @@ export class PretyGraph {
     };
 
     window.addEventListener('resize', this._resizeHandler);
+
+    this._controls.setCameraPosition(1000);
   }
 
   set options(options: GraphOptions) {
@@ -256,7 +258,7 @@ export class PretyGraph {
       // console.log("Camera z", this._camera.position.z);
       // console.log("New canera z", cameraZ);
 
-      this._controls.setCameraPosition(1000);
+      this._controls.setZoomExtent();
     }
   }
 

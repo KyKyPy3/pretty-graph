@@ -51,22 +51,19 @@ export class PrettyGraphControls extends EventDispatcher {
     window.addEventListener('resize', this._onResize, false);
   }
 
+  public setZoomExtent(): void {
+    this._zoom.scaleExtent([this._getScaleFromZ(this._camera.far - 1), this._getScaleFromZ(this._camera.near + 1)])
+  }
+
   public setCameraPosition(z: number): void {
     // Set camera position
     this._camera.position.set(0, 0, z);
     this._camera.lookAt(0, 0, 0);
 
-    this._zoom.scaleExtent([this._getScaleFromZ(this._camera.far), this._getScaleFromZ(this._camera.near + 1)])
-
     this.scale = this._getScaleFromZ(z);
     const dimensions = this._selection.node().getBoundingClientRect();
     const initialTransform = zoomIdentity.translate(dimensions.width / 2, dimensions.height / 2).scale(this.scale);
     this._zoom.transform(this._selection, initialTransform);
-
-    this.dispatchEvent({
-      scale: this.scale,
-      type: 'scale'
-    });
   }
 
   public setTransform(position: { x: number, y: number }): void {
@@ -179,8 +176,6 @@ export class PrettyGraphControls extends EventDispatcher {
         const x = -(transform.x - dimensions.width / 2) / this.scale;
         const y = (transform.y - dimensions.height / 2) / this.scale;
         const z = this._getZFromScale(this.scale);
-
-        console.log(z);
 
         this._camera.position.set(x, y, z);
 
