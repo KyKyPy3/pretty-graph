@@ -52,7 +52,11 @@ export class PrettyGraphControls extends EventDispatcher {
   }
 
   public setZoomExtent(): void {
-    this._zoom.scaleExtent([this._getScaleFromZ(this._camera.far - 1), this._getScaleFromZ(this._camera.near + 1)])
+    this._zoom.scaleExtent([this._getScaleFromZ(this._camera.far - 1), this._getScaleFromZ(this._camera.near + 1)]);
+
+    if (this._camera.position.z > this._camera.far - 1) {
+      this.setCameraPosition(this._camera.far - 1);
+    }
   }
 
   public setCameraPosition(z: number): void {
