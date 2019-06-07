@@ -47,7 +47,7 @@ export class AppComponent implements OnInit {
       this._graph = new PretyGraph({
         container: this._graphContainer.nativeElement,
         controls: PrettyGraphControls,
-        showLabels: true
+        // showLabels: true
       });
 
       this._graph.onEvent.on('nodeContextMenu', (data) => {
@@ -180,7 +180,7 @@ export class AppComponent implements OnInit {
             id: `${id}__${targetID}`,
             type: id % 10 === 0 ? 'dashed' : 'solid',
             color: 0x99A3A4,
-            size: Math.random() * (8 - 1) + 1
+            size: Math.random() * (35 - 2) + 2
           };
         })
     };
