@@ -4,9 +4,6 @@ import { PretyGraph } from '@pretty-graph/core';
 import { D3Layout } from '@pretty-graph/d3-layout';
 import { PrettyGraphControls } from '@pretty-graph/controls';
 
-import * as graphMini from '../data/before.json';
-import * as graphSmall from '../data/after.json';
-
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -28,23 +25,29 @@ export class AppComponent implements OnInit {
 
   private _activeNode: any;
 
+  private _data: any;
+
   constructor(
     private _zone: NgZone
   ) {}
 
   ngOnInit() {
+    this._data = this._generateData(300);
 
+    this.initGraph();
   }
 
   public initGraph(): void {
     this._zone.runOutsideAngular(() => {
-      this._prepareGraphData({ nodes: graphMini.nodes, links: graphMini.links });
+      this._links = this._data.links;
+      this._nodes = this._data.nodes;
+
       const dimensions = this._graphContainer.nativeElement.getBoundingClientRect();
 
       this._graph = new PretyGraph({
         container: this._graphContainer.nativeElement,
         controls: PrettyGraphControls,
-        // showLabels: true
+        showLabels: true
       });
 
       this._graph.onEvent.on('nodeContextMenu', (data) => {
@@ -128,7 +131,7 @@ export class AppComponent implements OnInit {
           links: links,
           center: 1044
         }, {
-          // animate: true
+          animate: true
         });
       });
 
@@ -145,63 +148,52 @@ export class AppComponent implements OnInit {
   public destroyGraph(): void {
     this._graph.destroy();
     this._agent.destroy();
-  }
-
-  public addNewData(): void {
-    this._zone.runOutsideAngular(() => {
-      const dimensions = this._graphContainer.nativeElement.getBoundingClientRect();
-      this._prepareGraphData({ nodes: graphSmall.nodes, links: graphSmall.links });
-      this._agent.init({
-        height: dimensions.height,
-        width: dimensions.width,
-        nodes: this._nodes,
-        links: this._links
-      });
-      this._agent.calculate();
-    });
-  }
-
-  public fullscreen(): void {
-    debugger
-    this._agent.destroy();
-    this._graph.destroy();
-    // this._agent = null;
-    // this._graph = null;
     this._links = [];
     this._nodes = [];
   }
 
-  private _prepareGraphData(data): any {
-    this._links = data.links.map((link, index) => {
-      return {
-        ...link,
-        size: 1,
-        color: 0x99A3A4,
-        type: index % 10 === 0 ? 'dashed' : 'solid'
-      };
-    });
-    this._nodes = data.nodes.map((node) => {
-      if (+node.id === 1044) {
-        return {
-          ...node,
-          img: 'assets/user.jpg',
-          color: 0x99A3A4,
-          label: 'Test label',
-          size: node.size || 5,
-          showDot: true
-        };
-      } else {
-        return {
-          ...node,
-          size: node.size || 5,
-          // img: 'assets/user.jpg',
-          img: 'assets/16_mail_c.svg',
-          color: 0x99A3A4,
-          label: 'Test label',
-          showDot: node.name ? true : false
-        };
-      }
-    });
+  private _generateData(size: number): { nodes: any[], links: any[] } {
+    return {
+      nodes: [...Array(size).keys()].map(i => {
+        const nodeSize = Math.random() * (30 - 5) + 5;
+        const label = this._getRandomString(nodeSize);
 
+        return {
+          id: i,
+          name: i,
+          label: label,
+          type: 'circle',
+          img: !(i % 2) ? 'assets/16_mail_c.svg' : 'assets/user.jpg',
+          color: 0x99A3A4,
+          size: nodeSize,
+          showDot: !(i % 2) ? true : false
+        };
+      }),
+      links: [...Array(size).keys()]
+        .filter(id => id)
+        .map(id => {
+          const targetID = Math.round(Math.random() * (id - 1));
+
+          return {
+            source: id,
+            target: targetID,
+            id: `${id}__${targetID}`,
+            type: id % 10 === 0 ? 'dashed' : 'solid',
+            color: 0x99A3A4,
+            size: Math.random() * (8 - 1) + 1
+          };
+        })
+    };
+  }
+
+  /**
+   * Generate random string with given length
+   */
+  private _getRandomString(length: number): string {
+    let s = '';
+    do { s += Math.random().toString(36).substr(2); } while (s.length < length);
+    s = s.substr(0, length);
+
+    return s;
   }
 }
