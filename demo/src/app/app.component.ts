@@ -4,9 +4,6 @@ import { PretyGraph } from '@pretty-graph/core';
 import { D3Layout } from '@pretty-graph/d3-layout';
 import { PrettyGraphControls } from '@pretty-graph/controls';
 
-import * as graphMini from '../data/before.json';
-import * as graphSmall from '../data/after.json';
-
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -14,9 +11,9 @@ import * as graphSmall from '../data/after.json';
 })
 export class AppComponent implements OnInit {
 
-  @ViewChild('graph') private _graphContainer: ElementRef;
+  @ViewChild('graph', { static: true }) private _graphContainer: ElementRef;
 
-  @ViewChild('tooltip') private _tooltipEl: ElementRef;
+  @ViewChild('tooltip', { static: true }) private _tooltipEl: ElementRef;
 
   private _links: any[] = [];
 
@@ -28,17 +25,23 @@ export class AppComponent implements OnInit {
 
   private _activeNode: any;
 
+  private _data: any = {};
+
   constructor(
     private _zone: NgZone
   ) {}
 
   ngOnInit() {
+    this._data = this._generateData(300);
 
+    this.initGraph();
   }
 
   public initGraph(): void {
     this._zone.runOutsideAngular(() => {
-      this._prepareGraphData({ nodes: graphMini.nodes, links: graphMini.links });
+      this._nodes = this._data.nodes;
+      this._links = this._data.links;
+
       const dimensions = this._graphContainer.nativeElement.getBoundingClientRect();
 
       this._graph = new PretyGraph({
@@ -99,9 +102,9 @@ export class AppComponent implements OnInit {
 
       this._graph.onEvent.on('edgeHover', (data) => {
         this._tooltipEl.nativeElement.innerHTML = `
-          ${data.edge.source.name || data.edge.source.id.split(':').pop()}
+          ${data.edge.source.name}
           -
-          ${data.edge.target.name || data.edge.target.id.split(':').pop()}
+          ${data.edge.target.name}
         `;
         const d = this._tooltipEl.nativeElement.getBoundingClientRect();
         this._tooltipEl.nativeElement.style.left = data.x - d.width / 2 + 'px';
@@ -126,9 +129,9 @@ export class AppComponent implements OnInit {
         this._graph.setData({
           nodes: nodes,
           links: links,
-          center: 1044
+          center: nodes[nodes.length / 2]
         }, {
-          // animate: true
+          animate: true
         });
       });
 
@@ -145,63 +148,44 @@ export class AppComponent implements OnInit {
   public destroyGraph(): void {
     this._graph.destroy();
     this._agent.destroy();
-  }
-
-  public addNewData(): void {
-    this._zone.runOutsideAngular(() => {
-      const dimensions = this._graphContainer.nativeElement.getBoundingClientRect();
-      this._prepareGraphData({ nodes: graphSmall.nodes, links: graphSmall.links });
-      this._agent.init({
-        height: dimensions.height,
-        width: dimensions.width,
-        nodes: this._nodes,
-        links: this._links
-      });
-      this._agent.calculate();
-    });
-  }
-
-  public fullscreen(): void {
-    debugger
-    this._agent.destroy();
-    this._graph.destroy();
-    // this._agent = null;
-    // this._graph = null;
+    this._agent = null;
+    this._graph = null;
     this._links = [];
     this._nodes = [];
   }
 
-  private _prepareGraphData(data): any {
-    this._links = data.links.map((link, index) => {
-      return {
-        ...link,
-        size: 1,
-        color: 0x99A3A4,
-        type: index % 10 === 0 ? 'dashed' : 'solid'
-      };
-    });
-    this._nodes = data.nodes.map((node) => {
-      if (+node.id === 1044) {
+  private _generateData(count: number): any {
+    return {
+      nodes: [...Array(count).keys()].map((i, index) => {
         return {
-          ...node,
-          img: 'assets/user.jpg',
+          id: i,
           color: 0x99A3A4,
-          label: 'Test label',
-          size: node.size || 5,
-          showDot: true
+          name: this._getRandomString(Math.random() * (30 - 5) + 5),
+          size: Math.random() * (30 - 5) + 5,
+          showDot: !(index % 2) ? true : false,
+          img: !(index % 10) ? 'assets/user.jpg' : 'assets/16_mail_c.svg',
+          label: this._getRandomString(Math.random() * (30 - 5) + 5)
         };
-      } else {
-        return {
-          ...node,
-          size: node.size || 5,
-          // img: 'assets/user.jpg',
-          img: 'assets/16_mail_c.svg',
-          color: 0x99A3A4,
-          label: 'Test label',
-          showDot: node.name ? true : false
-        };
-      }
-    });
+      }),
+      links: [...Array(count).keys()]
+        .filter(id => id)
+        .map((id, index) => {
+          return {
+            source: id,
+            target: Math.round(Math.random() * (id-1)),
+            color: 0x99A3A4,
+            type: !(index % 10) ? 'dashed' : 'solid',
+            size: Math.random() * (30 - 5) + 5
+          };
+      })
+    };
+  }
 
+  private _getRandomString(length: number): string {
+    var s = '';
+    do { s += Math.random().toString(36).substr(2); } while (s.length < length);
+    s = s.substr(0, length);
+
+    return s;
   }
 }

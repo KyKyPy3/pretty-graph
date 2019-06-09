@@ -303,17 +303,24 @@ export class EdgesLayer extends EventDispatcher {
     links.forEach((link, index) => {
       const angle = Math.atan2(link.target.y - link.source.y, link.target.x - link.source.x);
 
-      const sourceX = link.source.x + ((link.source.size / 2) * this._graph.nodeScalingFactor) * Math.cos(angle);
-      const sourceY = link.source.y + ((link.source.size / 2) * this._graph.nodeScalingFactor) * Math.sin(angle);
+      let sourceX;
+      let sourceY;
+      if (link.arrow && link.arrow === 'source') {
+        sourceX = link.source.x + ((link.source.size / 2) * this._graph.nodeScalingFactor + link.size * 1.5) * Math.cos(angle);
+        sourceY = link.source.y + ((link.source.size / 2) * this._graph.nodeScalingFactor + link.size * 1.5) * Math.sin(angle);
+      } else {
+        sourceX = link.source.x + ((link.source.size / 2) * this._graph.nodeScalingFactor) * Math.cos(angle);
+        sourceY = link.source.y + ((link.source.size / 2) * this._graph.nodeScalingFactor) * Math.sin(angle);
+      }
 
       let targetX;
       let targetY;
-      if (link.arrow === 'none') {
+      if (link.arrow === 'none' || link.arrow === 'source') {
         targetX = link.target.x - ((link.target.size / 2) * this._graph.nodeScalingFactor) * Math.cos(angle);
         targetY = link.target.y - ((link.target.size / 2) * this._graph.nodeScalingFactor) * Math.sin(angle);
       } else {
-        targetX = link.target.x - (((link.target.size / 2) * this._graph.nodeScalingFactor) + link.size * 2) * Math.cos(angle);
-        targetY = link.target.y - (((link.target.size / 2) * this._graph.nodeScalingFactor) + link.size * 2) * Math.sin(angle);
+        targetX = link.target.x - (((link.target.size / 2) * this._graph.nodeScalingFactor) + link.size * 1.5) * Math.cos(angle);
+        targetY = link.target.y - (((link.target.size / 2) * this._graph.nodeScalingFactor) + link.size * 1.5) * Math.sin(angle);
       }
 
       color.setHex(link.color);

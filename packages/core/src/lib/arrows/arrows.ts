@@ -118,7 +118,7 @@ export class ArrowsLayer extends EventDispatcher {
       let source;
       let target;
 
-      if (edges[i].arrow === 'target') {
+      if (!edges[i].arrow || edges[i].arrow === 'target') {
         source = edges[i].source;
         target = edges[i].target;
       } else {
@@ -173,7 +173,7 @@ export class ArrowsLayer extends EventDispatcher {
     const sourceY = targetPoint.y + radius * Math.sin(angle);
 
     const scalingCornerFactor = size < 6 ? 6 : size;
-    const scalingOnLineFactor = size < 6 ? 12 : 2 * size;
+    const scalingOnLineFactor = size < 6 ? 12 : 1.5 * size;
 
     // point on line at distance
     const pointOnLine = [sourceX + scalingOnLineFactor * dx / vNorm, sourceY + scalingOnLineFactor * dy / vNorm]
