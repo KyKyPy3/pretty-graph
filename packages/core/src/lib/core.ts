@@ -13,7 +13,7 @@ import { GraphOptions } from './options';
 
 import { ArrowsLayer } from './arrows/arrows';
 import { EdgesLayer } from './edges/edges';
-import { LabelsLayer } from './labels/labels';
+import { LabelsLayer } from './labelsLayer/labels';
 import { NodesLayer } from './nodes/nodes';
 
 export class PretyGraph {
@@ -114,7 +114,7 @@ export class PretyGraph {
     this._render();
 
     if (this.options.showLabels && this._scene) {
-      this._labelsLayer = new LabelsLayer(this._scene, this.nodeScalingFactor);
+      this._labelsLayer = new LabelsLayer(this);
     }
     this._arrowsLayer = new ArrowsLayer(this);
     this._edgesLayer = new EdgesLayer(this);
@@ -417,7 +417,7 @@ export class PretyGraph {
         if (this._nodesLayer.hoveredNode !== null) {
           this._nodesLayer.setNodePosition(newPos);
 
-          if (this._labelsLayer && this._nodesLayer.hoveredNode.__labelIndex) {
+          if (this._labelsLayer && this._nodesLayer.hoveredNode.__labelIndex !== null) {
             this._labelsLayer.setLabelPosition(this._nodesLayer.hoveredNode.__labelIndex, { x: newPos.x, y: newPos.y, z: 0 });
           }
         }
@@ -433,6 +433,10 @@ export class PretyGraph {
       if (this._edgesLayer) {
         this._edgesLayer.recalculate();
         this._edgesLayer.recalculatePicking();
+      }
+
+      if (this._labelsLayer) {
+        this._labelsLayer.recalculate();
       }
 
       if (this._arrowsLayer) {
@@ -497,6 +501,10 @@ export class PretyGraph {
   private _onPan(): void {
     this._render();
 
+    if (this._labelsLayer) {
+      this._labelsLayer.recalculate();
+    }
+
     if (this._nodesLayer && this._nodesLayer.hoveredNode) {
       const coordinates = this._translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
       this.onEvent.emit('nodeScaling', { node: this._nodesLayer.hoveredNode, ...coordinates, scale: this._controls.scale });
@@ -515,6 +523,10 @@ export class PretyGraph {
     }
 
     this._render();
+
+    if (this._labelsLayer) {
+      this._labelsLayer.recalculate();
+    }
 
     if (this._nodesLayer && this._nodesLayer.hoveredNode) {
       const coordinates = this._translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
