@@ -101,13 +101,13 @@ export class LabelsLayer {
     this._textContext.font = "12px Roboto";
     const textWidth = this._textContext.measureText(text).width;
 
-    const textOffset = (nodeSize / 2) * this._graph.nodeScalingFactor * this._graph._controls.scale + 2;
+    const textOffset = (nodeSize / 2) * this._graph.nodeScalingFactor * this._graph._controls.scale;
 
     this._textContext.fillStyle = "white";
-    this._textContext.fillRect(textOffset + coords.x, coords.y - textHeight / 2 + 2, textWidth + 2, textHeight);
+    this._textContext.fillRect(textOffset + coords.x, coords.y - textHeight / 2 + 1, textWidth + 4, textHeight);
 
     this._textContext.fillStyle = "black";
-    this._textContext.fillText(text, textOffset + coords.x, coords.y + 5);
+    this._textContext.fillText(text, textOffset + 2 + coords.x, coords.y + 5);
   }
 
 }
