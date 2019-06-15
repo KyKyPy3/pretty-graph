@@ -24,6 +24,11 @@ export class LabelsLayer {
     this._textContext.font = "12px Roboto";
   }
 
+  public clear(): void {
+    this._labels = [];
+    this._clearTextLayer();
+  }
+
   public addLabel(text: string, x: number, y: number, nodeSize: number): number {
     const index = this._labels.length;
 

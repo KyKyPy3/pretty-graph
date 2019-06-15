@@ -105,6 +105,7 @@ export class NodesLayer {
 
   public draw(): void {
     this._disposeInternal();
+    this._graph._labelsLayer.clear();
 
     const translateArray = new Float32Array(this._graph._nodes.length * 3);
     const colors = new Float32Array(this._graph._nodes.length * 3);

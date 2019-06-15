@@ -5,6 +5,7 @@ export declare class LabelsLayer {
     private _textCanvas;
     private _textContext;
     constructor(graph: any);
+    clear(): void;
     addLabel(text: string, x: number, y: number, nodeSize: number): number;
     show(): void;
     hide(): void;
