@@ -177,16 +177,23 @@ export class PrettyGraphControls extends EventDispatcher {
 
     if (transform.k !== this.scale) {
       if (!event.sourceEvent.ctrlKey) {
-        this.scale = transform.k;
+        const x = -(transform.x - dimensions.width / 2) / transform.k;
+        const y = (transform.y - dimensions.height / 2) / transform.k;
+        let z = this._getZFromScale(transform.k);
 
-        const x = -(transform.x - dimensions.width / 2) / this.scale;
-        const y = (transform.y - dimensions.height / 2) / this.scale;
-        const z = this._getZFromScale(this.scale);
+        if (z > this._camera.far - 1) {
+          z = this._camera.far - 1;
+        }
 
+        if (z < this._camera.near + 1) {
+          z = this._camera.near + 1;
+        }
+
+        this.scale = this._getScaleFromZ(z);
         this._camera.position.set(x, y, z);
 
         this.dispatchEvent({
-          scale: transform.k,
+          scale: this.scale,
           type: 'scale'
         });
       } else {

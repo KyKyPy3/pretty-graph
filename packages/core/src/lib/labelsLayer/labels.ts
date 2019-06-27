@@ -24,6 +24,17 @@ export class LabelsLayer {
     this._textContext.font = "12px Roboto";
   }
 
+  public onResize(): void {
+    this._clearTextLayer();
+
+    if (this._graph._renderer) {
+      this._textCanvas.width = this._graph._renderer.domElement.width;
+      this._textCanvas.height = this._graph._renderer.domElement.height;
+    }
+
+    this.recalculate();
+  }
+
   public clear(): void {
     this._labels = [];
     this._clearTextLayer();

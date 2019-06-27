@@ -131,8 +131,8 @@ export class PretyGraph {
         this._edgesLayer.onResize();
       }
 
-      if (this._edgesLayer) {
-        this._edgesLayer.onResize();
+      if (this._labelsLayer) {
+        this._labelsLayer.onResize();
       }
 
       if (this._nodesLayer) {
@@ -173,6 +173,12 @@ export class PretyGraph {
     if (this._renderer) {
       this._renderer.clear();
       this._renderer.renderLists.dispose();
+
+      if (this._camera) {
+        this._renderer.setSize(this._container.clientWidth, this._container.clientHeight);
+        this._camera.aspect = this._container.clientWidth / this._container.clientHeight;
+        this._camera.updateProjectionMatrix();
+      }
     }
 
     if (options.animate) {
