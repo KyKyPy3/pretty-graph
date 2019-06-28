@@ -1,4 +1,4 @@
-import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation, Simulation } from 'd3-force';
+import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation, Simulation, forceX, forceY } from 'd3-force';
 
 import { EventEmitter } from './emitter';
 
@@ -42,6 +42,8 @@ export class Layout {
       .force('charge', mainBody)
       .force('link', fLink)
       .force('center', forceCenter())
+      .force('x', forceX().strength(0.1))
+      .force('y', forceY().strength(0.1))
       .force('collision', forceCollide().radius((d: any) => {
         return d.size;
       }).iterations(2))
