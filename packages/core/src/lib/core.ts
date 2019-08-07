@@ -558,8 +558,8 @@ export class PretyGraph {
     const vector = new Vector3(x, y, 0);
 
     if (this._camera && this._renderer) {
-      const widthHalf = 0.5 * this._renderer.context.canvas.width;
-      const heightHalf = 0.5 * this._renderer.context.canvas.height;
+      const widthHalf = 0.5 * this._renderer.getContext().canvas.width;
+      const heightHalf = 0.5 * this._renderer.getContext().canvas.height;
 
       vector.project(this._camera);
 
