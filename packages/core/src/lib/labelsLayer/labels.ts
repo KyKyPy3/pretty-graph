@@ -68,18 +68,20 @@ export class LabelsLayer {
     this._labels[index].y = position.y;
   }
 
-  public draw(): void {
+  public draw(canvasCtx?: CanvasRenderingContext2D): void {
     if (this._isHidden) {
       return;
     }
 
-    this._clearTextLayer();
+    if (!canvasCtx) {
+      this._clearTextLayer();
+    }
     const bounds = this._graph._container.getBoundingClientRect();
 
     for (let i = 0; i < this._labels.length; i++) {
       const coords = this._graph._translateCoordinates(this._labels[i].x, this._labels[i].y);
       if (coords.x > 0 && coords.x < bounds.width && coords.y > 0 && coords.y < bounds.height && this._labels[i].nodeSize * 7 * this._graph._controls.scale > 45) {
-        this._drawText(this._labels[i].text, coords, this._labels[i].nodeSize);
+        this._drawText(this._labels[i].text, coords, this._labels[i].nodeSize, canvasCtx);
       }
     }
   }
@@ -109,21 +111,29 @@ export class LabelsLayer {
     this._textContext.clearRect(0, 0, this._textContext.canvas.width, this._textContext.canvas.height);
   }
 
-  private _drawText(text: string, coords: { x: number, y: number}, nodeSize: number): void {
+  private _drawText(text: string, coords: { x: number, y: number}, nodeSize: number, canvasCtx?: CanvasRenderingContext2D): void {
+    let ctx: CanvasRenderingContext2D;
+
+    if (canvasCtx) {
+      ctx = canvasCtx;
+    } else {
+      ctx = this._textContext;
+    }
+
     // Get text height = font size * 1.286
     const textHeight = 12 * 1.286;
 
     // Calculate text width
-    this._textContext.font = "12px Roboto";
-    const textWidth = this._textContext.measureText(text).width;
+    ctx.font = "12px Roboto";
+    const textWidth = ctx.measureText(text).width;
 
     const textOffset = (nodeSize / 2) * this._graph.nodeScalingFactor * this._graph._controls.scale;
 
-    this._textContext.fillStyle = "white";
-    this._textContext.fillRect(textOffset + coords.x, coords.y - textHeight / 2 + 1, textWidth + 4, textHeight);
+    ctx.fillStyle = "white";
+    ctx.fillRect(textOffset + coords.x, coords.y - textHeight / 2 + 1, textWidth + 4, textHeight);
 
-    this._textContext.fillStyle = "black";
-    this._textContext.fillText(text, textOffset + 2 + coords.x, coords.y + 5);
+    ctx.fillStyle = "black";
+    ctx.fillText(text, textOffset + 2 + coords.x, coords.y + 5);
   }
 
 }

@@ -170,6 +170,10 @@ export class PretyGraph {
       }
     }
 
+    if (this._labelsLayer) {
+      this._labelsLayer.clear();
+    }
+
     if (this._renderer) {
       this._renderer.clear();
       this._renderer.renderLists.dispose();
@@ -289,7 +293,22 @@ export class PretyGraph {
       renderer.render(this._scene, this._camera);
     }
 
-    return renderer.domElement.toDataURL( 'image/png' );
+    const screenshotCanvas = document.createElement("canvas");
+    screenshotCanvas.width = this._container.clientWidth;
+    screenshotCanvas.height = this._container.clientHeight;
+    const canvasCtx = screenshotCanvas.getContext('2d');
+
+    if (canvasCtx) {
+      canvasCtx.drawImage(renderer.getContext().canvas, 0, 0);
+
+      if (this._labelsLayer) {
+        this._labelsLayer.draw(canvasCtx);
+      }
+    }
+
+    const image = screenshotCanvas.toDataURL( 'image/png' );
+
+    return image;
   }
 
   public destroy(): void {

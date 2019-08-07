@@ -15,7 +15,7 @@ export declare class LabelsLayer {
         y: number;
         z: number;
     }): void;
-    draw(): void;
+    draw(canvasCtx?: CanvasRenderingContext2D): void;
     recalculate(): void;
     dispose(): void;
     private _clearTextLayer;
