@@ -121,28 +121,31 @@ export class PretyGraph {
     this._nodesLayer = new NodesLayer(this);
 
     this._resizeHandler = () => {
-      if (this._renderer && this._camera) {
-        this._renderer.setSize(this._container.clientWidth, this._container.clientHeight);
-        this._camera.aspect = this._container.clientWidth / this._container.clientHeight;
-        this._camera.updateProjectionMatrix();
-      }
+      // Таймаут нужен так как размеры контейнера не всегда приходят сразу
+      setTimeout(() => {
+        if (this._renderer && this._camera) {
+          this._renderer.setSize(this._container.clientWidth, this._container.clientHeight);
+          this._camera.aspect = this._container.clientWidth / this._container.clientHeight;
+          this._camera.updateProjectionMatrix();
+        }
 
-      if (this._edgesLayer) {
-        this._edgesLayer.onResize();
-      }
+        if (this._edgesLayer) {
+          this._edgesLayer.onResize();
+        }
 
-      if (this._labelsLayer) {
-        this._labelsLayer.onResize();
-      }
+        if (this._labelsLayer) {
+          this._labelsLayer.onResize();
+        }
 
-      if (this._nodesLayer) {
-        this._nodesLayer.onResize();
-      }
+        if (this._nodesLayer) {
+          this._nodesLayer.onResize();
+        }
 
-      this._render();
+        this._render();
+      }, 250);
     };
 
-    window.addEventListener('resize', this._resizeHandler);
+    window.addEventListener('resize', this._resizeHandler, false);
 
     this._controls.setCameraPosition(1000);
   }
