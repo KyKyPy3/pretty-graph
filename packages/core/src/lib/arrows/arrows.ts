@@ -106,7 +106,7 @@ export class ArrowsLayer extends EventDispatcher {
   }
 
   private _calculateArrowData(): any {
-    const edges = this._graph.edges;
+    const edges = this._graph._edges;
     const vertices = new Float32Array(edges.length * 6);
     const colors = new Float32Array(edges.length * 9);
 

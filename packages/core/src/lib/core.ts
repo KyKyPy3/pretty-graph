@@ -24,7 +24,9 @@ export class PretyGraph {
 
   public animationTime: number = 500;
 
-  public edges: any[] = [];
+  public neighbourhoodNodes: { [id: string]: any; } = {};
+
+  public neighbourhoodEdges: { [id: string]: any; } = {};
 
   private _camera!: PerspectiveCamera | null;
 
@@ -41,6 +43,8 @@ export class PretyGraph {
   private _far: number = 10000;
 
   private _nodes: any[] = [];
+
+  private _edges: any[] = [];
 
   private _center: any = null;
 
@@ -161,10 +165,11 @@ export class PretyGraph {
 
   public setData(data: any, options: any = { animate: false, locate: false }): void {
     this._nodes = data.nodes;
-    this.edges = data.links;
+    this._edges = data.links;
 
     const lastIndexedNodes = JSON.parse(JSON.stringify(this._indexedNodes));
     this._indexingNodes();
+    this._collectNeighbourhoods();
 
     if (data.center) {
       this._center = this._indexedNodes[data.center];
@@ -353,7 +358,7 @@ export class PretyGraph {
     }
 
     this._nodes = [];
-    this.edges = [];
+    this._edges = [];
     this._center = null;
     this._indexedNodes = {};
     this._scene = null;
@@ -625,6 +630,34 @@ export class PretyGraph {
     if (this._scene && this._camera && this._renderer) {
       this._renderer.render(this._scene, this._camera);
     }
+  }
+
+  private _collectNeighbourhoods(): void {
+    this.neighbourhoodNodes = {};
+
+    this._edges.forEach((edge) => {
+      if (!this.neighbourhoodNodes[edge.source.id]) {
+        this.neighbourhoodNodes[edge.source.id] = [];
+      }
+
+      if (!this.neighbourhoodNodes[edge.target.id]) {
+        this.neighbourhoodNodes[edge.target.id] = [];
+      }
+
+      this.neighbourhoodNodes[edge.source.id].push(edge.target);
+      this.neighbourhoodNodes[edge.target.id].push(edge.source);
+
+      if (!this.neighbourhoodEdges[edge.source.id]) {
+        this.neighbourhoodEdges[edge.source.id] = [];
+      }
+
+      if (!this.neighbourhoodEdges[edge.target.id]) {
+        this.neighbourhoodEdges[edge.target.id] = [];
+      }
+
+      this.neighbourhoodEdges[edge.source.id].push(edge);
+      this.neighbourhoodEdges[edge.target.id].push(edge);
+    });
   }
 
   private _indexingNodes(): void {

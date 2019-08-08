@@ -256,15 +256,20 @@ export class NodesLayer {
     return this._size;
   }
 
-  public setNodeColor(nodeColor: any): void {
+  public setNodesColor(nodes: any[], nodeColor: any): void {
+    if (!nodes.length) {
+      return;
+    }
+
     const color = new Color();
     color.setHex(nodeColor);
 
-    if (this.hoveredNode !== null) {
-      this._nodeColorAttribute.setXYZ(this.hoveredNode.__positionIndex, color.r, color.g, color.b);
-      this._nodeColorAttribute.needsUpdate = true;
-      this._graph._render();
-    }
+    nodes.forEach((node) => {
+      this._nodeColorAttribute.setXYZ(node.__positionIndex, color.r, color.g, color.b);
+    });
+
+    this._nodeColorAttribute.needsUpdate = true;
+    this._graph._render();
   }
 
   public setNodePosition(newPos): void {
@@ -277,7 +282,7 @@ export class NodesLayer {
     }
   }
 
-  public testNode(position): boolean {
+  public testNode(position): any {
     if (this._pickingTexture) {
       this._graph._renderer.setRenderTarget(this._pickingTexture);
       this._graph._renderer.render(this._pickingNodesScene, this._graph._camera);
@@ -289,32 +294,39 @@ export class NodesLayer {
       if (id) {
         const node = this._graph._indexedNodes[this._colorToNodeID[id]];
         if (this.hoveredNode !== node) {
+          let nodes;
+
           if (this.hoveredNode !== null) {
-            this.setNodeColor(this.hoveredNode.color);
+            nodes = this._graph.neighbourhoodNodes[this.hoveredNode.id];
+            this.setNodesColor([this.hoveredNode, ...nodes], this.hoveredNode.color);
           }
 
           this.hoveredNode = this._graph._indexedNodes[this._colorToNodeID[id]];
-          this.setNodeColor(0xff0000);
+          nodes = this._graph.neighbourhoodNodes[this.hoveredNode.id];
+
+          this.setNodesColor([this.hoveredNode, ...nodes], 0x4b7bec);
 
           const coordinates = this._graph._translateCoordinates(this.hoveredNode.x, this.hoveredNode.y);
           this._graph.onEvent.emit('nodeHover', { node: this.hoveredNode, ...coordinates, scale: this._graph._controls.scale });
           this._graph._render();
         }
 
-        return true;
+        return this.hoveredNode;
       } else {
         if (this.hoveredNode !== null) {
-          this.setNodeColor(this.hoveredNode.color);
+          const nodes = this._graph.neighbourhoodNodes[this.hoveredNode.id];
+
+          this.setNodesColor([this.hoveredNode, ...nodes], this.hoveredNode.color);
           this._graph.onEvent.emit('nodeUnhover', { node: this.hoveredNode });
           this.hoveredNode = null;
           this._graph._render();
         }
 
-        return false;
+        return undefined;
       }
     }
 
-    return false;
+    return undefined;
   }
 
   public recalculate(): void {

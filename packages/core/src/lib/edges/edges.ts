@@ -47,6 +47,50 @@ export class EdgesLayer extends EventDispatcher {
 
     this._pickingLineScene = new Scene();
     this._pickingLineScene.background = new Color(0x000000);
+
+    this._graph.onEvent.on('nodeUnhover', (data) => {
+      const node = data.node;
+      const edges = this._graph.neighbourhoodEdges[node.id];
+
+      edges.forEach((edge) => {
+        if (edge._lineSizeRange) {
+          const count = edge._lineSizeRange[1] - edge._lineSizeRange[0];
+          const size = edge.size;
+
+          if (count > 1) {
+            for (let i = edge._lineSizeRange[0]; i < edge._lineSizeRange[1] / 2 + 2; i++) {
+              this._lineGeometry.attributes.linewidth.setX(i, size);
+            }
+          } else {
+            this._lineGeometry.attributes.linewidth.setX(edge._lineSizeRange[0], size);
+          }
+        }
+      });
+
+      this._lineGeometry.attributes.linewidth.needsUpdate = true;
+    });
+
+    this._graph.onEvent.on('nodeHover', (data) => {
+      const node = data.node;
+      const edges = this._graph.neighbourhoodEdges[node.id];
+
+      edges.forEach((edge) => {
+        if (edge._lineSizeRange) {
+          const count = edge._lineSizeRange[1] - edge._lineSizeRange[0];
+          const size = edge.size * 2;
+
+          if (count > 1) {
+            for (let i = edge._lineSizeRange[0]; i < edge._lineSizeRange[1] / 2 + 2; i++) {
+              this._lineGeometry.attributes.linewidth.setX(i, size);
+            }
+          } else {
+            this._lineGeometry.attributes.linewidth.setX(edge._lineSizeRange[0], size);
+          }
+        }
+      });
+
+      this._lineGeometry.attributes.linewidth.needsUpdate = true;
+    });
   }
 
   get hoveredEdge(): any {
@@ -71,7 +115,7 @@ export class EdgesLayer extends EventDispatcher {
 
   public draw(): void {
     this._disposeInternal();
-    const linesData = this._constructLines(this._graph.edges);
+    const linesData = this._constructLines(this._graph._edges);
 
     this._constructMesh(linesData);
     this._constructPickingMesh(linesData);
@@ -144,7 +188,7 @@ export class EdgesLayer extends EventDispatcher {
         if (this._hoveredEdgeID !== id - 1) {
           this.resetHoverEdge();
 
-          this._hoveredEdge = this._graph.edges[id - 1];
+          this._hoveredEdge = this._graph._edges[id - 1];
           this._hoveredEdgeID = id - 1;
           this._setEdgeColor(0xff0000);
 
@@ -161,12 +205,12 @@ export class EdgesLayer extends EventDispatcher {
   }
 
   public recalculate(): void {
-    const linesData = this._constructLines(this._graph.edges);
+    const linesData = this._constructLines(this._graph._edges);
     this._lineGeometry.setPositions(linesData.positions);
   }
 
   public recalculatePicking(): void {
-    const linesData = this._constructLines(this._graph.edges);
+    const linesData = this._constructLines(this._graph._edges);
     this._linesPickingGeometry.setPositions(linesData.positions);
   }
 

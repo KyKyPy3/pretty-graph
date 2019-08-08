@@ -4,7 +4,12 @@ export declare class PretyGraph {
     onEvent: EventEmitter;
     nodeScalingFactor: number;
     animationTime: number;
-    edges: any[];
+    neighbourhoodNodes: {
+        [id: string]: any;
+    };
+    neighbourhoodEdges: {
+        [id: string]: any;
+    };
     private _camera;
     private _scene;
     private _options;
@@ -13,6 +18,7 @@ export declare class PretyGraph {
     private _fov;
     private _far;
     private _nodes;
+    private _edges;
     private _center;
     private _controls;
     private _dragInProgress;
@@ -59,6 +65,7 @@ export declare class PretyGraph {
     private _setupCamera;
     private _setupRenderer;
     private _render;
+    private _collectNeighbourhoods;
     private _indexingNodes;
     private _moveNodes;
     private _getRandomFromRange;
