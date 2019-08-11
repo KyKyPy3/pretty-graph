@@ -275,23 +275,26 @@
     tree-kill "1.2.1"
     webpack-sources "1.3.0"
 
-"@pretty-graph/controls@0.0.33":
-  version "0.0.33"
-  resolved "https://registry.yarnpkg.com/@pretty-graph/controls/-/controls-0.0.33.tgz#74621dc0a4065ac77688fb9031fe5ec51ca0126b"
+"@pretty-graph/controls@0.0.37":
+  version "0.0.37"
+  resolved "https://registry.yarnpkg.com/@pretty-graph/controls/-/controls-0.0.37.tgz#b3b7ad86d359e1c084427f807ab7e221b880eee3"
+  integrity sha512-YgX6VvIPrSPHi86Jg4OM5obnrT4k+OeIBErKI11YbQ9Lg7hkoQT5Ew8mQW6PmtyS531MFHus6tApe5xwgvTWDg==
   dependencies:
     d3-selection "1.4.0"
     d3-zoom "1.7.3"
-    three "0.105.2"
+    three "0.107.0"
 
-"@pretty-graph/core@0.0.52":
-  version "0.0.52"
-  resolved "https://registry.yarnpkg.com/@pretty-graph/core/-/core-0.0.52.tgz#63b55e6f432b4e5bd5f44df96378b7e809951fdc"
+"@pretty-graph/core@0.0.56":
+  version "0.0.56"
+  resolved "https://registry.yarnpkg.com/@pretty-graph/core/-/core-0.0.56.tgz#196b390e156d264352496cf0dbea40eb1d41061b"
+  integrity sha512-3GTJb+BXkKmQIyTB21m10B8Fa3xIpJcODOPT56XsPz/Ariw6GaD7/C2vXFJO8i4UF8EVr212+B02ONvEdZywgg==
   dependencies:
-    three "0.105.2"
+    three "0.107.0"
 
-"@pretty-graph/d3-layout@0.0.30":
-  version "0.0.30"
-  resolved "https://registry.yarnpkg.com/@pretty-graph/d3-layout/-/d3-layout-0.0.30.tgz#686b25d6d710672f05e0f47e9e4e3add9128fb76"
+"@pretty-graph/d3-layout@0.0.34":
+  version "0.0.34"
+  resolved "https://registry.yarnpkg.com/@pretty-graph/d3-layout/-/d3-layout-0.0.34.tgz#906e827c7864fa223382613f5d0a0ff7e6c80f48"
+  integrity sha512-9n8Sr0rAGKTa4nNpVB5jkwqa9SuJdVlwXndxeQvP3lQtwRlV2VR9Pf4EzqhrOe8jGHYcXoP7o0H3pUumbkR4hg==
   dependencies:
     d3-force "2.0.1"
 
@@ -5644,9 +5647,10 @@ terser@^4.0.0:
     source-map "~0.6.1"
     source-map-support "~0.5.10"
 
-three@0.105.2:
-  version "0.105.2"
-  resolved "https://registry.yarnpkg.com/three/-/three-0.105.2.tgz#d135f1549bdcf5a9acd904ba3dbf9198a0268984"
+three@0.107.0:
+  version "0.107.0"
+  resolved "https://registry.yarnpkg.com/three/-/three-0.107.0.tgz#0c862c348d61bd3f22058e01f5e771c1294315a1"
+  integrity sha512-vqbKJRLBEviPVa7poEzXocobicwxzsctr5mnymA7n8fEzcVS49rYP0RrwqZ98JqujRoruK+/YzcchNpRP+kXsQ==
 
 through2@^2.0.0:
   version "2.0.5"
