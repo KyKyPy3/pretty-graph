@@ -256,15 +256,20 @@ export class NodesLayer {
     return this._size;
   }
 
-  public setNodesColor(nodes: any[], nodeColor: any): void {
+  public setNodesColor(nodes: any[], newColor?: any): void {
     if (!nodes.length) {
       return;
     }
 
     const color = new Color();
-    color.setHex(nodeColor);
 
     nodes.forEach((node) => {
+      if (newColor) {
+        color.setHex(newColor);
+      } else {
+        color.setHex(node.color);
+      }
+
       this._nodeColorAttribute.setXYZ(node.__positionIndex, color.r, color.g, color.b);
     });
 
@@ -298,7 +303,7 @@ export class NodesLayer {
 
           if (this.hoveredNode !== null) {
             nodes = this._graph.neighbourhoodNodes[this.hoveredNode.id];
-            this.setNodesColor([this.hoveredNode, ...nodes], this.hoveredNode.color);
+            this.setNodesColor([this.hoveredNode, ...nodes]);
           }
 
           this.hoveredNode = this._graph._indexedNodes[this._colorToNodeID[id]];
@@ -316,7 +321,7 @@ export class NodesLayer {
         if (this.hoveredNode !== null) {
           const nodes = this._graph.neighbourhoodNodes[this.hoveredNode.id];
 
-          this.setNodesColor([this.hoveredNode, ...nodes], this.hoveredNode.color);
+          this.setNodesColor([this.hoveredNode, ...nodes]);
           this._graph.onEvent.emit('nodeUnhover', { node: this.hoveredNode });
           this.hoveredNode = null;
           this._graph._render();

@@ -23,7 +23,7 @@ export declare class NodesLayer {
     setSilent(silent: boolean): void;
     draw(): void;
     getSize(): Vector3;
-    setNodesColor(nodes: any[], nodeColor: any): void;
+    setNodesColor(nodes: any[], newColor?: any): void;
     setNodePosition(newPos: any): void;
     testNode(position: any): any;
     recalculate(): void;
