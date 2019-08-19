@@ -46,6 +46,7 @@ export class ArrowsLayer extends EventDispatcher {
     if (!this._arrowGeometry) {
       return;
     }
+
     const { vertices } = this._calculateArrowData();
 
     this._arrowGeometry.boundingSphere = this._computeBoundingSphere(vertices);

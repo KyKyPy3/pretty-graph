@@ -274,7 +274,6 @@ export class NodesLayer {
     });
 
     this._nodeColorAttribute.needsUpdate = true;
-    this._graph._render();
   }
 
   public setNodePosition(newPos): void {
@@ -299,18 +298,7 @@ export class NodesLayer {
       if (id) {
         const node = this._graph._indexedNodes[this._colorToNodeID[id]];
         if (this.hoveredNode !== node) {
-          let nodes;
-
-          if (this.hoveredNode !== null) {
-            nodes = this._graph.neighbourhoodNodes[this.hoveredNode.id];
-            this.setNodesColor([this.hoveredNode, ...nodes]);
-          }
-
           this.hoveredNode = this._graph._indexedNodes[this._colorToNodeID[id]];
-          nodes = this._graph.neighbourhoodNodes[this.hoveredNode.id];
-
-          this.setNodesColor([this.hoveredNode, ...nodes], 0x4b7bec);
-
           const coordinates = this._graph._translateCoordinates(this.hoveredNode.x, this.hoveredNode.y);
           this._graph.onEvent.emit('nodeHover', { node: this.hoveredNode, ...coordinates, scale: this._graph._controls.scale });
           this._graph._render();
@@ -319,9 +307,6 @@ export class NodesLayer {
         return this.hoveredNode;
       } else {
         if (this.hoveredNode !== null) {
-          const nodes = this._graph.neighbourhoodNodes[this.hoveredNode.id];
-
-          this.setNodesColor([this.hoveredNode, ...nodes]);
           this._graph.onEvent.emit('nodeUnhover', { node: this.hoveredNode });
           this.hoveredNode = null;
           this._graph._render();

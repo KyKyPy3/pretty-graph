@@ -94,6 +94,18 @@ export class PretyGraph {
 
   private _onRotateListener: any;
 
+  private _activeNodes: any[] = [];
+
+  private _hoveredNodes: any[] = [];
+
+  private _activeNodesIds: number[] = [];
+
+  private _activeEdges: any[] = [];
+
+  private _hoveredEdges: any[] = [];
+
+  private _activeEdgesIds: number[] = [];
+
   constructor(options: GraphOptions) {
     this.options = options;
 
@@ -391,6 +403,11 @@ export class PretyGraph {
 
     this._onRotateListener = this._onRotate.bind(this);
     this._controls.addEventListener('rotate', this._onRotateListener);
+
+    this.onEvent.on('nodeHover', this._onNodeHover.bind(this));
+    this.onEvent.on('nodeUnhover', this._onNodeUnhover.bind(this));
+    this.onEvent.on('nodeClick', this._onNodeClick.bind(this));
+    this.onEvent.on('workspaceClick', this._onWorkspaceClick.bind(this));
   }
 
   private _removeControlsListeners(): void {
@@ -403,6 +420,109 @@ export class PretyGraph {
     this._controls.removeEventListener('mousedown', this._onMouseDownListener);
     this._controls.removeEventListener('mouseup', this._onMouseUpListener);
     this._controls.removeEventListener('rotate', this._onRotateListener);
+
+    this.onEvent.removeAllListeners();
+  }
+
+  private _onNodeClick(): void {
+    if (this._activeNodes.length) {
+      if (this._nodesLayer) {
+        this._nodesLayer.setNodesColor(this._activeNodes);
+      }
+    }
+
+    if (this._activeEdges.length) {
+      if (this._edgesLayer) {
+        this._edgesLayer._setEdgesSize(this._activeEdges, 1, 1.3);
+      }
+    }
+
+    this._activeNodes = this._hoveredNodes;
+    this._activeNodesIds = this._activeNodes.map(n => n.id);
+    this._activeEdges = this._activeEdges;
+    this._activeEdgesIds = this._activeEdges.map(e => e.index);
+
+    this._hoveredEdges = this._hoveredEdges.filter((e) => this._activeEdgesIds.indexOf(e.index) === -1);
+    this._hoveredNodes = this._hoveredNodes.filter((n) => this._activeNodesIds.indexOf(n.id) === -1);
+
+    this._render();
+  }
+
+  private _onWorkspaceClick(): void {
+    if (this._nodesLayer) {
+      this._nodesLayer.setNodesColor(this._activeNodes);
+    }
+
+    if (this._edgesLayer) {
+      this._edgesLayer._setEdgesSize(this._activeEdges, 1, 1.3);
+    }
+
+    this._activeEdges = [];
+    this._activeEdgesIds = [];
+
+    this._activeNodes = [];
+    this._activeNodesIds = [];
+
+    if (this._arrowsLayer) {
+      this._arrowsLayer.recalculate();
+    }
+
+    this._render();
+  }
+
+  private _onNodeHover(data): void {
+    const node = data.node;
+
+    if (this._nodesLayer) {
+      // Clear previous nodes color
+      this._nodesLayer.setNodesColor(this._hoveredNodes);
+    }
+
+    if (this._edgesLayer) {
+      this._edgesLayer._setEdgesSize(this._hoveredEdges, 1, 1.5);
+    }
+
+    this._hoveredNodes = [node, ...this.neighbourhoodNodes[node.id]];
+    if (this._activeNodesIds) {
+      this._hoveredNodes = this._hoveredNodes.filter((n) => this._activeNodesIds.indexOf(n.id) === -1);
+    }
+    this._hoveredEdges = this.neighbourhoodEdges[node.id];
+    if (this._activeEdgesIds) {
+      this._hoveredEdges = this._hoveredEdges.filter((e) => this._activeEdgesIds.indexOf(e.index) === -1);
+    }
+
+    if (this._edgesLayer) {
+      this._edgesLayer._setEdgesSize(this._hoveredEdges, 1.3, 1);
+    }
+
+    if (this._nodesLayer) {
+      this._nodesLayer.setNodesColor(this._hoveredNodes, 0x4b7bec);
+    }
+
+    if (this._arrowsLayer) {
+      this._arrowsLayer.recalculate();
+    }
+
+    this._render();
+  }
+
+  private _onNodeUnhover(): void {
+    if (this._nodesLayer) {
+      this._nodesLayer.setNodesColor(this._hoveredNodes);
+    }
+
+    if (this._edgesLayer) {
+      this._edgesLayer._setEdgesSize(this._hoveredEdges, 1, 1.3);
+    }
+
+    this._hoveredNodes = [];
+    this._hoveredEdges = [];
+
+    if (this._arrowsLayer) {
+      this._arrowsLayer.recalculate();
+    }
+
+    this._render();
   }
 
   private _onRotate({ delta }): void {
@@ -484,6 +604,10 @@ export class PretyGraph {
         if (this._edgesLayer) {
           this._edgesLayer.resetHoverEdge();
         }
+      }
+
+      if (this._arrowsLayer) {
+        this._arrowsLayer.recalculate();
       }
     }
 

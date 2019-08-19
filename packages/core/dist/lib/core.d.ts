@@ -42,6 +42,12 @@ export declare class PretyGraph {
     private _onMouseDownListener;
     private _onMouseUpListener;
     private _onRotateListener;
+    private _activeNodes;
+    private _hoveredNodes;
+    private _activeNodesIds;
+    private _activeEdges;
+    private _hoveredEdges;
+    private _activeEdgesIds;
     constructor(options: GraphOptions);
     options: GraphOptions;
     setData(data: any, options?: any): void;
@@ -50,6 +56,10 @@ export declare class PretyGraph {
     destroy(): void;
     private _addControlsListeners;
     private _removeControlsListeners;
+    private _onNodeClick;
+    private _onWorkspaceClick;
+    private _onNodeHover;
+    private _onNodeUnhover;
     private _onRotate;
     private _onMouseMove;
     private _onMouseUp;

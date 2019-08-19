@@ -47,50 +47,6 @@ export class EdgesLayer extends EventDispatcher {
 
     this._pickingLineScene = new Scene();
     this._pickingLineScene.background = new Color(0x000000);
-
-    this._graph.onEvent.on('nodeUnhover', (data) => {
-      const node = data.node;
-      const edges = this._graph.neighbourhoodEdges[node.id];
-
-      edges.forEach((edge) => {
-        if (edge._lineSizeRange) {
-          const count = edge._lineSizeRange[1] - edge._lineSizeRange[0];
-          const size = edge.size;
-
-          if (count > 1) {
-            for (let i = edge._lineSizeRange[0]; i < edge._lineSizeRange[1] / 2 + 2; i++) {
-              this._lineGeometry.attributes.linewidth.setX(i, size);
-            }
-          } else {
-            this._lineGeometry.attributes.linewidth.setX(edge._lineSizeRange[0], size);
-          }
-        }
-      });
-
-      this._lineGeometry.attributes.linewidth.needsUpdate = true;
-    });
-
-    this._graph.onEvent.on('nodeHover', (data) => {
-      const node = data.node;
-      const edges = this._graph.neighbourhoodEdges[node.id];
-
-      edges.forEach((edge) => {
-        if (edge._lineSizeRange) {
-          const count = edge._lineSizeRange[1] - edge._lineSizeRange[0];
-          const size = edge.size * 2;
-
-          if (count > 1) {
-            for (let i = edge._lineSizeRange[0]; i < edge._lineSizeRange[1] / 2 + 2; i++) {
-              this._lineGeometry.attributes.linewidth.setX(i, size);
-            }
-          } else {
-            this._lineGeometry.attributes.linewidth.setX(edge._lineSizeRange[0], size);
-          }
-        }
-      });
-
-      this._lineGeometry.attributes.linewidth.needsUpdate = true;
-    });
   }
 
   get hoveredEdge(): any {
@@ -111,6 +67,9 @@ export class EdgesLayer extends EventDispatcher {
   public onScale(scale: number): void {
     this._lineMaterial.uniforms.scale.value = scale;
     this._lineMaterial.needsUpdate = true;
+
+    this._linePickingMaterial.uniforms.scale.value = scale;
+    this._linePickingMaterial.needsUpdate = true;
   }
 
   public draw(): void {
@@ -119,13 +78,6 @@ export class EdgesLayer extends EventDispatcher {
 
     this._constructMesh(linesData);
     this._constructPickingMesh(linesData);
-  }
-
-  public _setEdgeColor(edgeColor: any): void {
-    const color = new Color();
-    color.setHex(edgeColor);
-
-    // TODO: set edge color
   }
 
   public dispose(): void {
@@ -146,28 +98,36 @@ export class EdgesLayer extends EventDispatcher {
     this._hoveredEdgeID = -1;
   }
 
-  public _setEdgeSize(size: number): void {
-    if (this._hoveredEdge._lineSizeRange) {
-      const count = this._hoveredEdge._lineSizeRange[1] - this._hoveredEdge._lineSizeRange[0];
-
-      if (count > 1) {
-        for (let i = this._hoveredEdge._lineSizeRange[0]; i < this._hoveredEdge._lineSizeRange[1] / 2 + 2; i++) {
-          this._lineGeometry.attributes.linewidth.setX(i, size);
-        }
-      } else {
-        this._lineGeometry.attributes.linewidth.setX(this._hoveredEdge._lineSizeRange[0], size);
-      }
-
-      // this._lineGeometry.attributes.linewidth.updateRange = { offset: this._hoveredEdge._lineSizeRange[0], count };
-      this._lineGeometry.attributes.linewidth.needsUpdate = true;
+  public _setEdgesSize(edges: any[], sizeMul: number, sizeDiv: number): void {
+    if (!edges.length) {
+      return;
     }
+
+    edges.forEach((edge) => {
+      if (edge._lineSizeRange) {
+        const count = edge._lineSizeRange[1] - edge._lineSizeRange[0];
+        edge.size = (edge.size * sizeMul) / sizeDiv;
+
+        if (count > 1) {
+          for (let i = edge._lineSizeRange[0]; i < edge._lineSizeRange[1] / 2 + 2; i++) {
+            this._lineGeometry.attributes.linewidth.setX(i, edge.size);
+          }
+        } else {
+          this._lineGeometry.attributes.linewidth.setX(edge._lineSizeRange[0], edge.size);
+        }
+
+        this._lineGeometry.attributes.linewidth.updateRange = { offset: edge._lineSizeRange[0], count };
+      }
+    });
+
+    this._setPickingLineSize(edges);
+
+    this._lineGeometry.attributes.linewidth.needsUpdate = true;
   }
 
   public resetHoverEdge(): void {
     if (this._hoveredEdge) {
-      this._setEdgeColor(this._hoveredEdge.color);
-      this._setEdgeSize(this._hoveredEdge.size);
-      this._setPickingLineSize(this._hoveredEdge.size);
+      this._setEdgesSize([this._hoveredEdge], 1, 1.3);
 
       this._graph.onEvent.emit('edgeUnhover', { edge: this._hoveredEdge });
       this._hoveredEdge = null;
@@ -190,10 +150,8 @@ export class EdgesLayer extends EventDispatcher {
 
           this._hoveredEdge = this._graph._edges[id - 1];
           this._hoveredEdgeID = id - 1;
-          this._setEdgeColor(0xff0000);
 
-          this._setEdgeSize(Math.max(3, this._hoveredEdge.size));
-          this._setPickingLineSize(Math.max(8, this._hoveredEdge.size));
+          this._setEdgesSize([this._hoveredEdge], 1.3, 1);
 
           // ToDo: отсылать надо центр ребра?
           this._graph.onEvent.emit('edgeHover', { edge: this._hoveredEdge, ...position });
@@ -214,20 +172,28 @@ export class EdgesLayer extends EventDispatcher {
     this._linesPickingGeometry.setPositions(linesData.positions);
   }
 
-  private _setPickingLineSize(size: number): void {
-    if (this._hoveredEdge._lineSizeRange) {
-      const count = this._hoveredEdge._lineSizeRange[1] - this._hoveredEdge._lineSizeRange[0];
-      if (count > 1) {
-        for (let i = this._hoveredEdge._lineSizeRange[0]; i < this._hoveredEdge._lineSizeRange[1] / 2 + 2; i++) {
-          this._linesPickingGeometry.attributes.linewidth.setX(i, size);
-        }
-      } else {
-        this._linesPickingGeometry.attributes.linewidth.setX(this._hoveredEdge._lineSizeRange[0], size);
-      }
-
-      this._linesPickingGeometry.attributes.linewidth.updateRange = { offset: this._hoveredEdge._lineSizeRange[0], count };
-      this._linesPickingGeometry.attributes.linewidth.needsUpdate = true;
+  private _setPickingLineSize(edges): void {
+    if (!edges.length) {
+      return;
     }
+
+    edges.forEach((edge) => {
+      if (edge._lineSizeRange) {
+        const count = edge._lineSizeRange[1] - edge._lineSizeRange[0];
+
+        if (count > 1) {
+          for (let i = edge._lineSizeRange[0]; i < edge._lineSizeRange[1] / 2 + 2; i++) {
+            this._linesPickingGeometry.attributes.linewidth.setX(i, edge.size);
+          }
+        } else {
+          this._linesPickingGeometry.attributes.linewidth.setX(edge._lineSizeRange[0], edge.size);
+        }
+
+        this._linesPickingGeometry.attributes.linewidth.updateRange = { offset: edge._lineSizeRange[0], count };
+      }
+    });
+
+    this._linesPickingGeometry.attributes.linewidth.needsUpdate = true;
   }
 
   private _constructMesh(linesData): void {
