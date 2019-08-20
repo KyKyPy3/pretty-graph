@@ -175,6 +175,14 @@ export class PretyGraph {
     return this._options;
   }
 
+  public zoomIn(): void {
+    this._controls.zoomIn();
+  }
+
+  public zoomOut(): void {
+    this._controls.zoomOut();
+  }
+
   public setData(data: any, options: any = { animate: false, locate: false }): void {
     this._nodes = data.nodes;
     this._edges = data.links;

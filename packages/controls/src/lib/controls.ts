@@ -51,6 +51,20 @@ export class PrettyGraphControls extends EventDispatcher {
     window.addEventListener('resize', this._onResize, false);
   }
 
+  public zoomIn(): void {
+    const currentTransform = zoomTransform(this._selection.node());
+    const targetZoom = currentTransform.k * (1 + 0.2 * 1);
+    const initialTransform = zoomIdentity.translate(currentTransform.x, currentTransform.y).scale(targetZoom);
+    this._zoom.transform(this._selection, initialTransform);
+  }
+
+  public zoomOut(): void {
+    const currentTransform = zoomTransform(this._selection.node());
+    const targetZoom = currentTransform.k * (1 + 0.2 * -1);
+    const initialTransform = zoomIdentity.translate(currentTransform.x, currentTransform.y).scale(targetZoom);
+    this._zoom.transform(this._selection, initialTransform);
+  }
+
   public setZoomExtent(): void {
     const start = this._camera.near + 1;
     const end = this._camera.far - 1;
@@ -174,9 +188,13 @@ export class PrettyGraphControls extends EventDispatcher {
       return;
     }
     const dimensions = this._selection.node().getBoundingClientRect();
+    let ctrlKey = false;
+    if (event && event.sourceEvent && event.sourceEvent.ctrlKey) {
+      ctrlKey = true
+    }
 
     if (transform.k !== this.scale) {
-      if (!event.sourceEvent.ctrlKey) {
+      if (!ctrlKey) {
         const x = -(transform.x - dimensions.width / 2) / transform.k;
         const y = (transform.y - dimensions.height / 2) / transform.k;
         let z = this._getZFromScale(transform.k);
