@@ -103,7 +103,7 @@ export class EdgesLayer extends EventDispatcher {
       return;
     }
 
-    edges.forEach((edge) => {
+    for (const edge of edges) {
       if (edge._lineSizeRange) {
         const count = edge._lineSizeRange[1] - edge._lineSizeRange[0];
         edge.size = (edge.size * sizeMul) / sizeDiv;
@@ -118,7 +118,7 @@ export class EdgesLayer extends EventDispatcher {
 
         this._lineGeometry.attributes.linewidth.updateRange = { offset: edge._lineSizeRange[0], count };
       }
-    });
+    }
 
     this._setPickingLineSize(edges);
 
@@ -177,7 +177,7 @@ export class EdgesLayer extends EventDispatcher {
       return;
     }
 
-    edges.forEach((edge) => {
+    for (const edge of edges) {
       if (edge._lineSizeRange) {
         const count = edge._lineSizeRange[1] - edge._lineSizeRange[0];
 
@@ -191,7 +191,7 @@ export class EdgesLayer extends EventDispatcher {
 
         this._linesPickingGeometry.attributes.linewidth.updateRange = { offset: edge._lineSizeRange[0], count };
       }
-    });
+    }
 
     this._linesPickingGeometry.attributes.linewidth.needsUpdate = true;
   }

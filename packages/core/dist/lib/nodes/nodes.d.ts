@@ -24,7 +24,7 @@ export declare class NodesLayer {
     draw(): void;
     getSize(): Vector3;
     setNodesColor(nodes: any[], newColor?: any): void;
-    setNodePosition(newPos: any): void;
+    setNodePosition(nodes: any[], offset: any): void;
     testNode(position: any): any;
     recalculate(): void;
     recalculatePicking(): void;

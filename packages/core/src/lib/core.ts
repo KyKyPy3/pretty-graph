@@ -541,7 +541,7 @@ export class PretyGraph {
     this._render();
   }
 
-  private _onMouseMove({ position }: any): void {
+  private _onMouseMove({ event, position }: any): void {
     if (this._dragging && this._camera) {
       // dragging node
       const mouse = new Vector3();
@@ -576,16 +576,21 @@ export class PretyGraph {
         }
 
         if (this._nodesLayer.hoveredNode !== null) {
-          this._nodesLayer.setNodePosition(newPos);
+          const offset = { x: 0, y: 0};
+          offset.x = this._nodesLayer.hoveredNode.x - newPos.x;
+          offset.y = this._nodesLayer.hoveredNode.y - newPos.y;
+          let nodes;
+          if (event.ctrlKey) {
+            nodes = [this._nodesLayer.hoveredNode, ...this.neighbourhoodNodes[this._nodesLayer.hoveredNode.id]];
+          } else {
+            nodes = [this._nodesLayer.hoveredNode];
+          }
+          this._nodesLayer.setNodePosition(nodes, offset);
 
           if (this._labelsLayer && this._nodesLayer.hoveredNode.__labelIndex !== null) {
             this._labelsLayer.setLabelPosition(this._nodesLayer.hoveredNode.__labelIndex, { x: newPos.x, y: newPos.y, z: 0 });
           }
         }
-
-
-        this._nodesLayer.hoveredNode.x = newPos.x;
-        this._nodesLayer.hoveredNode.y = newPos.y;
 
         const coordinates = this._translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
         this.onEvent.emit('nodeMoving', { node: this._nodesLayer.hoveredNode, ...coordinates, scale: this._controls.scale });
@@ -626,12 +631,20 @@ export class PretyGraph {
     this._controls.enabled = true;
     this._dragging = false;
     this._dragInProgress = false;
+
+    if (this._labelsLayer) {
+      this._labelsLayer.show();
+    }
   }
 
   private _onMouseDown({ event }): void {
     if (this._nodesLayer && this._nodesLayer.hoveredNode !== null && event.buttons === 1) {
       this._controls.enabled = false;
       this._dragging = true;
+
+      if (this._labelsLayer) {
+        this._labelsLayer.hide();
+      }
     }
   }
 
@@ -767,7 +780,7 @@ export class PretyGraph {
   private _collectNeighbourhoods(): void {
     this.neighbourhoodNodes = {};
 
-    this._edges.forEach((edge) => {
+    for (const edge of this._edges) {
       if (!this.neighbourhoodNodes[edge.source.id]) {
         this.neighbourhoodNodes[edge.source.id] = [];
       }
@@ -789,20 +802,20 @@ export class PretyGraph {
 
       this.neighbourhoodEdges[edge.source.id].push(edge);
       this.neighbourhoodEdges[edge.target.id].push(edge);
-    });
+    }
   }
 
   private _indexingNodes(): void {
     this._indexedNodes = {};
 
-    this._nodes.forEach((node) => {
+    for (const node of this._nodes) {
       if (this._indexedNodes[node.id]) {
         /* tslint:disable-next-line no-console */
         console.error(`Node with id ${node.id} already exists`);
       }
 
       this._indexedNodes[node.id] = node;
-    });
+    }
   }
 
   private _moveNodes(last: boolean = false): void {

@@ -263,7 +263,7 @@ export class NodesLayer {
 
     const color = new Color();
 
-    nodes.forEach((node) => {
+    for (const node of nodes) {
       if (newColor) {
         color.setHex(newColor);
       } else {
@@ -271,15 +271,22 @@ export class NodesLayer {
       }
 
       this._nodeColorAttribute.setXYZ(node.__positionIndex, color.r, color.g, color.b);
-    });
+    }
 
     this._nodeColorAttribute.needsUpdate = true;
   }
 
-  public setNodePosition(newPos): void {
+  public setNodePosition(nodes: any[], offset): void {
     if (this._nodesInstancedGeometry && this._nodesPickingGeometry) {
-      this._nodesInstancedGeometry.attributes.translation.setXYZ(this.hoveredNode.__positionIndex, newPos.x, newPos.y, 0);
-      this._nodesPickingGeometry.attributes.translation.setXYZ(this.hoveredNode.__positionIndex, newPos.x, newPos.y, 0);
+      for (const node of nodes) {
+        if (this._nodesInstancedGeometry && this._nodesPickingGeometry) {
+          node.x -= offset.x;
+          node.y -= offset.y;
+
+          this._nodesInstancedGeometry.attributes.translation.setXYZ(node.__positionIndex, node.x, node.y, 0);
+          this._nodesPickingGeometry.attributes.translation.setXYZ(node.__positionIndex, node.x, node.y, 0);
+        }
+      }
 
       (this._nodesInstancedGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
       (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
