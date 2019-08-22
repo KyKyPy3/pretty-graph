@@ -21,7 +21,7 @@ export class AppComponent implements OnInit {
 
   private _agent: any;
 
-  private _graph: any;
+  private _graph: PretyGraph;
 
   private _activeNode: any;
 

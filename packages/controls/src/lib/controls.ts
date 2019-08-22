@@ -54,14 +54,34 @@ export class PrettyGraphControls extends EventDispatcher {
   public zoomIn(): void {
     const currentTransform = zoomTransform(this._selection.node());
     const targetZoom = currentTransform.k * (1 + 0.2 * 1);
-    const initialTransform = zoomIdentity.translate(currentTransform.x, currentTransform.y).scale(targetZoom);
+    let z = this._getZFromScale(targetZoom);
+    if (z > this._camera.far - 1) {
+      z = this._camera.far - 1;
+    }
+
+    if (z < this._camera.near + 1) {
+      z = this._camera.near + 1;
+    }
+    const scale = this._getScaleFromZ(z);
+
+    const initialTransform = zoomIdentity.translate(currentTransform.x, currentTransform.y).scale(scale);
     this._zoom.transform(this._selection, initialTransform);
   }
 
   public zoomOut(): void {
     const currentTransform = zoomTransform(this._selection.node());
     const targetZoom = currentTransform.k * (1 + 0.2 * -1);
-    const initialTransform = zoomIdentity.translate(currentTransform.x, currentTransform.y).scale(targetZoom);
+    let z = this._getZFromScale(targetZoom);
+    if (z > this._camera.far - 1) {
+      z = this._camera.far - 1;
+    }
+
+    if (z < this._camera.near + 1) {
+      z = this._camera.near + 1;
+    }
+    const scale = this._getScaleFromZ(z);
+
+    const initialTransform = zoomIdentity.translate(currentTransform.x, currentTransform.y).scale(scale);
     this._zoom.transform(this._selection, initialTransform);
   }
 
@@ -191,27 +211,27 @@ export class PrettyGraphControls extends EventDispatcher {
     let ctrlKey = false;
     if (event && event.sourceEvent && event.sourceEvent.ctrlKey) {
       ctrlKey = true
+    };
+    let z = this._getZFromScale(transform.k);
+    if (z > this._camera.far - 1) {
+      z = this._camera.far - 1;
     }
 
-    if (transform.k !== this.scale) {
+    if (z < this._camera.near + 1) {
+      z = this._camera.near + 1;
+    }
+    const scale = this._getScaleFromZ(z);
+
+    if (scale !== this.scale) {
       if (!ctrlKey) {
-        const x = -(transform.x - dimensions.width / 2) / transform.k;
-        const y = (transform.y - dimensions.height / 2) / transform.k;
-        let z = this._getZFromScale(transform.k);
+        this.scale = scale;
+        const x = -(transform.x - dimensions.width / 2) / scale;
+        const y = (transform.y - dimensions.height / 2) / scale;
 
-        if (z > this._camera.far - 1) {
-          z = this._camera.far - 1;
-        }
-
-        if (z < this._camera.near + 1) {
-          z = this._camera.near + 1;
-        }
-
-        this.scale = this._getScaleFromZ(z);
         this._camera.position.set(x, y, z);
 
         this.dispatchEvent({
-          scale: this.scale,
+          scale,
           type: 'scale'
         });
       } else {
@@ -223,7 +243,6 @@ export class PrettyGraphControls extends EventDispatcher {
     } else {
       const x = -(transform.x - dimensions.width / 2) / this.scale;
       const y = (transform.y - dimensions.height / 2) / this.scale;
-      const z = this._getZFromScale(this.scale);
 
       this._camera.position.set(x, y, z);
 
