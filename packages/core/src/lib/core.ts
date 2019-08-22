@@ -317,7 +317,7 @@ export class PretyGraph {
 
     if (this._scene && this._camera) {
       renderer.setSize(this._container.clientWidth, this._container.clientHeight);
-      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setPixelRatio(1);
       renderer.render(this._scene, this._camera);
     }
 
@@ -749,7 +749,7 @@ export class PretyGraph {
     });
 
     // Add support for retina displays
-    this._renderer.setPixelRatio(window.devicePixelRatio);
+    this._renderer.setPixelRatio(1);
 
     // Set canvas dimension
     this._renderer.setSize(this._container.clientWidth, this._container.clientHeight);

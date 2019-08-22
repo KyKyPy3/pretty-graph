@@ -22,6 +22,19 @@ export class LabelsLayer {
     this._graph._container.appendChild(this._textCanvas);
 
     this._textContext.font = "12px Roboto";
+
+    (CanvasRenderingContext2D.prototype as any).roundRect = function (x, y, w, h, r) {
+      if (w < 2 * r) r = w / 2;
+      if (h < 2 * r) r = h / 2;
+      this.beginPath();
+      this.moveTo(x+r, y);
+      this.arcTo(x+w, y,   x+w, y+h, r);
+      this.arcTo(x+w, y+h, x,   y+h, r);
+      this.arcTo(x,   y+h, x,   y,   r);
+      this.arcTo(x,   y,   x+w, y,   r);
+      this.closePath();
+      return this;
+    }
   }
 
   public onResize(): void {
@@ -129,11 +142,24 @@ export class LabelsLayer {
 
     const textOffset = (nodeSize / 2) * this._graph.nodeScalingFactor * this._graph._controls.scale;
 
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+    ctx.shadowBlur = 3;
+    // ctx.shadowOffsetX = 1;
+    ctx.shadowOffsetY = 1;
+
+    (ctx as any).roundRect(textOffset + coords.x + 1, coords.y - textHeight / 2 - 2, textWidth + 10, textHeight + 6, 2);
+
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.stroke();
     ctx.fillStyle = "white";
-    ctx.fillRect(textOffset + coords.x, coords.y - textHeight / 2 + 1, textWidth + 4, textHeight);
+    ctx.fill();
+
+    ctx.shadowColor = '';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
 
     ctx.fillStyle = "black";
-    ctx.fillText(text, textOffset + 2 + coords.x, coords.y + 5);
+    ctx.fillText(text, textOffset + 6 + coords.x, coords.y + 5);
   }
 
 }
