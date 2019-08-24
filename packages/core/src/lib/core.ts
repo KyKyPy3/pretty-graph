@@ -4,6 +4,7 @@ import {
   Plane,
   Raycaster,
   Scene,
+  Vector2,
   Vector3,
   WebGLRenderer,
 } from 'three';
@@ -73,6 +74,16 @@ export class PretyGraph {
   private _nodesLayer: NodesLayer | null = null;
 
   private _resizeHandler: any;
+
+  private _selectBox: HTMLElement;
+
+  private _startPoint = new Vector2();
+
+  private _pointTopLeft = new Vector2();
+
+  private _pointBottomRight = new Vector2();
+
+  private _mouseDown: boolean = false;
 
   // Listeners
 
@@ -164,6 +175,13 @@ export class PretyGraph {
     window.addEventListener('resize', this._resizeHandler, false);
 
     this._controls.setCameraPosition(1000);
+
+    this._selectBox = document.createElement('div');
+    this._selectBox.style.pointerEvents = 'none';
+    this._selectBox.style.zIndex = '10000';
+    this._selectBox.style.border = '1px solid red';
+    this._selectBox.style.position = 'fixed';
+    this._selectBox.style.backgroundColor = 'rgba(75, 160, 255, 0.3)';
   }
 
   set options(options: GraphOptions) {
@@ -609,18 +627,30 @@ export class PretyGraph {
         this._arrowsLayer.recalculate();
       }
     } else {
-      if (this._nodesLayer && !this._nodesLayer.testNode(position)) {
-        if (this._edgesLayer) {
-          this._edgesLayer.testEdge(position);
-        }
-      } else {
-        if (this._edgesLayer) {
-          this._edgesLayer.resetHoverEdge();
-        }
-      }
+      if (this._mouseDown) {
+        this._pointBottomRight.x = Math.max( this._startPoint.x, event.clientX );
+		    this._pointBottomRight.y = Math.max( this._startPoint.y, event.clientY );
+		    this._pointTopLeft.x = Math.min( this._startPoint.x, event.clientX );
+        this._pointTopLeft.y = Math.min( this._startPoint.y, event.clientY );
 
-      if (this._arrowsLayer) {
-        this._arrowsLayer.recalculate();
+        this._selectBox.style.left = this._pointTopLeft.x + 'px';
+		    this._selectBox.style.top = this._pointTopLeft.y + 'px';
+		    this._selectBox.style.width = ( this._pointBottomRight.x - this._pointTopLeft.x ) + 'px';
+		    this._selectBox.style.height = ( this._pointBottomRight.y - this._pointTopLeft.y ) + 'px';
+      } else {
+        if (this._nodesLayer && !this._nodesLayer.testNode(position)) {
+          if (this._edgesLayer) {
+            this._edgesLayer.testEdge(position);
+          }
+        } else {
+          if (this._edgesLayer) {
+            this._edgesLayer.resetHoverEdge();
+          }
+        }
+
+        if (this._arrowsLayer) {
+          this._arrowsLayer.recalculate();
+        }
       }
     }
 
@@ -631,6 +661,29 @@ export class PretyGraph {
     this._controls.enabled = true;
     this._dragging = false;
     this._dragInProgress = false;
+
+    if (this._mouseDown) {
+      this._mouseDown = false;
+
+      if (this._selectBox && this._selectBox.parentElement) {
+        this._selectBox.parentElement.removeChild(this._selectBox);
+      }
+
+      if (this._nodesLayer && this._camera) {
+        const nodes: any = [];
+        this._nodes.forEach((n) => {
+          const coords = this._translateCoordinates(n.x, n.y);
+          if (coords.x > this._pointTopLeft.x && coords.x < this._pointBottomRight.x) {
+            if (coords.y > this._pointTopLeft.y && coords.y <  this._pointBottomRight.y) {
+              nodes.push(n);
+            }
+          }
+        });
+
+        console.log(nodes);
+      }
+    }
+
 
     if (this._labelsLayer) {
       this._labelsLayer.show();
@@ -644,6 +697,21 @@ export class PretyGraph {
 
       if (this._labelsLayer) {
         this._labelsLayer.hide();
+      }
+    } else {
+      if (event.ctrlKey) {
+        this._mouseDown = true;
+        if (this._renderer && this._renderer.domElement && this._renderer.domElement.parentElement) {
+          this._renderer.domElement.parentElement.appendChild(this._selectBox);
+        }
+
+        this._selectBox.style.left = event.clientX + 'px';
+        this._selectBox.style.top = event.clientY + 'px';
+        this._selectBox.style.width = '0px';
+        this._selectBox.style.height = '0px';
+
+        this._startPoint.x = event.clientX;
+        this._startPoint.y = event.clientY;
       }
     }
   }
@@ -789,8 +857,10 @@ export class PretyGraph {
         this.neighbourhoodNodes[edge.target.id] = [];
       }
 
-      this.neighbourhoodNodes[edge.source.id].push(edge.target);
-      this.neighbourhoodNodes[edge.target.id].push(edge.source);
+      if (edge.source.id !== edge.target.id) {
+        this.neighbourhoodNodes[edge.source.id].push(edge.target);
+        this.neighbourhoodNodes[edge.target.id].push(edge.source);
+      }
 
       if (!this.neighbourhoodEdges[edge.source.id]) {
         this.neighbourhoodEdges[edge.source.id] = [];

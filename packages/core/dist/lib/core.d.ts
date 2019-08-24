@@ -33,6 +33,11 @@ export declare class PretyGraph {
     private _edgesLayer;
     private _nodesLayer;
     private _resizeHandler;
+    private _selectBox;
+    private _startPoint;
+    private _pointTopLeft;
+    private _pointBottomRight;
+    private _mouseDown;
     private _onScaleListener;
     private _onPanListener;
     private _onMouseMoveListener;
