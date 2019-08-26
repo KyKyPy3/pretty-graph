@@ -9,6 +9,8 @@ import {
   WebGLRenderer,
 } from 'three';
 
+import ResizeObserver from 'resize-observer-polyfill';
+
 import { EventEmitter } from './emitter';
 import { GraphOptions } from './options';
 
@@ -16,6 +18,25 @@ import { ArrowsLayer } from './arrows/arrows';
 import { EdgesLayer } from './edges/edges';
 import { LabelsLayer } from './labelsLayer/labels';
 import { NodesLayer } from './nodes/nodes';
+
+function debounce(func, wait, immediate): any {
+	let timeout;
+	return (...args) => {
+		const later = () => {
+			timeout = null;
+			if (!immediate) {
+        func.call(args);
+      }
+		};
+		const callNow = immediate && !timeout;
+		clearTimeout(timeout);
+		timeout = setTimeout(later, wait);
+		if (callNow) {
+      func.call(args);
+    }
+
+	};
+};
 
 export class PretyGraph {
 
@@ -147,32 +168,33 @@ export class PretyGraph {
     this._edgesLayer = new EdgesLayer(this);
     this._nodesLayer = new NodesLayer(this);
 
-    this._resizeHandler = () => {
+    this._resizeHandler = debounce(() => {
       // Таймаут нужен так как размеры контейнера не всегда приходят сразу
-      setTimeout(() => {
-        if (this._renderer && this._camera) {
-          this._renderer.setSize(this._container.clientWidth, this._container.clientHeight);
-          this._camera.aspect = this._container.clientWidth / this._container.clientHeight;
-          this._camera.updateProjectionMatrix();
-        }
 
-        if (this._edgesLayer) {
-          this._edgesLayer.onResize();
-        }
+      if (this._renderer && this._camera) {
+        this._renderer.setSize(this._container.clientWidth, this._container.clientHeight);
+        this._camera.aspect = this._container.clientWidth / this._container.clientHeight;
+        this._camera.updateProjectionMatrix();
+      }
 
-        if (this._labelsLayer) {
-          this._labelsLayer.onResize();
-        }
+      if (this._edgesLayer) {
+        this._edgesLayer.onResize();
+      }
 
-        if (this._nodesLayer) {
-          this._nodesLayer.onResize();
-        }
+      if (this._labelsLayer) {
+        this._labelsLayer.onResize();
+      }
 
-        this._render();
-      }, 250);
-    };
+      if (this._nodesLayer) {
+        this._nodesLayer.onResize();
+      }
 
-    window.addEventListener('resize', this._resizeHandler, false);
+      this._render();
+    }, 250, false);
+
+    const ro = new ResizeObserver(this._resizeHandler);
+
+    ro.observe(this._container);
 
     this._controls.setCameraPosition(1000);
 
@@ -193,12 +215,12 @@ export class PretyGraph {
     return this._options;
   }
 
-  public zoomIn(): void {
-    this._controls.zoomIn();
+  public zoomIn(): boolean {
+    return this._controls.zoomIn();
   }
 
-  public zoomOut(): void {
-    this._controls.zoomOut();
+  public zoomOut(): boolean {
+    return this._controls.zoomOut();
   }
 
   public setData(data: any, options: any = { animate: false, locate: false }): void {

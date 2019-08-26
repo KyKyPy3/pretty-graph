@@ -51,38 +51,48 @@ export class PrettyGraphControls extends EventDispatcher {
     window.addEventListener('resize', this._onResize, false);
   }
 
-  public zoomIn(): void {
+  public zoomIn(): boolean {
     const currentTransform = zoomTransform(this._selection.node());
     const targetZoom = currentTransform.k * (1 + 0.2 * 1);
+    let canZoomIn: boolean = true;
     let z = this._getZFromScale(targetZoom);
     if (z > this._camera.far - 1) {
       z = this._camera.far - 1;
+      canZoomIn = false;
     }
 
     if (z < this._camera.near + 1) {
       z = this._camera.near + 1;
+      canZoomIn = false;
     }
     const scale = this._getScaleFromZ(z);
 
     const initialTransform = zoomIdentity.translate(currentTransform.x, currentTransform.y).scale(scale);
     this._zoom.transform(this._selection, initialTransform);
+
+    return canZoomIn;
   }
 
-  public zoomOut(): void {
+  public zoomOut(): boolean {
     const currentTransform = zoomTransform(this._selection.node());
     const targetZoom = currentTransform.k * (1 + 0.2 * -1);
+    let canZoomIn: boolean = true;
     let z = this._getZFromScale(targetZoom);
     if (z > this._camera.far - 1) {
       z = this._camera.far - 1;
+      canZoomIn = false;
     }
 
     if (z < this._camera.near + 1) {
       z = this._camera.near + 1;
+      canZoomIn = false;
     }
     const scale = this._getScaleFromZ(z);
 
     const initialTransform = zoomIdentity.translate(currentTransform.x, currentTransform.y).scale(scale);
     this._zoom.transform(this._selection, initialTransform);
+
+    return canZoomIn;
   }
 
   public setZoomExtent(): void {

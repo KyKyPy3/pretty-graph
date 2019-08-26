@@ -19,7 +19,8 @@
     "build:prod": "webpack --profile --progress --env.production"
   },
   "dependencies": {
-    "three": "0.107.0"
+    "three": "0.107.0",
+    "resize-observer-polyfill": "1.5.1"
   },
   "devDependencies": {
     "ts-loader": "6.0.4",

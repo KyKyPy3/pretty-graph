@@ -8,8 +8,8 @@ export declare class PrettyGraphControls extends EventDispatcher {
     private _onResize;
     constructor(camera: PerspectiveCamera, container: HTMLElement | HTMLDocument);
     init(): void;
-    zoomIn(): void;
-    zoomOut(): void;
+    zoomIn(): boolean;
+    zoomOut(): boolean;
     setZoomExtent(): void;
     setCameraPosition(z: number): void;
     setTransform(position: {

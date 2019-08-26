@@ -55,8 +55,8 @@ export declare class PretyGraph {
     private _activeEdgesIds;
     constructor(options: GraphOptions);
     options: GraphOptions;
-    zoomIn(): void;
-    zoomOut(): void;
+    zoomIn(): boolean;
+    zoomOut(): boolean;
     setData(data: any, options?: any): void;
     getNodeByID(nodeID: string): any;
     getScreenshot(): string;
