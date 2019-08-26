@@ -1,6 +1,6 @@
 {
   "name": "@pretty-graph/core",
-  "version": "0.0.60",
+  "version": "0.0.61",
   "description": "Core graph package",
   "author": "Efremenko Roman <Roman.Efremenko@infowatch.com>",
   "keywords": [
@@ -19,8 +19,8 @@
     "build:prod": "webpack --profile --progress --env.production"
   },
   "dependencies": {
-    "three": "0.107.0",
-    "resize-observer-polyfill": "1.5.1"
+    "resize-observer-polyfill": "1.5.1",
+    "three": "0.107.0"
   },
   "devDependencies": {
     "ts-loader": "6.0.4",
