@@ -368,10 +368,11 @@ export class PretyGraph {
     const screenshotCanvas = document.createElement("canvas");
     screenshotCanvas.width = this._container.clientWidth;
     screenshotCanvas.height = this._container.clientHeight;
-    screenshotCanvas.style.backgroundColor = 'white';
     const canvasCtx = screenshotCanvas.getContext('2d');
 
     if (canvasCtx) {
+      canvasCtx.fillStyle = "white";
+      canvasCtx.fillRect(0, 0, screenshotCanvas.width, screenshotCanvas.height);
       canvasCtx.drawImage(renderer.getContext().canvas, 0, 0);
 
       if (this._labelsLayer) {
