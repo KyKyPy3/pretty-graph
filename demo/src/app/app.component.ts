@@ -45,6 +45,10 @@ export class AppComponent implements OnInit {
     this._graph.zoomOut();
   }
 
+  public toggleLabels(): void {
+    this._graph.toggleLabels();
+  }
+
   public initGraph(): void {
     this._zone.runOutsideAngular(() => {
       this._nodes = this._data.nodes;

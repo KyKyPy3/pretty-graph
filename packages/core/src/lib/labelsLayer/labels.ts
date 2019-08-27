@@ -76,6 +76,14 @@ export class LabelsLayer {
     this._isHidden = true;
   }
 
+  public toggleLabels(): void {
+    if (this._isHidden) {
+      this.show()
+    } else {
+      this.hide();
+    }
+  }
+
   public setLabelPosition(index: number, position: { x: number, y: number, z: number }): void {
     this._labels[index].x = position.x;
     this._labels[index].y = position.y;

@@ -57,6 +57,9 @@ export declare class PretyGraph {
     options: GraphOptions;
     zoomIn(): boolean;
     zoomOut(): boolean;
+    showLabels(): void;
+    hideLabels(): void;
+    toggleLabels(): void;
     setData(data: any, options?: any): void;
     getNodeByID(nodeID: string): any;
     getScreenshot(): string;

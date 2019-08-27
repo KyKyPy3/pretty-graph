@@ -10,6 +10,7 @@ export declare class LabelsLayer {
     addLabel(text: string, x: number, y: number, nodeSize: number): number;
     show(): void;
     hide(): void;
+    toggleLabels(): void;
     setLabelPosition(index: number, position: {
         x: number;
         y: number;

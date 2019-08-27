@@ -52,19 +52,16 @@ export class PrettyGraphControls extends EventDispatcher {
   }
 
   public zoomIn(): boolean {
-    const currentTransform = zoomTransform(this._selection.node());
-    const targetZoom = currentTransform.k * (1 + 0.2 * 1);
     let canZoomIn: boolean = true;
+    const currentTransform = zoomTransform(this._selection.node());
+    const targetZoom = currentTransform.k * (1.2);
     let z = this._getZFromScale(targetZoom);
+
     if (z > this._camera.far - 1) {
       z = this._camera.far - 1;
       canZoomIn = false;
     }
 
-    if (z < this._camera.near + 1) {
-      z = this._camera.near + 1;
-      canZoomIn = false;
-    }
     const scale = this._getScaleFromZ(z);
 
     const initialTransform = zoomIdentity.translate(currentTransform.x, currentTransform.y).scale(scale);
@@ -74,14 +71,10 @@ export class PrettyGraphControls extends EventDispatcher {
   }
 
   public zoomOut(): boolean {
-    const currentTransform = zoomTransform(this._selection.node());
-    const targetZoom = currentTransform.k * (1 + 0.2 * -1);
     let canZoomIn: boolean = true;
+    const currentTransform = zoomTransform(this._selection.node());
+    const targetZoom = currentTransform.k * (0.8);
     let z = this._getZFromScale(targetZoom);
-    if (z > this._camera.far - 1) {
-      z = this._camera.far - 1;
-      canZoomIn = false;
-    }
 
     if (z < this._camera.near + 1) {
       z = this._camera.near + 1;
@@ -218,6 +211,7 @@ export class PrettyGraphControls extends EventDispatcher {
     if (!this.enabled) {
       return;
     }
+    let canZoom: boolean = true;
     const dimensions = this._selection.node().getBoundingClientRect();
     let ctrlKey = false;
     if (event && event.sourceEvent && event.sourceEvent.ctrlKey) {
@@ -226,10 +220,12 @@ export class PrettyGraphControls extends EventDispatcher {
     let z = this._getZFromScale(transform.k);
     if (z > this._camera.far - 1) {
       z = this._camera.far - 1;
+      canZoom = false;
     }
 
     if (z < this._camera.near + 1) {
       z = this._camera.near + 1;
+      canZoom = false;
     }
     const scale = this._getScaleFromZ(z);
 
@@ -242,6 +238,7 @@ export class PrettyGraphControls extends EventDispatcher {
         this._camera.position.set(x, y, z);
 
         this.dispatchEvent({
+          canZoom,
           scale,
           type: 'scale'
         });
