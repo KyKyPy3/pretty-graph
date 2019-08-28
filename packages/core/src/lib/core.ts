@@ -746,7 +746,7 @@ export class PretyGraph {
     }
 
 
-    if (this._labelsLayer) {
+    if (this._labelsLayer && this.options.showLabels) {
       this._labelsLayer.show();
     }
   }
