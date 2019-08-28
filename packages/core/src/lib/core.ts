@@ -85,6 +85,10 @@ export class PretyGraph {
 
   private _mouseDown: boolean = false;
 
+  private _iframe: HTMLIFrameElement;
+
+  private _resizeTimeout: number = 0;
+
   // Listeners
 
   private _onScaleListener: any;
@@ -148,9 +152,10 @@ export class PretyGraph {
     this._nodesLayer = new NodesLayer(this);
 
     this._resizeHandler = () => {
-      setTimeout(() => {
+      clearTimeout(this._resizeTimeout);
+      this._resizeTimeout = setTimeout(() => {
         if (this._renderer && this._camera) {
-          this._renderer.setSize(this._container.clientWidth, this._container.clientHeight);
+          this._renderer.setSize(this._container.clientWidth, this._container.clientHeight, false);
           this._camera.aspect = this._container.clientWidth / this._container.clientHeight;
           this._camera.updateProjectionMatrix();
         }
@@ -168,10 +173,8 @@ export class PretyGraph {
         }
 
         this._render();
-      }, 250);
+      }, 20);
     };
-
-    window.addEventListener('resize', this._resizeHandler, false);
 
     this._controls.setCameraPosition(1000);
 
@@ -181,6 +184,20 @@ export class PretyGraph {
     this._selectBox.style.border = '1px solid red';
     this._selectBox.style.position = 'fixed';
     this._selectBox.style.backgroundColor = 'rgba(75, 160, 255, 0.3)';
+
+    this._iframe = document.createElement('iframe');
+    this._iframe.style.position = 'absolute';
+    this._iframe.style.top = '0';
+    this._iframe.style.left = '0';
+    this._iframe.style.height = '100%';
+    this._iframe.style.width = '100%';
+    this._iframe.style.zIndex = '-1';
+
+    this._container.appendChild(this._iframe);
+
+    if (this._iframe.contentWindow) {
+      this._iframe.contentWindow.addEventListener('resize', this._resizeHandler, false);
+    }
   }
 
   set options(options: GraphOptions) {
@@ -251,7 +268,7 @@ export class PretyGraph {
       this._renderer.renderLists.dispose();
 
       if (this._camera) {
-        this._renderer.setSize(this._container.clientWidth, this._container.clientHeight);
+        this._renderer.setSize(this._container.clientWidth, this._container.clientHeight, false);
         this._camera.aspect = this._container.clientWidth / this._container.clientHeight;
         this._camera.updateProjectionMatrix();
       }
@@ -386,7 +403,11 @@ export class PretyGraph {
   }
 
   public destroy(): void {
-    window.removeEventListener('resize', this._resizeHandler);
+    if (this._iframe && this._iframe.contentWindow) {
+      this._iframe.contentWindow.removeEventListener('resize', this._resizeHandler);
+
+      this._container.removeChild(this._iframe);
+    }
 
     this._removeControlsListeners();
 
@@ -708,7 +729,18 @@ export class PretyGraph {
           }
         });
 
-        console.log(nodes);
+        if (nodes.length) {
+          this._activeNodes = nodes;
+          this._activeNodesIds = this._activeNodes.map(n => n.id);
+
+          if (this._activeNodes.length) {
+            if (this._nodesLayer) {
+              this._nodesLayer.setNodesColor(this._activeNodes, 0x4b7bec);
+            }
+          }
+
+          this._render();
+        }
       }
     }
 
@@ -861,7 +893,7 @@ export class PretyGraph {
     this._renderer.setPixelRatio(1);
 
     // Set canvas dimension
-    this._renderer.setSize(this._container.clientWidth, this._container.clientHeight);
+    this._renderer.setSize(this._container.clientWidth, this._container.clientHeight, false);
 
     // Add the canvas to the DOM
     this._container.appendChild(this._renderer.domElement);

@@ -38,6 +38,8 @@ export declare class PretyGraph {
     private _pointTopLeft;
     private _pointBottomRight;
     private _mouseDown;
+    private _iframe;
+    private _resizeTimeout;
     private _onScaleListener;
     private _onPanListener;
     private _onMouseMoveListener;
