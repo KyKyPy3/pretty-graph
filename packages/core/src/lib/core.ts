@@ -144,8 +144,9 @@ export class PretyGraph {
 
     this._render();
 
-    if (this.options.showLabels && this._scene) {
-      this._labelsLayer = new LabelsLayer(this);
+    this._labelsLayer = new LabelsLayer(this);
+    if (!this.options.showLabels) {
+      this._labelsLayer.hide();
     }
     this._arrowsLayer = new ArrowsLayer(this);
     this._edgesLayer = new EdgesLayer(this);
@@ -996,7 +997,7 @@ export class PretyGraph {
     if (this._arrowsLayer) {
       this._arrowsLayer.hide();
     }
-    if (this._labelsLayer) {
+    if (this._labelsLayer && this.options.showLabels) {
       this._labelsLayer.hide();
     }
     if (this._nodesLayer) {
@@ -1020,7 +1021,7 @@ export class PretyGraph {
         if (this._arrowsLayer) {
           this._arrowsLayer.show();
         }
-        if (this._labelsLayer) {
+        if (this._labelsLayer && this.options.showLabels) {
           this._labelsLayer.show();
         }
         if (this._nodesLayer) {
