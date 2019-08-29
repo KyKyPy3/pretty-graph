@@ -80,6 +80,10 @@ export class NodesLayer {
 
   private _buffer: Uint8Array = new Uint8Array();
 
+  private _hoveredNodes: any[] = [];
+
+  private _activeNodes: any[] = [];
+
   constructor(graph: any) {
     this._graph = graph;
 
@@ -252,12 +256,35 @@ export class NodesLayer {
       this._pickingNodesScene.add(this._nodesPickingsMesh);
       this._pickingNodesScene.updateMatrixWorld(true);
     }
-
-    this._refreshBuffer();
   }
 
   public getSize(): Vector3 {
     return this._size;
+  }
+
+  public setActiveNodes(nodes: any): void {
+    if (this._activeNodes.length && nodes[0].index === this._activeNodes[0].index) {
+      this.clearActiveNodes();
+      return;
+    }
+    this.clearActiveNodes();
+
+    this._activeNodes = nodes;
+    this._activeNodes.forEach((n) => n.__active = true);
+
+    const activatingNodes = this._activeNodes.filter((n) => n.__hovered === undefined || n.__hovered === false);
+
+    this.setNodesColor(activatingNodes, 0x4b7bec);
+  }
+
+  public clearActiveNodes(): void {
+    this._activeNodes.forEach((n) => n.__active = false);
+
+    const deactivatingNodes = this._activeNodes.filter((n) => n.__hovered === undefined || n.__hovered === false);
+
+    this.setNodesColor(deactivatingNodes);
+
+    this._activeNodes = [];
   }
 
   public setNodesColor(nodes: any[], newColor?: any): void {
@@ -299,10 +326,28 @@ export class NodesLayer {
 
   public testNode(position): any {
     if (this._pickingTexture) {
-      const node = this.pickNode(position);
-      if (node) {
+      this._graph._renderer.setRenderTarget(this._pickingTexture);
+      this._graph._renderer.render(this._pickingNodesScene, this._graph._camera);
+      this._graph._renderer.setRenderTarget(null);
+      const pixelBuffer = new Uint8Array(4);
+      this._graph._renderer.readRenderTargetPixels(this._pickingTexture, position.x, this._pickingTexture.height - position.y, 1, 1, pixelBuffer);
+      /* tslint:disable-next-line */
+      const id = (pixelBuffer[0]<<16)|(pixelBuffer[1]<<8)|(pixelBuffer[2]);
+      if (id) {
+        const node = this._graph._indexedNodes[this._colorToNodeID[id]];
         if (this.hoveredNode !== node) {
+          // clear last nodes
+          const unhoveringNodes = this._hoveredNodes.filter((n) => n.__active === undefined || n.__active === false);
+          this.setNodesColor(unhoveringNodes);
+          this._hoveredNodes.forEach((n) => n.__hovered = false);
+
           this.hoveredNode = node;
+          this._hoveredNodes = [node, ...this._graph.neighbourhoodNodes[node.id]];
+          this._hoveredNodes.forEach((n) => n.__hovered = true);
+
+          const hoveringNodes = this._hoveredNodes.filter((n) => n.__active === undefined || n.__active === false);
+          this.setNodesColor(hoveringNodes, 0x4b7bec);
+
           const coordinates = this._graph._translateCoordinates(this.hoveredNode.x, this.hoveredNode.y);
           this._graph.onEvent.emit('nodeHover', { node: this.hoveredNode, ...coordinates, scale: this._graph._controls.scale });
           this._graph._render();
@@ -311,6 +356,11 @@ export class NodesLayer {
         return this.hoveredNode;
       } else {
         if (this.hoveredNode !== null) {
+          const unhoveringNodes = this._hoveredNodes.filter((n) => n.__active === undefined || n.__active === false);
+          this.setNodesColor(unhoveringNodes);
+          this._hoveredNodes.forEach((n) => n.__hovered = false);
+          this._hoveredNodes = [];
+
           this._graph.onEvent.emit('nodeUnhover', { node: this.hoveredNode });
           this.hoveredNode = null;
           this._graph._render();
@@ -370,8 +420,6 @@ export class NodesLayer {
       (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).setArray(translateArray);
       (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
     }
-
-    this._refreshBuffer();
   }
 
   public onScale(scale: number): void {
@@ -381,20 +429,12 @@ export class NodesLayer {
       this._nodesPickingMaterial.uniforms.scale.value = scale;
       this._nodesPickingMaterial.needsUpdate = true;
     }
-
-    this._refreshBuffer();
   }
 
   public onResize(): void {
     if (this._pickingTexture) {
       this._pickingTexture.setSize(this._graph._container.clientWidth, this._graph._container.clientHeight);
     }
-
-    this._refreshBuffer();
-  }
-
-  public onPan(): void {
-    this._refreshBuffer();
   }
 
   public dispose(): void {
@@ -421,7 +461,7 @@ export class NodesLayer {
     this._colorToNodeID = {};
   }
 
-  private _refreshBuffer(): void {
+  public refreshBuffer(): void {
     if (this._pickingTexture) {
       this._graph._renderer.setRenderTarget(this._pickingTexture);
       this._graph._renderer.render(this._pickingNodesScene, this._graph._camera);
@@ -466,6 +506,11 @@ export class NodesLayer {
       this._pickingNodesScene.remove(this._nodesPickingsMesh);
       this._nodesPickingsMesh = null;
     }
+
+    this._buffer = new Uint8Array();
+    this._hoveredNodes = [];
+    this.hoveredNode = null;
+    this._activeNodes = [];
   }
 
 }

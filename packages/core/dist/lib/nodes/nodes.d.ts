@@ -20,10 +20,14 @@ export declare class NodesLayer {
     private _silent;
     private _size;
     private _buffer;
+    private _hoveredNodes;
+    private _activeNodes;
     constructor(graph: any);
     setSilent(silent: boolean): void;
     draw(): void;
     getSize(): Vector3;
+    setActiveNodes(nodes: any): void;
+    clearActiveNodes(): void;
     setNodesColor(nodes: any[], newColor?: any): void;
     setNodePosition(nodes: any[], offset: any): void;
     testNode(position: any): any;
@@ -32,8 +36,7 @@ export declare class NodesLayer {
     recalculatePicking(): void;
     onScale(scale: number): void;
     onResize(): void;
-    onPan(): void;
     dispose(): void;
-    private _refreshBuffer;
+    refreshBuffer(): void;
     private _disposeInternal;
 }

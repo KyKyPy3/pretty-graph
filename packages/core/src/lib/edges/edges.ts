@@ -38,7 +38,9 @@ export class EdgesLayer extends EventDispatcher {
 
   private _hoveredEdgeID: number = -1;
 
-  private _buffer: Uint8Array = new Uint8Array();
+  private _hoveredEdges: any[] = [];
+
+  private _activeEdges: any[] = [];
 
   constructor(graph: any) {
     super();
@@ -64,8 +66,6 @@ export class EdgesLayer extends EventDispatcher {
     if (this._pickingTexture) {
       this._pickingTexture.setSize(this._graph._container.clientWidth, this._graph._container.clientHeight);
     }
-
-    this._refreshBuffer();
   }
 
   public onScale(scale: number): void {
@@ -74,12 +74,6 @@ export class EdgesLayer extends EventDispatcher {
 
     this._linePickingMaterial.uniforms.scale.value = scale;
     this._linePickingMaterial.needsUpdate = true;
-
-    this._refreshBuffer();
-  }
-
-  public onPan(): void {
-    this._refreshBuffer();
   }
 
   public draw(): void {
@@ -88,8 +82,6 @@ export class EdgesLayer extends EventDispatcher {
 
     this._constructMesh(linesData);
     this._constructPickingMesh(linesData);
-
-    this._refreshBuffer();
   }
 
   public dispose(): void {
@@ -106,8 +98,38 @@ export class EdgesLayer extends EventDispatcher {
     }
 
     this._graph = null;
-    this._hoveredEdge = null;
-    this._hoveredEdgeID = -1;
+  }
+
+  public setHoveredEdges(edges): void {
+    this._hoveredEdges = edges;
+    this._hoveredEdges.forEach((edge) => edge.__hovered = true);
+    const hoveringEdges = this._hoveredEdges.filter((edge) => edge.__active === undefined || edge.__active === false);
+    this._setEdgesSize(hoveringEdges, 1.3, 1);
+  }
+
+  public clearHoveredEdges(): void {
+    const unhoveringEdges = this._hoveredEdges.filter((edge) => edge.__active === undefined || edge.__active === false);
+    this._setEdgesSize(unhoveringEdges, 1, 1.3);
+    this._hoveredEdges.forEach((edge) => edge.__hovered = false);
+    this._hoveredEdges = [];
+  }
+
+  public setActiveEdges(edges): void {
+    this._activeEdges = edges;
+    this._activeEdges.forEach((edge) => edge.__active = true);
+
+    const activatingEdges = this._activeEdges.filter((edge) => edge.__hovered === undefined || edge.__hovered === false);
+    this._setEdgesSize(activatingEdges, 1.3, 1);
+  }
+
+  public clearActiveEdges(): void {
+    const deactivatingEdges = this._activeEdges.filter((edge) => edge.__hovered === undefined || edge.__hovered === false);
+    this._setEdgesSize(deactivatingEdges, 1, 1.3);
+    this._activeEdges.forEach((edge) => edge.__active = false);
+    this._activeEdges = [];
+
+    this.recalculate();
+    this.recalculatePicking();
   }
 
   public _setEdgesSize(edges: any[], sizeMul: number, sizeDiv: number): void {
@@ -128,7 +150,7 @@ export class EdgesLayer extends EventDispatcher {
           this._lineGeometry.attributes.linewidth.setX(edge._lineSizeRange[0], edge.size);
         }
 
-        this._lineGeometry.attributes.linewidth.updateRange = { offset: edge._lineSizeRange[0], count };
+        // this._lineGeometry.attributes.linewidth.updateRange = { offset: edge._lineSizeRange[0], count };
       }
     }
 
@@ -139,7 +161,10 @@ export class EdgesLayer extends EventDispatcher {
 
   public resetHoverEdge(): void {
     if (this._hoveredEdge) {
-      this._setEdgesSize([this._hoveredEdge], 1, 1.3);
+      this._hoveredEdge.__hovered = false;
+      if (this._hoveredEdge.__active === undefined || this._hoveredEdge.__active === false) {
+        this._setEdgesSize([this._hoveredEdge], 1, 1.3);
+      }
 
       this._graph.onEvent.emit('edgeUnhover', { edge: this._hoveredEdge });
       this._hoveredEdge = null;
@@ -149,15 +174,24 @@ export class EdgesLayer extends EventDispatcher {
 
   public testEdge(position: any): void {
     if (this._pickingTexture) {
-      const id = this.pickEdgeID(position);
+      this._graph._renderer.setRenderTarget(this._pickingTexture);
+      this._graph._renderer.render(this._pickingLineScene, this._graph._camera);
+      this._graph._renderer.setRenderTarget(null);
+      const pixelBuffer = new Uint8Array(4);
+      this._graph._renderer.readRenderTargetPixels(this._pickingTexture, position.x, this._pickingTexture.height - position.y, 1, 1, pixelBuffer);
+      /* tslint:disable-next-line */
+      const id = (pixelBuffer[0]<<16)|(pixelBuffer[1]<<8)|(pixelBuffer[2]);
       if (id) {
         if (this._hoveredEdgeID !== id - 1) {
           this.resetHoverEdge();
 
           this._hoveredEdge = this._graph._edges[id - 1];
+          this._hoveredEdge.__hovered = true;
           this._hoveredEdgeID = id - 1;
 
-          this._setEdgesSize([this._hoveredEdge], 1.3, 1);
+          if (this._hoveredEdge.__active === undefined || this._hoveredEdge.__active === false) {
+            this._setEdgesSize([this._hoveredEdge], 1.3, 1);
+          }
 
           // ToDo: отсылать надо центр ребра?
           this._graph.onEvent.emit('edgeHover', { edge: this._hoveredEdge, ...position });
@@ -176,32 +210,6 @@ export class EdgesLayer extends EventDispatcher {
   public recalculatePicking(): void {
     const linesData = this._constructLines(this._graph._edges);
     this._linesPickingGeometry.setPositions(linesData.positions);
-
-    this._refreshBuffer();
-  }
-
-  public pickEdgeID(position): any {
-    if (this._pickingTexture && this._buffer.length) {
-      const index = position.x + (this._pickingTexture.height - position.y) * this._pickingTexture.width;
-      const pixel = this._buffer.slice(index * 4, index * 4 + 4);
-      /* tslint:disable-next-line */
-      const id = (pixel[0]<<16)|(pixel[1]<<8)|(pixel[2]);
-      if (id) {
-        return id;
-      }
-    }
-
-    return 0;
-  }
-
-  private _refreshBuffer(): void {
-    if (this._pickingTexture) {
-      this._graph._renderer.setRenderTarget(this._pickingTexture);
-      this._graph._renderer.render(this._pickingLineScene, this._graph._camera);
-      this._graph._renderer.setRenderTarget(null);
-      this._buffer = new Uint8Array(4 * this._pickingTexture.width * this._pickingTexture.height);
-      this._graph._renderer.readRenderTargetPixels(this._pickingTexture, 0, 0, this._pickingTexture.width, this._pickingTexture.height, this._buffer);
-    }
   }
 
   private _setPickingLineSize(edges): void {
@@ -330,6 +338,11 @@ export class EdgesLayer extends EventDispatcher {
       this._graph._scene.remove(this._lineMesh);
       this._lineMesh = null;
     }
+
+    this._hoveredEdge = null;
+    this._hoveredEdgeID = -1;
+    this._hoveredEdges = [];
+    this._activeEdges = [];
   }
 
   private _constructLines(links: any[]): any {

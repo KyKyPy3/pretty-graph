@@ -19,7 +19,6 @@
     "build:prod": "webpack --profile --progress --env.production"
   },
   "dependencies": {
-    "resize-observer-polyfill": "1.5.1",
     "three": "0.107.0"
   },
   "devDependencies": {

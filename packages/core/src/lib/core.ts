@@ -83,13 +83,13 @@ export class PretyGraph {
 
   private _pointBottomRight = new Vector2();
 
-  private _mouseDown: boolean = false;
-
   private _iframe: HTMLIFrameElement;
 
   private _resizeTimeout: number = 0;
 
   private _labelHidedOnMove: boolean = false;
+
+  private _selectMode: boolean = false;
 
   // Listeners
 
@@ -110,20 +110,6 @@ export class PretyGraph {
   private _onMouseUpListener: any;
 
   private _onRotateListener: any;
-
-  private _activeNodes: any[] = [];
-
-  private _lastActiveNode: any;
-
-  private _hoveredNodes: any[] = [];
-
-  private _activeNodesIds: number[] = [];
-
-  private _activeEdges: any[] = [];
-
-  private _hoveredEdges: any[] = [];
-
-  private _activeEdgesIds: number[] = [];
 
   constructor(options: GraphOptions) {
     this.options = options;
@@ -234,6 +220,16 @@ export class PretyGraph {
     }
   }
 
+  public activateSelectMode(): void {
+    this._selectMode = true;
+    this._controls.enabled = false;
+  }
+
+  public deactivateSelectMode(): void {
+    this._selectMode = false;
+    this._controls.enabled = true;
+  }
+
   public toggleLabels(): void {
     if (this._labelsLayer) {
       this._labelsLayer.toggleLabels();
@@ -241,15 +237,6 @@ export class PretyGraph {
   }
 
   public setData(data: any, options: any = { animate: false, locate: false }): void {
-    if (this._nodesLayer) {
-      // Clear previous nodes color
-      this._nodesLayer.setNodesColor(this._hoveredNodes);
-    }
-
-    if (this._edgesLayer) {
-      this._edgesLayer._setEdgesSize(this._hoveredEdges, 1, 1.5);
-    }
-
     this._nodes = data.nodes;
     this._edges = data.links;
 
@@ -507,44 +494,14 @@ export class PretyGraph {
   private _onNodeClick(data): void {
     const node = data.node;
 
-    // Clear last active nodes
-    if (this._activeNodes.length) {
-      if (this._nodesLayer) {
-        this._nodesLayer.setNodesColor(this._activeNodes);
-      }
+    if (this._nodesLayer) {
+      const activeNodes = [node, ...this.neighbourhoodNodes[node.id]];
+      this._nodesLayer.setActiveNodes(activeNodes);
     }
 
-    if (this._activeEdges.length) {
-      if (this._edgesLayer) {
-        this._edgesLayer._setEdgesSize(this._activeEdges, 1, 1.3);
-      }
-    }
-
-    if (this._lastActiveNode && node.id === this._lastActiveNode.id) {
-      this._activeNodes = [];
-      this._activeNodesIds = [];
-      this._activeEdges = [];
-      this._activeEdgesIds = [];
-      this._lastActiveNode = null;
-    } else {
-      this._activeNodes = [node, ...this.neighbourhoodNodes[node.id]];
-      this._activeNodesIds = this._activeNodes.map(n => n.id);
-
-      this._activeEdges = this.neighbourhoodEdges[node.id];
-      this._activeEdgesIds = this._activeEdges.map(e => e.index);
-
-      this._hoveredEdges = this._hoveredEdges.filter((e) => this._activeEdgesIds.indexOf(e.index) === -1);
-      this._hoveredNodes = this._hoveredNodes.filter((n) => this._activeNodesIds.indexOf(n.id) === -1);
-
-      if (this._edgesLayer) {
-        this._edgesLayer._setEdgesSize(this._activeEdges, 1.3, 1);
-      }
-
-      if (this._nodesLayer) {
-        this._nodesLayer.setNodesColor(this._activeNodes, 0x4b7bec);
-      }
-
-      this._lastActiveNode = node;
+    if (this._edgesLayer) {
+      const activeEdges = this.neighbourhoodEdges[node.id];
+      this._edgesLayer.setActiveEdges(activeEdges);
     }
 
     if (this._arrowsLayer) {
@@ -556,18 +513,12 @@ export class PretyGraph {
 
   private _onWorkspaceClick(): void {
     if (this._nodesLayer) {
-      this._nodesLayer.setNodesColor(this._activeNodes);
+      this._nodesLayer.clearActiveNodes();
     }
 
     if (this._edgesLayer) {
-      this._edgesLayer._setEdgesSize(this._activeEdges, 1, 1.3);
+      this._edgesLayer.clearActiveEdges();
     }
-
-    this._activeEdges = [];
-    this._activeEdgesIds = [];
-
-    this._activeNodes = [];
-    this._activeNodesIds = [];
 
     if (this._arrowsLayer) {
       this._arrowsLayer.recalculate();
@@ -579,30 +530,9 @@ export class PretyGraph {
   private _onNodeHover(data): void {
     const node = data.node;
 
-    if (this._nodesLayer) {
-      // Clear previous nodes color
-      this._nodesLayer.setNodesColor(this._hoveredNodes);
-    }
-
+    const hoveredEdges = this.neighbourhoodEdges[node.id];
     if (this._edgesLayer) {
-      this._edgesLayer._setEdgesSize(this._hoveredEdges, 1, 1.5);
-    }
-
-    this._hoveredNodes = [node, ...this.neighbourhoodNodes[node.id]];
-    if (this._activeNodesIds) {
-      this._hoveredNodes = this._hoveredNodes.filter((n) => this._activeNodesIds.indexOf(n.id) === -1);
-    }
-    this._hoveredEdges = this.neighbourhoodEdges[node.id];
-    if (this._activeEdgesIds) {
-      this._hoveredEdges = this._hoveredEdges.filter((e) => this._activeEdgesIds.indexOf(e.index) === -1);
-    }
-
-    if (this._edgesLayer) {
-      this._edgesLayer._setEdgesSize(this._hoveredEdges, 1.3, 1);
-    }
-
-    if (this._nodesLayer) {
-      this._nodesLayer.setNodesColor(this._hoveredNodes, 0x4b7bec);
+      this._edgesLayer.setHoveredEdges(hoveredEdges);
     }
 
     if (this._arrowsLayer) {
@@ -613,22 +543,16 @@ export class PretyGraph {
   }
 
   private _onNodeUnhover(): void {
-    if (this._nodesLayer) {
-      this._nodesLayer.setNodesColor(this._hoveredNodes);
-    }
-
     if (this._edgesLayer) {
-      this._edgesLayer._setEdgesSize(this._hoveredEdges, 1, 1.3);
+      this._edgesLayer.clearHoveredEdges();
     }
-
-    this._hoveredNodes = [];
-    this._hoveredEdges = [];
 
     if (this._arrowsLayer) {
       this._arrowsLayer.recalculate();
     }
 
     this._render();
+
   }
 
   private _onRotate({ delta }): void {
@@ -712,7 +636,7 @@ export class PretyGraph {
         this._arrowsLayer.recalculate();
       }
     } else {
-      if (this._mouseDown) {
+      if (this._selectMode) {
         this._pointBottomRight.x = Math.max( this._startPoint.x, position.x );
 		    this._pointBottomRight.y = Math.max( this._startPoint.y, position.y );
 		    this._pointTopLeft.x = Math.min( this._startPoint.x, position.x );
@@ -743,36 +667,28 @@ export class PretyGraph {
   }
 
   private _onMouseUp(): void {
-    this._controls.enabled = true;
-    this._dragging = false;
-    this._dragInProgress = false;
-
-    if (this._mouseDown) {
-      this._mouseDown = false;
+    if (this._selectMode) {
+      this._selectMode = false;
 
       if (this._selectBox && this._selectBox.parentElement) {
         this._selectBox.parentElement.removeChild(this._selectBox);
       }
 
       if (this._nodesLayer && this._camera) {
-        const nodes: any = [];
+        const nodes = {};
+        this._nodesLayer.refreshBuffer();
         for (let x = this._pointTopLeft.x; x < this._pointBottomRight.x; x++) {
           for (let y = this._pointTopLeft.y; y < this._pointBottomRight.y; y++) {
             const node = this._nodesLayer.pickNode({ x, y });
             if (node) {
-              nodes.push(node);
+              nodes[node.id] = node;
             }
           }
         }
 
-        if (nodes.length) {
-          this._activeNodes = nodes;
-          this._activeNodesIds = this._activeNodes.map(n => n.id);
-
-          if (this._activeNodes.length) {
-            if (this._nodesLayer) {
-              this._nodesLayer.setNodesColor(this._activeNodes, 0x4b7bec);
-            }
+        if (Object.values(nodes).length) {
+          if (this._nodesLayer) {
+            this._nodesLayer.setActiveNodes(Object.values(nodes));
           }
 
           this._render();
@@ -780,30 +696,33 @@ export class PretyGraph {
       }
     }
 
+    this._controls.enabled = true;
+    this._dragging = false;
+    this._dragInProgress = false;
+
     if (this._labelsLayer && this._labelHidedOnMove) {
       this._labelsLayer.show();
       this._labelHidedOnMove = false;
     }
   }
 
-  private _onMouseDown({ event }): void {
+  private _onMouseDown({ event, position }): void {
     if (this._nodesLayer && this._nodesLayer.hoveredNode !== null && event.buttons === 1) {
       this._controls.enabled = false;
       this._dragging = true;
     } else {
-      if (event.ctrlKey) {
-        this._mouseDown = true;
+      if (this._selectMode) {
         if (this._renderer && this._renderer.domElement && this._renderer.domElement.parentElement) {
           this._renderer.domElement.parentElement.appendChild(this._selectBox);
         }
 
-        this._selectBox.style.left = event.x + 'px';
-        this._selectBox.style.top = event.y + 'px';
+        this._selectBox.style.left = position.x + 'px';
+        this._selectBox.style.top = position.y + 'px';
         this._selectBox.style.width = '0px';
         this._selectBox.style.height = '0px';
 
-        this._startPoint.x = event.x;
-        this._startPoint.y = event.y;
+        this._startPoint.x = position.x;
+        this._startPoint.y = position.y;
       }
     }
   }
@@ -838,14 +757,6 @@ export class PretyGraph {
 
   private _onPan(): void {
     this._render();
-
-    if (this._nodesLayer) {
-      this._nodesLayer.onPan();
-    }
-
-    if (this._edgesLayer) {
-      this._edgesLayer.onPan();
-    }
 
     if (this._labelsLayer) {
       this._labelsLayer.recalculate();

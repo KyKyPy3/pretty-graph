@@ -37,6 +37,14 @@ export class AppComponent implements OnInit {
     this.initGraph();
   }
 
+  public activateSelectMode(): void {
+    this._graph.activateSelectMode();
+  }
+
+  public deactivateSelectMode(): void {
+    this._graph.deactivateSelectMode();
+  }
+
   public zoomIn(): void {
     this._graph.zoomIn();
   }

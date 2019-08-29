@@ -2,6 +2,8 @@
 <button (click)="zoomIn()" style="position: absolute;z-index:20000;top:20px;">+</button>
 <button (click)="zoomOut()" style="position: absolute;z-index:20000;top:20px;left:30px;">-</button>
 <button (click)="toggleLabels()" style="position: absolute;z-index:20000;top:40px;">Toggle labels</button>
+<button (click)="activateSelectMode()" style="position: absolute;z-index:20000;top:60px;">On</button>
+<button (click)="deactivateSelectMode()" style="position: absolute;z-index:20000;top:60px;left:50px;">Off</button>
 
 <div #graph class="graph"></div>
 

@@ -145,6 +145,10 @@ export class PrettyGraphControls extends EventDispatcher {
     event.preventDefault();
     event.stopPropagation();
 
+    if (!this.enabled) {
+      return;
+    }
+
     const [mouseX, mouseY] = mouse(this._selection.node());
 
     this.dispatchEvent({
@@ -183,6 +187,10 @@ export class PrettyGraphControls extends EventDispatcher {
   }
 
   private _onDblClick(): void {
+    if (!this.enabled) {
+      return;
+    }
+
     const [mouseX, mouseY] = mouse(this._selection.node());
 
     this.dispatchEvent({
@@ -195,6 +203,11 @@ export class PrettyGraphControls extends EventDispatcher {
   }
 
   private _onClick(): void {
+    console.log(this.enabled);
+    if (!this.enabled) {
+      return;
+    }
+
     const [mouseX, mouseY] = mouse(this._selection.node());
 
     this.dispatchEvent({
