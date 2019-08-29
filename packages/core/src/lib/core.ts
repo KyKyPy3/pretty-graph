@@ -841,9 +841,9 @@ export class PretyGraph {
 
     if (this._nodesLayer && this._nodesLayer.hoveredNode) {
       const coordinates = this._translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
-      this.onEvent.emit('nodeScaling', { node: this._nodesLayer.hoveredNode, ...coordinates, scale: this._controls.scale, canZoom: event.canZoom });
+      this.onEvent.emit('nodeScaling', { node: this._nodesLayer.hoveredNode, ...coordinates, scale: this._controls.scale, canZoom: event.canZoom, zoomDirection: event.zoomDirection });
     } else {
-      this.onEvent.emit('workspaceViewChanged', { scale: this._controls.scale, canZoom: event.canZoom });
+      this.onEvent.emit('workspaceViewChanged', { scale: this._controls.scale, canZoom: event.canZoom, zoomDirection: event.zoomDirection });
     }
   }
 
