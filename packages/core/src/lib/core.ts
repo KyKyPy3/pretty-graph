@@ -924,6 +924,8 @@ export class PretyGraph {
     // Set canvas dimension
     this._renderer.setSize(this._container.clientWidth, this._container.clientHeight, false);
 
+    this._renderer.domElement.style.position = 'absolute';
+
     // Add the canvas to the DOM
     this._container.appendChild(this._renderer.domElement);
   }
