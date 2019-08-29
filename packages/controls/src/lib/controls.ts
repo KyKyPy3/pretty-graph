@@ -212,6 +212,7 @@ export class PrettyGraphControls extends EventDispatcher {
       return;
     }
     let canZoom: boolean = true;
+    let zoomDirection: string = '';
     const dimensions = this._selection.node().getBoundingClientRect();
     let ctrlKey = false;
     if (event && event.sourceEvent && event.sourceEvent.ctrlKey) {
@@ -230,6 +231,12 @@ export class PrettyGraphControls extends EventDispatcher {
     const scale = this._getScaleFromZ(z);
 
     if (scale !== this.scale) {
+      if (scale > this.scale) {
+        zoomDirection = 'in';
+      } else {
+        zoomDirection = 'out';
+      }
+
       if (!ctrlKey) {
         this.scale = scale;
         const x = -(transform.x - dimensions.width / 2) / scale;
@@ -240,7 +247,8 @@ export class PrettyGraphControls extends EventDispatcher {
         this.dispatchEvent({
           canZoom,
           scale,
-          type: 'scale'
+          type: 'scale',
+          zoomDirection
         });
       } else {
         this.dispatchEvent({

@@ -40,6 +40,7 @@ export declare class PretyGraph {
     private _mouseDown;
     private _iframe;
     private _resizeTimeout;
+    private _labelHidedOnMove;
     private _onScaleListener;
     private _onPanListener;
     private _onMouseMoveListener;

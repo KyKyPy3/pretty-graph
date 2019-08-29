@@ -89,6 +89,8 @@ export class PretyGraph {
 
   private _resizeTimeout: number = 0;
 
+  private _labelHidedOnMove: boolean = false;
+
   // Listeners
 
   private _onScaleListener: any;
@@ -611,6 +613,11 @@ export class PretyGraph {
 
   private _onMouseMove({ event, position }: any): void {
     if (this._dragging && this._camera) {
+      if (this._labelsLayer && !this._labelsLayer.isHidden()) {
+        this._labelHidedOnMove = true;
+        this._labelsLayer.hide();
+      }
+
       // dragging node
       const mouse = new Vector3();
       mouse.x = (position.x / this._container.clientWidth) * 2 - 1;
@@ -746,8 +753,9 @@ export class PretyGraph {
     }
 
 
-    if (this._labelsLayer && this.options.showLabels) {
+    if (this._labelsLayer && this._labelHidedOnMove) {
       this._labelsLayer.show();
+      this._labelHidedOnMove = false;
     }
   }
 
@@ -755,10 +763,6 @@ export class PretyGraph {
     if (this._nodesLayer && this._nodesLayer.hoveredNode !== null && event.buttons === 1) {
       this._controls.enabled = false;
       this._dragging = true;
-
-      if (this._labelsLayer) {
-        this._labelsLayer.hide();
-      }
     } else {
       if (event.ctrlKey) {
         this._mouseDown = true;
@@ -997,7 +1001,7 @@ export class PretyGraph {
     if (this._arrowsLayer) {
       this._arrowsLayer.hide();
     }
-    if (this._labelsLayer && this.options.showLabels) {
+    if (this._labelsLayer) {
       this._labelsLayer.hide();
     }
     if (this._nodesLayer) {

@@ -71,6 +71,10 @@ export class LabelsLayer {
     this.recalculate();
   }
 
+  public isHidden(): boolean {
+    return this._isHidden;
+  }
+
   public hide(): void {
     this._clearTextLayer();
     this._isHidden = true;
