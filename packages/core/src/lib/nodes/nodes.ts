@@ -78,7 +78,7 @@ export class NodesLayer {
 
   private _size: Vector3 = new Vector3();
 
-  private _buffer!: Uint8Array;
+  private _buffer: Uint8Array = new Uint8Array();
 
   constructor(graph: any) {
     this._graph = graph;
@@ -322,7 +322,7 @@ export class NodesLayer {
   }
 
   public pickNode(position): any {
-    if (this._pickingTexture) {
+    if (this._pickingTexture && this._buffer.length) {
       const index = position.x + (this._pickingTexture.height - position.y) * this._pickingTexture.width;
       const pixel = this._buffer.slice(index * 4, index * 4 + 4);
       /* tslint:disable-next-line */

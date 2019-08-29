@@ -57,15 +57,16 @@ export class PrettyGraphControls extends EventDispatcher {
     const targetZoom = currentTransform.k * (1.2);
     let z = this._getZFromScale(targetZoom);
 
-    if (z > this._camera.far - 1) {
-      z = this._camera.far - 1;
+    if (z < this._camera.near + 1) {
+      z = this._camera.near + 1;
       canZoomIn = false;
     }
-
     const scale = this._getScaleFromZ(z);
 
-    const initialTransform = zoomIdentity.translate(currentTransform.x, currentTransform.y).scale(scale);
-    this._zoom.transform(this._selection, initialTransform);
+    if (this.scale !== scale) {
+      const initialTransform = zoomIdentity.translate(currentTransform.x, currentTransform.y).scale(scale);
+      this._zoom.transform(this._selection, initialTransform);
+    }
 
     return canZoomIn;
   }
@@ -76,14 +77,16 @@ export class PrettyGraphControls extends EventDispatcher {
     const targetZoom = currentTransform.k * (0.8);
     let z = this._getZFromScale(targetZoom);
 
-    if (z < this._camera.near + 1) {
-      z = this._camera.near + 1;
+    if (z > this._camera.far - 1) {
+      z = this._camera.far - 1;
       canZoomIn = false;
     }
     const scale = this._getScaleFromZ(z);
 
-    const initialTransform = zoomIdentity.translate(currentTransform.x, currentTransform.y).scale(scale);
-    this._zoom.transform(this._selection, initialTransform);
+    if (this.scale !== scale) {
+      const initialTransform = zoomIdentity.translate(currentTransform.x, currentTransform.y).scale(scale);
+      this._zoom.transform(this._selection, initialTransform);
+    }
 
     return canZoomIn;
   }
@@ -211,20 +214,23 @@ export class PrettyGraphControls extends EventDispatcher {
     if (!this.enabled) {
       return;
     }
+
     let canZoom: boolean = true;
     let zoomDirection: string = '';
     const dimensions = this._selection.node().getBoundingClientRect();
     let ctrlKey = false;
+
     if (event && event.sourceEvent && event.sourceEvent.ctrlKey) {
       ctrlKey = true
     };
+
     let z = this._getZFromScale(transform.k);
-    if (z > this._camera.far - 1) {
+    if (z >= this._camera.far - 1) {
       z = this._camera.far - 1;
       canZoom = false;
     }
 
-    if (z < this._camera.near + 1) {
+    if (z <= this._camera.near + 1) {
       z = this._camera.near + 1;
       canZoom = false;
     }

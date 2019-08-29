@@ -533,6 +533,18 @@ export class PretyGraph {
 
       this._hoveredEdges = this._hoveredEdges.filter((e) => this._activeEdgesIds.indexOf(e.index) === -1);
       this._hoveredNodes = this._hoveredNodes.filter((n) => this._activeNodesIds.indexOf(n.id) === -1);
+
+      if (this._edgesLayer) {
+        this._edgesLayer._setEdgesSize(this._activeEdges, 1.3, 1);
+      }
+
+      if (this._nodesLayer) {
+        this._nodesLayer.setNodesColor(this._activeNodes, 0x4b7bec);
+      }
+    }
+
+    if (this._arrowsLayer) {
+      this._arrowsLayer.recalculate();
     }
 
     this._render();
