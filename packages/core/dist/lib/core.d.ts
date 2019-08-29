@@ -51,6 +51,7 @@ export declare class PretyGraph {
     private _onMouseUpListener;
     private _onRotateListener;
     private _activeNodes;
+    private _lastActiveNode;
     private _hoveredNodes;
     private _activeNodesIds;
     private _activeEdges;

@@ -11,10 +11,12 @@ export declare class EdgesLayer extends EventDispatcher {
     private _pickingTexture;
     private _hoveredEdge;
     private _hoveredEdgeID;
+    private _buffer;
     constructor(graph: any);
     readonly hoveredEdge: any;
     onResize(): void;
     onScale(scale: number): void;
+    onPan(): void;
     draw(): void;
     dispose(): void;
     _setEdgesSize(edges: any[], sizeMul: number, sizeDiv: number): void;
@@ -22,6 +24,8 @@ export declare class EdgesLayer extends EventDispatcher {
     testEdge(position: any): void;
     recalculate(): void;
     recalculatePicking(): void;
+    pickEdgeID(position: any): any;
+    private _refreshBuffer;
     private _setPickingLineSize;
     private _constructMesh;
     private _constructPickingMesh;

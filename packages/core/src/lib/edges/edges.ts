@@ -38,6 +38,8 @@ export class EdgesLayer extends EventDispatcher {
 
   private _hoveredEdgeID: number = -1;
 
+  private _buffer: Uint8Array = new Uint8Array();
+
   constructor(graph: any) {
     super();
 
@@ -62,6 +64,8 @@ export class EdgesLayer extends EventDispatcher {
     if (this._pickingTexture) {
       this._pickingTexture.setSize(this._graph._container.clientWidth, this._graph._container.clientHeight);
     }
+
+    this._refreshBuffer();
   }
 
   public onScale(scale: number): void {
@@ -70,6 +74,12 @@ export class EdgesLayer extends EventDispatcher {
 
     this._linePickingMaterial.uniforms.scale.value = scale;
     this._linePickingMaterial.needsUpdate = true;
+
+    this._refreshBuffer();
+  }
+
+  public onPan(): void {
+    this._refreshBuffer();
   }
 
   public draw(): void {
@@ -78,6 +88,8 @@ export class EdgesLayer extends EventDispatcher {
 
     this._constructMesh(linesData);
     this._constructPickingMesh(linesData);
+
+    this._refreshBuffer();
   }
 
   public dispose(): void {
@@ -137,13 +149,7 @@ export class EdgesLayer extends EventDispatcher {
 
   public testEdge(position: any): void {
     if (this._pickingTexture) {
-      this._graph._renderer.setRenderTarget(this._pickingTexture);
-      this._graph._renderer.render(this._pickingLineScene, this._graph._camera);
-      this._graph._renderer.setRenderTarget(null);
-      const pixelBuffer = new Uint8Array(4);
-      this._graph._renderer.readRenderTargetPixels(this._pickingTexture, position.x, this._pickingTexture.height - position.y, 1, 1, pixelBuffer);
-      /* tslint:disable-next-line */
-      const id = (pixelBuffer[0]<<16)|(pixelBuffer[1]<<8)|(pixelBuffer[2]);
+      const id = this.pickEdgeID(position);
       if (id) {
         if (this._hoveredEdgeID !== id - 1) {
           this.resetHoverEdge();
@@ -170,6 +176,32 @@ export class EdgesLayer extends EventDispatcher {
   public recalculatePicking(): void {
     const linesData = this._constructLines(this._graph._edges);
     this._linesPickingGeometry.setPositions(linesData.positions);
+
+    this._refreshBuffer();
+  }
+
+  public pickEdgeID(position): any {
+    if (this._pickingTexture && this._buffer.length) {
+      const index = position.x + (this._pickingTexture.height - position.y) * this._pickingTexture.width;
+      const pixel = this._buffer.slice(index * 4, index * 4 + 4);
+      /* tslint:disable-next-line */
+      const id = (pixel[0]<<16)|(pixel[1]<<8)|(pixel[2]);
+      if (id) {
+        return id;
+      }
+    }
+
+    return 0;
+  }
+
+  private _refreshBuffer(): void {
+    if (this._pickingTexture) {
+      this._graph._renderer.setRenderTarget(this._pickingTexture);
+      this._graph._renderer.render(this._pickingLineScene, this._graph._camera);
+      this._graph._renderer.setRenderTarget(null);
+      this._buffer = new Uint8Array(4 * this._pickingTexture.width * this._pickingTexture.height);
+      this._graph._renderer.readRenderTargetPixels(this._pickingTexture, 0, 0, this._pickingTexture.width, this._pickingTexture.height, this._buffer);
+    }
   }
 
   private _setPickingLineSize(edges): void {

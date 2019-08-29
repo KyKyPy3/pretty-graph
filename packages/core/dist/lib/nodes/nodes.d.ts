@@ -28,11 +28,12 @@ export declare class NodesLayer {
     setNodePosition(nodes: any[], offset: any): void;
     testNode(position: any): any;
     pickNode(position: any): any;
-    refreshBuffer(): void;
     recalculate(): void;
     recalculatePicking(): void;
     onScale(scale: number): void;
     onResize(): void;
+    onPan(): void;
     dispose(): void;
+    private _refreshBuffer;
     private _disposeInternal;
 }

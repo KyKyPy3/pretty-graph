@@ -17,6 +17,7 @@ export class LabelsLayer {
     this._textCanvas.setAttribute("style", "position: absolute;left: 0px;top: 0px;z-index:10;");
     this._textCanvas.width = this._graph._renderer.domElement.width;
     this._textCanvas.height = this._graph._renderer.domElement.height;
+    this._textCanvas.style.userSelect = 'none';
 
     this._textContext = this._textCanvas.getContext("2d");
     this._graph._container.appendChild(this._textCanvas);

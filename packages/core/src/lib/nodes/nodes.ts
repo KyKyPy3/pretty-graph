@@ -252,6 +252,8 @@ export class NodesLayer {
       this._pickingNodesScene.add(this._nodesPickingsMesh);
       this._pickingNodesScene.updateMatrixWorld(true);
     }
+
+    this._refreshBuffer();
   }
 
   public getSize(): Vector3 {
@@ -335,16 +337,6 @@ export class NodesLayer {
     return null;
   }
 
-  public refreshBuffer(): void {
-    if (this._pickingTexture) {
-      this._graph._renderer.setRenderTarget(this._pickingTexture);
-      this._graph._renderer.render(this._pickingNodesScene, this._graph._camera);
-      this._graph._renderer.setRenderTarget(null);
-      this._buffer = new Uint8Array(4 * this._pickingTexture.width * this._pickingTexture.height);
-      this._graph._renderer.readRenderTargetPixels(this._pickingTexture, 0, 0, this._pickingTexture.width, this._pickingTexture.height, this._buffer);
-    }
-  }
-
   public recalculate(): void {
     const translateArray = new Float32Array(this._graph._nodes.length * 3);
     for (let i = 0, i3 = 0, l = this._graph._nodes.length; i < l; i ++, i3 += 3 ) {
@@ -378,6 +370,8 @@ export class NodesLayer {
       (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).setArray(translateArray);
       (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
     }
+
+    this._refreshBuffer();
   }
 
   public onScale(scale: number): void {
@@ -387,12 +381,20 @@ export class NodesLayer {
       this._nodesPickingMaterial.uniforms.scale.value = scale;
       this._nodesPickingMaterial.needsUpdate = true;
     }
+
+    this._refreshBuffer();
   }
 
   public onResize(): void {
     if (this._pickingTexture) {
       this._pickingTexture.setSize(this._graph._container.clientWidth, this._graph._container.clientHeight);
     }
+
+    this._refreshBuffer();
+  }
+
+  public onPan(): void {
+    this._refreshBuffer();
   }
 
   public dispose(): void {
@@ -417,6 +419,16 @@ export class NodesLayer {
     this.hoveredNode = null;
     this._color = null;
     this._colorToNodeID = {};
+  }
+
+  private _refreshBuffer(): void {
+    if (this._pickingTexture) {
+      this._graph._renderer.setRenderTarget(this._pickingTexture);
+      this._graph._renderer.render(this._pickingNodesScene, this._graph._camera);
+      this._graph._renderer.setRenderTarget(null);
+      this._buffer = new Uint8Array(4 * this._pickingTexture.width * this._pickingTexture.height);
+      this._graph._renderer.readRenderTargetPixels(this._pickingTexture, 0, 0, this._pickingTexture.width, this._pickingTexture.height, this._buffer);
+    }
   }
 
   private _disposeInternal(): void {
