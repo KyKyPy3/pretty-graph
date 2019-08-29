@@ -19,6 +19,7 @@ export declare class NodesLayer {
     private _imageLoaded;
     private _silent;
     private _size;
+    private _buffer;
     constructor(graph: any);
     setSilent(silent: boolean): void;
     draw(): void;
@@ -26,6 +27,8 @@ export declare class NodesLayer {
     setNodesColor(nodes: any[], newColor?: any): void;
     setNodePosition(nodes: any[], offset: any): void;
     testNode(position: any): any;
+    pickNode(position: any): any;
+    refreshBuffer(): void;
     recalculate(): void;
     recalculatePicking(): void;
     onScale(scale: number): void;

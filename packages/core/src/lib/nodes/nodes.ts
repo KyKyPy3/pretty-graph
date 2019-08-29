@@ -78,6 +78,8 @@ export class NodesLayer {
 
   private _size: Vector3 = new Vector3();
 
+  private _buffer!: Uint8Array;
+
   constructor(graph: any) {
     this._graph = graph;
 
@@ -295,17 +297,10 @@ export class NodesLayer {
 
   public testNode(position): any {
     if (this._pickingTexture) {
-      this._graph._renderer.setRenderTarget(this._pickingTexture);
-      this._graph._renderer.render(this._pickingNodesScene, this._graph._camera);
-      this._graph._renderer.setRenderTarget(null);
-      const pixelBuffer = new Uint8Array(4);
-      this._graph._renderer.readRenderTargetPixels(this._pickingTexture, position.x, this._pickingTexture.height - position.y, 1, 1, pixelBuffer);
-      /* tslint:disable-next-line */
-      const id = (pixelBuffer[0]<<16)|(pixelBuffer[1]<<8)|(pixelBuffer[2]);
-      if (id) {
-        const node = this._graph._indexedNodes[this._colorToNodeID[id]];
+      const node = this.pickNode(position);
+      if (node) {
         if (this.hoveredNode !== node) {
-          this.hoveredNode = this._graph._indexedNodes[this._colorToNodeID[id]];
+          this.hoveredNode = node;
           const coordinates = this._graph._translateCoordinates(this.hoveredNode.x, this.hoveredNode.y);
           this._graph.onEvent.emit('nodeHover', { node: this.hoveredNode, ...coordinates, scale: this._graph._controls.scale });
           this._graph._render();
@@ -324,6 +319,30 @@ export class NodesLayer {
     }
 
     return undefined;
+  }
+
+  public pickNode(position): any {
+    if (this._pickingTexture) {
+      const index = position.x + (this._pickingTexture.height - position.y) * this._pickingTexture.width;
+      const pixel = this._buffer.slice(index * 4, index * 4 + 4);
+      /* tslint:disable-next-line */
+      const id = (pixel[0]<<16)|(pixel[1]<<8)|(pixel[2]);
+      if (id) {
+        return this._graph._indexedNodes[this._colorToNodeID[id]];
+      }
+    }
+
+    return null;
+  }
+
+  public refreshBuffer(): void {
+    if (this._pickingTexture) {
+      this._graph._renderer.setRenderTarget(this._pickingTexture);
+      this._graph._renderer.render(this._pickingNodesScene, this._graph._camera);
+      this._graph._renderer.setRenderTarget(null);
+      this._buffer = new Uint8Array(4 * this._pickingTexture.width * this._pickingTexture.height);
+      this._graph._renderer.readRenderTargetPixels(this._pickingTexture, 0, 0, this._pickingTexture.width, this._pickingTexture.height, this._buffer);
+    }
   }
 
   public recalculate(): void {

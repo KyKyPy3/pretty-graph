@@ -502,7 +502,11 @@ export class PretyGraph {
     this.onEvent.removeAllListeners();
   }
 
-  private _onNodeClick(): void {
+  private _onNodeClick(data): void {
+    const node = data.node;
+    const lastActiveNode = this._activeNodes[0];
+
+    // Clear last active nodes
     if (this._activeNodes.length) {
       if (this._nodesLayer) {
         this._nodesLayer.setNodesColor(this._activeNodes);
@@ -515,13 +519,21 @@ export class PretyGraph {
       }
     }
 
-    this._activeNodes = this._hoveredNodes;
-    this._activeNodesIds = this._activeNodes.map(n => n.id);
-    this._activeEdges = this._activeEdges;
-    this._activeEdgesIds = this._activeEdges.map(e => e.index);
+    if (lastActiveNode && node.id === lastActiveNode.id) {
+      this._activeNodes = [];
+      this._activeNodesIds = [];
+      this._activeEdges = [];
+      this._activeEdgesIds = [];
+    } else {
+      this._activeNodes = [node, ...this.neighbourhoodNodes[node.id]];
+      this._activeNodesIds = this._activeNodes.map(n => n.id);
 
-    this._hoveredEdges = this._hoveredEdges.filter((e) => this._activeEdgesIds.indexOf(e.index) === -1);
-    this._hoveredNodes = this._hoveredNodes.filter((n) => this._activeNodesIds.indexOf(n.id) === -1);
+      this._activeEdges = this.neighbourhoodEdges[node.id];
+      this._activeEdgesIds = this._activeEdges.map(e => e.index);
+
+      this._hoveredEdges = this._hoveredEdges.filter((e) => this._activeEdgesIds.indexOf(e.index) === -1);
+      this._hoveredNodes = this._hoveredNodes.filter((n) => this._activeNodesIds.indexOf(n.id) === -1);
+    }
 
     this._render();
   }
@@ -728,14 +740,14 @@ export class PretyGraph {
 
       if (this._nodesLayer && this._camera) {
         const nodes: any = [];
-        this._nodes.forEach((n) => {
-          const coords = this._translateCoordinates(n.x, n.y);
-          if (coords.x > this._pointTopLeft.x && coords.x < this._pointBottomRight.x) {
-            if (coords.y > this._pointTopLeft.y && coords.y <  this._pointBottomRight.y) {
-              nodes.push(n);
+        for (let x = this._pointTopLeft.x; x < this._pointBottomRight.x; x++) {
+          for (let y = this._pointTopLeft.y; y < this._pointBottomRight.y; y++) {
+            const node = this._nodesLayer.pickNode({ x, y });
+            if (node) {
+              nodes.push(node);
             }
           }
-        });
+        }
 
         if (nodes.length) {
           this._activeNodes = nodes;
@@ -906,6 +918,9 @@ export class PretyGraph {
 
   private _render(): void {
     if (this._scene && this._camera && this._renderer) {
+      if (this._nodesLayer) {
+        this._nodesLayer.refreshBuffer();
+      }
       this._renderer.render(this._scene, this._camera);
     }
   }
