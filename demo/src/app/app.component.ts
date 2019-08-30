@@ -32,7 +32,7 @@ export class AppComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this._data = this._generateData(30);
+    this._data = this._generateData(3000);
 
     this.initGraph();
   }

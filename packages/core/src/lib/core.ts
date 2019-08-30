@@ -91,6 +91,8 @@ export class PretyGraph {
 
   private _selectMode: boolean = false;
 
+  private _skip: boolean = false;
+
   // Listeners
 
   private _onScaleListener: any;
@@ -608,7 +610,24 @@ export class PretyGraph {
           offset.y = this._nodesLayer.hoveredNode.y - newPos.y;
           let nodes;
           if (event.ctrlKey) {
-            nodes = [this._nodesLayer.hoveredNode, ...this.neighbourhoodNodes[this._nodesLayer.hoveredNode.id]];
+            if (this._nodesLayer && this._nodesLayer.activeNodes.length) {
+              const hasHoveredNode = this._nodesLayer.activeNodes.find((n) => {
+                if (this._nodesLayer) {
+                  return n.id === this._nodesLayer.hoveredNode.id
+                }
+
+                return false;
+              });
+
+              if (hasHoveredNode) {
+                nodes = this._nodesLayer.activeNodes;
+              } else {
+                nodes = [this._nodesLayer.hoveredNode, ...this.neighbourhoodNodes[this._nodesLayer.hoveredNode.id]];
+              }
+
+            } else {
+              nodes = [this._nodesLayer.hoveredNode, ...this.neighbourhoodNodes[this._nodesLayer.hoveredNode.id]];
+            }
           } else {
             nodes = [this._nodesLayer.hoveredNode];
           }
@@ -669,6 +688,7 @@ export class PretyGraph {
   private _onMouseUp(): void {
     if (this._selectMode) {
       this._selectMode = false;
+      this._skip = true;
 
       if (this._selectBox && this._selectBox.parentElement) {
         this._selectBox.parentElement.removeChild(this._selectBox);
@@ -728,6 +748,10 @@ export class PretyGraph {
   }
 
   private _onClick(): void {
+    if (this._skip) {
+      this._skip = false;
+      return
+    }
     if (this._nodesLayer && this._nodesLayer.hoveredNode) {
       const coordinates = this._translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
       this.onEvent.emit('nodeClick', { node: this._nodesLayer.hoveredNode, ...coordinates, scale: this._controls.scale });

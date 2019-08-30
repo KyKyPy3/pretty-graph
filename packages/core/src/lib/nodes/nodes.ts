@@ -105,6 +105,10 @@ export class NodesLayer {
     this._color = new Color();
   }
 
+  get activeNodes(): any[] {
+    return this._activeNodes;
+  }
+
   public setSilent(silent: boolean): void {
     this._silent = silent;
   }

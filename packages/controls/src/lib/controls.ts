@@ -203,7 +203,6 @@ export class PrettyGraphControls extends EventDispatcher {
   }
 
   private _onClick(): void {
-    console.log(this.enabled);
     if (!this.enabled) {
       return;
     }

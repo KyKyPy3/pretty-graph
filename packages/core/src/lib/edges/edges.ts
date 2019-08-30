@@ -69,11 +69,15 @@ export class EdgesLayer extends EventDispatcher {
   }
 
   public onScale(scale: number): void {
-    this._lineMaterial.uniforms.scale.value = scale;
-    this._lineMaterial.needsUpdate = true;
+    if (this._lineMaterial) {
+      this._lineMaterial.uniforms.scale.value = scale;
+      this._lineMaterial.needsUpdate = true;
+    }
 
-    this._linePickingMaterial.uniforms.scale.value = scale;
-    this._linePickingMaterial.needsUpdate = true;
+    if (this._linePickingMaterial) {
+      this._linePickingMaterial.uniforms.scale.value = scale;
+      this._linePickingMaterial.needsUpdate = true;
+    }
   }
 
   public draw(): void {
@@ -203,8 +207,11 @@ export class EdgesLayer extends EventDispatcher {
   }
 
   public recalculate(): void {
-    const linesData = this._constructLines(this._graph._edges);
-    this._lineGeometry.setPositions(linesData.positions);
+    if (this._lineGeometry) {
+      const linesData = this._constructLines(this._graph._edges);
+
+      this._lineGeometry.setPositions(linesData.positions);
+    }
   }
 
   public recalculatePicking(): void {

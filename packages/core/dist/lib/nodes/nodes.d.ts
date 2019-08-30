@@ -23,6 +23,7 @@ export declare class NodesLayer {
     private _hoveredNodes;
     private _activeNodes;
     constructor(graph: any);
+    readonly activeNodes: any[];
     setSilent(silent: boolean): void;
     draw(): void;
     getSize(): Vector3;
