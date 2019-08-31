@@ -32,17 +32,13 @@ export class AppComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this._data = this._generateData(3000);
+    this._data = this._generateData(300);
 
     this.initGraph();
   }
 
   public activateSelectMode(): void {
     this._graph.activateSelectMode();
-  }
-
-  public deactivateSelectMode(): void {
-    this._graph.deactivateSelectMode();
   }
 
   public zoomIn(): void {

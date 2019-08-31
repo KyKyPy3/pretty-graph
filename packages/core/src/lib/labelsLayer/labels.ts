@@ -89,6 +89,15 @@ export class LabelsLayer {
     }
   }
 
+  public setLabelsPositionForNodes(nodes: any[], offset: { x: number, y: number }): void {
+    for (const node of nodes) {
+      if (node.__labelIndex) {
+        this._labels[node.__labelIndex].x = this._labels[node.__labelIndex].x - offset.x;
+        this._labels[node.__labelIndex].y = this._labels[node.__labelIndex].y - offset.y;
+      }
+    }
+  }
+
   public setLabelPosition(index: number, position: { x: number, y: number, z: number }): void {
     this._labels[index].x = position.x;
     this._labels[index].y = position.y;

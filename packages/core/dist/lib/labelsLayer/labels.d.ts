@@ -12,6 +12,10 @@ export declare class LabelsLayer {
     isHidden(): boolean;
     hide(): void;
     toggleLabels(): void;
+    setLabelsPositionForNodes(nodes: any[], offset: {
+        x: number;
+        y: number;
+    }): void;
     setLabelPosition(index: number, position: {
         x: number;
         y: number;

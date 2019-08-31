@@ -633,8 +633,8 @@ export class PretyGraph {
           }
           this._nodesLayer.setNodePosition(nodes, offset);
 
-          if (this._labelsLayer && this._nodesLayer.hoveredNode.__labelIndex !== null) {
-            this._labelsLayer.setLabelPosition(this._nodesLayer.hoveredNode.__labelIndex, { x: newPos.x, y: newPos.y, z: 0 });
+          if (this._labelsLayer) {
+            this._labelsLayer.setLabelsPositionForNodes(nodes, offset);
           }
         }
 
