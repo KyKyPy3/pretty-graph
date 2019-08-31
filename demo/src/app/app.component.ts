@@ -132,7 +132,12 @@ export class AppComponent implements OnInit {
       });
 
       this._agent = new D3Layout({
-        useWorker: true
+        useWorker: true,
+        layoutOptions: {
+          mainBody: {
+            strength: -3000
+          }
+        }
       });
 
       this._agent.onEvent.on('tick', (progress) => {
@@ -170,7 +175,7 @@ export class AppComponent implements OnInit {
         frameborder="0"
         style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;"
         allowfullscreen>
-      </iframe>`
+      </iframe>`;
 
     const win = window.open();
     win.document.open();
@@ -196,7 +201,7 @@ export class AppComponent implements OnInit {
           name: this._getRandomString(Math.random() * (30 - 5) + 5),
           size: Math.random() * (30 - 5) + 5,
           showDot: !(index % 2) ? true : false,
-          img: !(index % 10) ? 'assets/user.jpg' : 'assets/16_mail_c.svg',
+          img: !(index % 10) ? 'assets/user.jpg' : 'assets/web.svg',
           label: this._getRandomString(Math.random() * (30 - 5) + 5)
         };
       }),
@@ -205,7 +210,7 @@ export class AppComponent implements OnInit {
         .map((id, index) => {
           return {
             source: id,
-            target: Math.round(Math.random() * (id-1)),
+            target: Math.round(Math.random() * (id - 1)),
             color: 0x99A3A4,
             type: !(index % 10) ? 'dashed' : 'solid',
             size: Math.random() * (30 - 5) + 5
@@ -215,7 +220,7 @@ export class AppComponent implements OnInit {
   }
 
   private _getRandomString(length: number): string {
-    var s = '';
+    let s = '';
     do { s += Math.random().toString(36).substr(2); } while (s.length < length);
     s = s.substr(0, length);
 
