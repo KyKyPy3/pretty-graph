@@ -99,8 +99,10 @@ export class LabelsLayer {
   }
 
   public setLabelPosition(index: number, position: { x: number, y: number, z: number }): void {
-    this._labels[index].x = position.x;
-    this._labels[index].y = position.y;
+    if (this._labels[index]) {
+      this._labels[index].x = position.x;
+      this._labels[index].y = position.y;
+    }
   }
 
   public draw(canvasCtx?: CanvasRenderingContext2D): void {

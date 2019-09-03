@@ -136,9 +136,14 @@ export class PretyGraph {
 
     this._render();
 
-    this._labelsLayer = new LabelsLayer(this);
-    if (!this.options.showLabels) {
-      this._labelsLayer.hide();
+    console.log(this.options);
+
+    if (!this.options.disableLabels) {
+      console.log('WTF');
+      this._labelsLayer = new LabelsLayer(this);
+      if (!this.options.showLabels) {
+        this._labelsLayer.hide();
+      }
     }
     this._arrowsLayer = new ArrowsLayer(this);
     this._edgesLayer = new EdgesLayer(this);

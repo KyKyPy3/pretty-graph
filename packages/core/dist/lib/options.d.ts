@@ -5,4 +5,5 @@ export interface GraphOptions {
     layout?: any;
     clearContainer?: boolean;
     showLabels?: boolean;
+    disableLabels?: boolean;
 }

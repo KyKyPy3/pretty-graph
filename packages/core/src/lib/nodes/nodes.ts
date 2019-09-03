@@ -400,7 +400,7 @@ export class NodesLayer {
 
       this._graph._nodes[i].__positionIndex = i;
 
-      if (this._graph._labelsLayer) {
+      if (this._graph._labelsLayer && this._graph._nodes[i].__labelIndex !== undefined) {
         this._graph._labelsLayer.setLabelPosition(this._graph._nodes[i].__labelIndex, { x: this._graph._nodes[i].x, y: this._graph._nodes[i].y, z: 0}, false);
       }
     }
