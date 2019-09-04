@@ -227,11 +227,13 @@ export class PretyGraph {
   public activateSelectMode(): void {
     this._selectMode = true;
     this._controls.enabled = false;
+    this.onEvent.emit('changeMode', { mode: 'select' });
   }
 
   public deactivateSelectMode(): void {
     this._selectMode = false;
     this._controls.enabled = true;
+    this.onEvent.emit('changeMode', { mode: 'view' });
   }
 
   public toggleLabels(): void {
@@ -691,6 +693,7 @@ export class PretyGraph {
     if (this._selectMode) {
       this._selectMode = false;
       this._skip = true;
+      this.onEvent.emit('changeMode', { mode: 'view' });
 
       if (this._selectBox && this._selectBox.parentElement) {
         this._selectBox.parentElement.removeChild(this._selectBox);

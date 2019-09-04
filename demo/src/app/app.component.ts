@@ -66,6 +66,10 @@ export class AppComponent implements OnInit {
         showLabels: false
       });
 
+      this._graph.onEvent.on('changeMode', (data) => {
+        console.log('New mode: ', data.mode);
+      });
+
       this._graph.onEvent.on('nodeContextMenu', (data) => {
         console.log(data);
       });
