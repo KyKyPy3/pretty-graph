@@ -66,7 +66,6 @@ export declare class PretyGraph {
     destroy(): void;
     private _addControlsListeners;
     private _removeControlsListeners;
-    private _onNodeClick;
     private _onWorkspaceClick;
     private _onNodeHover;
     private _onNodeUnhover;

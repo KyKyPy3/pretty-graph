@@ -479,7 +479,6 @@ export class PretyGraph {
 
     this.onEvent.on('nodeHover', this._onNodeHover.bind(this));
     this.onEvent.on('nodeUnhover', this._onNodeUnhover.bind(this));
-    this.onEvent.on('nodeClick', this._onNodeClick.bind(this));
     this.onEvent.on('workspaceClick', this._onWorkspaceClick.bind(this));
   }
 
@@ -495,26 +494,6 @@ export class PretyGraph {
     this._controls.removeEventListener('rotate', this._onRotateListener);
 
     this.onEvent.removeAllListeners();
-  }
-
-  private _onNodeClick(data): void {
-    const node = data.node;
-
-    if (this._nodesLayer) {
-      const activeNodes = [node, ...this.neighbourhoodNodes[node.id]];
-      this._nodesLayer.setActiveNodes(activeNodes);
-    }
-
-    if (this._edgesLayer) {
-      const activeEdges = this.neighbourhoodEdges[node.id];
-      this._edgesLayer.setActiveEdges(activeEdges);
-    }
-
-    if (this._arrowsLayer) {
-      this._arrowsLayer.recalculate();
-    }
-
-    this._render();
   }
 
   private _onWorkspaceClick(): void {
@@ -569,7 +548,7 @@ export class PretyGraph {
     this._render();
   }
 
-  private _onMouseMove({ event, position }: any): void {
+  private _onMouseMove({ position }: any): void {
     if (this._dragging && this._camera) {
       if (this._labelsLayer && !this._labelsLayer.isHidden()) {
         this._labelHidedOnMove = true;
@@ -613,22 +592,17 @@ export class PretyGraph {
           offset.x = this._nodesLayer.hoveredNode.x - newPos.x;
           offset.y = this._nodesLayer.hoveredNode.y - newPos.y;
           let nodes;
-          if (event.ctrlKey) {
-            if (this._nodesLayer && this._nodesLayer.activeNodes.length) {
-              const hasHoveredNode = this._nodesLayer.activeNodes.find((n) => {
-                if (this._nodesLayer) {
-                  return n.id === this._nodesLayer.hoveredNode.id
-                }
-
-                return false;
-              });
-
-              if (hasHoveredNode) {
-                nodes = this._nodesLayer.activeNodes;
-              } else {
-                nodes = [this._nodesLayer.hoveredNode, ...this.neighbourhoodNodes[this._nodesLayer.hoveredNode.id]];
+          if (this._nodesLayer && this._nodesLayer.activeNodes.length) {
+            const hasHoveredNode = this._nodesLayer.activeNodes.find((n) => {
+              if (this._nodesLayer) {
+                return n.id === this._nodesLayer.hoveredNode.id
               }
 
+              return false;
+            });
+
+            if (hasHoveredNode) {
+              nodes = this._nodesLayer.activeNodes;
             } else {
               nodes = [this._nodesLayer.hoveredNode, ...this.neighbourhoodNodes[this._nodesLayer.hoveredNode.id]];
             }
@@ -689,7 +663,7 @@ export class PretyGraph {
     this._render();
   }
 
-  private _onMouseUp(): void {
+  private _onMouseUp({ event }): void {
     if (this._selectMode) {
       this._selectMode = false;
       this._skip = true;
@@ -718,6 +692,26 @@ export class PretyGraph {
 
           this._render();
         }
+      }
+    } else {
+      if (this._nodesLayer && !this._dragInProgress) {
+        if (event.altKey) {
+          this._nodesLayer.setActiveNodes([this._nodesLayer.hoveredNode, ...this._nodesLayer.activeNodes]);
+        } else {
+          const activeNodes = [this._nodesLayer.hoveredNode, ...this.neighbourhoodNodes[this._nodesLayer.hoveredNode.id]];
+          this._nodesLayer.setActiveNodes(activeNodes);
+
+          if (this._edgesLayer) {
+            const activeEdges = this.neighbourhoodEdges[this._nodesLayer.hoveredNode.id];
+            this._edgesLayer.setActiveEdges(activeEdges);
+          }
+
+          if (this._arrowsLayer) {
+            this._arrowsLayer.recalculate();
+          }
+        }
+
+        this._render();
       }
     }
 

@@ -217,6 +217,7 @@ export class PrettyGraphControls extends EventDispatcher {
     const [mouseX, mouseY] = mouse(this._selection.node());
 
     this.dispatchEvent({
+      event,
       position: {
         x: mouseX,
         y: mouseY
@@ -230,7 +231,7 @@ export class PrettyGraphControls extends EventDispatcher {
       return;
     }
 
-    this.dispatchEvent({ type: 'mouseup' });
+    this.dispatchEvent({ event, type: 'mouseup' });
   }
 
   private _zoomHandler(transform: any): void {
