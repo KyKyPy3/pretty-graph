@@ -129,7 +129,7 @@ export class PretyGraph {
     this._setupCamera();
     this._setupRenderer();
 
-    this._controls = new options.controls(this._camera, this._container);
+    this._controls = new options.controls(this._camera, this._container, this._renderer);
     this._controls.init();
 
     this._addControlsListeners();

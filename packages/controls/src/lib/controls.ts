@@ -19,12 +19,15 @@ export class PrettyGraphControls extends EventDispatcher {
 
   private _selection!: any;
 
+  private _renderer!: any;
+
   private _onResize!: (event: ThreeEvent) => void;
 
-  constructor(camera: PerspectiveCamera, container: HTMLElement | HTMLDocument) {
+  constructor(camera: PerspectiveCamera, container: HTMLElement | HTMLDocument, renderer: any) {
     super();
 
     this._camera = camera;
+    this._renderer = renderer;
     this._selection = select(container);
   }
 
@@ -176,7 +179,7 @@ export class PrettyGraphControls extends EventDispatcher {
   private _onMouseDown(): void {
     const [mouseX, mouseY] = mouse(this._selection.node());
 
-    if (!this._selection.node().contains(event.target)) {
+    if (!this._renderer.domElement.contains(event.target)) {
       return;
     }
 
@@ -191,7 +194,7 @@ export class PrettyGraphControls extends EventDispatcher {
   }
 
   private _onDblClick(): void {
-    if (!this.enabled || !this._selection.node().contains(event.target)) {
+    if (!this.enabled || !this._renderer.domElement.contains(event.target)) {
       return;
     }
 
@@ -207,7 +210,7 @@ export class PrettyGraphControls extends EventDispatcher {
   }
 
   private _onClick(): void {
-    if (!this.enabled || !this._selection.node().contains(event.target)) {
+    if (!this.enabled || !this._renderer.domElement.contains(event.target)) {
       return;
     }
 
@@ -223,7 +226,7 @@ export class PrettyGraphControls extends EventDispatcher {
   }
 
   private _onMouseUp(): void {
-    if (!this._selection.node().contains(event.target)) {
+    if (!this._renderer.domElement.contains(event.target)) {
       return;
     }
 
