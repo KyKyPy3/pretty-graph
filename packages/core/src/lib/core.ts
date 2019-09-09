@@ -737,6 +737,12 @@ export class PretyGraph {
       this._dragging = true;
     } else {
       if (this._selectMode) {
+        if (this._nodesLayer) {
+          this._nodesLayer.clearActiveNodes();
+
+          this._render();
+        }
+
         if (this._renderer && this._renderer.domElement && this._renderer.domElement.parentElement) {
           this._renderer.domElement.parentElement.appendChild(this._selectBox);
         }
@@ -745,6 +751,10 @@ export class PretyGraph {
         this._selectBox.style.top = position.y + 'px';
         this._selectBox.style.width = '0px';
         this._selectBox.style.height = '0px';
+
+        this._startPoint = new Vector2();
+        this._pointBottomRight = new Vector2();
+        this._pointTopLeft = new Vector2();
 
         this._startPoint.x = position.x;
         this._startPoint.y = position.y;
