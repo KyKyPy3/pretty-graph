@@ -164,10 +164,6 @@ export class PrettyGraphControls extends EventDispatcher {
   }
 
   private _onMouseMove(): void {
-    if (!this._renderer.domElement.contains(event.target)) {
-      return;
-    }
-
     const [mouseX, mouseY] = mouse(this._selection.node());
 
     this.dispatchEvent({

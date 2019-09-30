@@ -549,7 +549,7 @@ export class PretyGraph {
     this._render();
   }
 
-  private _onMouseMove({ position }: any): void {
+  private _onMouseMove({ position, event }: any): void {
     if (this._dragging && this._camera) {
       if (this._labelsLayer && !this._labelsLayer.isHidden()) {
         this._labelHidedOnMove = true;
@@ -634,6 +634,10 @@ export class PretyGraph {
         this._arrowsLayer.recalculate();
       }
     } else {
+      if (this._renderer && !this._renderer.domElement.contains(event.target)) {
+        return;
+      }
+
       if (this._selectMode) {
         this._pointBottomRight.x = Math.max( this._startPoint.x, position.x );
 		    this._pointBottomRight.y = Math.max( this._startPoint.y, position.y );

@@ -25,17 +25,39 @@ import {
 
 import { ImageCanvas } from './imageCanvas';
 
-function throttle(callback, limit): () => void {
-  let wait = false;
-  return () => {
-    if (!wait) {
-      callback.call();
-      wait = true;
-      setTimeout(() => {
-        wait = false;
-      }, limit);
-    }
+function throttle(func: any, wait: number, options: any = {}): any {
+  let args;
+  let result;
+  let timeout: any = null;
+  let previous = 0;
+
+  function later(): void {
+    previous = options.leading === false ? 0 : +new Date();
+    timeout = null;
+    result = func.apply(null, args);
   }
+
+  return (...data: any[]): any => {
+    const now = +new Date();
+
+    if (!previous && options.leading === false) {
+      previous = now;
+    }
+
+    const remaining = wait - (now - previous);
+    args = data;
+
+    if (remaining <= 0) {
+      clearTimeout(timeout);
+      timeout = null;
+      previous = now;
+      result = func.apply(null, args);
+    } else if (!timeout && options.trailing !== false) {
+      timeout = setTimeout(later, remaining);
+    }
+
+    return result;
+  };
 }
 
 export class NodesLayer {
@@ -91,7 +113,7 @@ export class NodesLayer {
       if (!this._silent) {
         this._graph._render();
       }
-    }, 800);
+    }, 800, { trailing: true });
 
     this._imageCanvas = new ImageCanvas();
     this._imageCanvas.addEventListener('imageLoaded', this._imageLoaded);
