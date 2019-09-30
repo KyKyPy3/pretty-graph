@@ -182,6 +182,7 @@ export class PretyGraph {
 
     this._iframe = document.createElement('iframe');
     this._iframe.style.position = 'absolute';
+    this._iframe.style.userSelect = 'none';
     this._iframe.style.top = '0';
     this._iframe.style.left = '0';
     this._iframe.style.height = '100%';
@@ -566,8 +567,8 @@ export class PretyGraph {
 
       if (this._nodesLayer) {
         newPos = {
-          x: this._nodesLayer.hoveredNode.x,
-          y: this._nodesLayer.hoveredNode.y
+          x: this._nodesLayer.hoveredNode ? this._nodesLayer.hoveredNode.x : 0,
+          y: this._nodesLayer.hoveredNode ? this._nodesLayer.hoveredNode.y : 0
         };
 
 
@@ -702,6 +703,7 @@ export class PretyGraph {
           this._nodesLayer.setActiveNodes(activeNodes);
 
           if (this._edgesLayer) {
+            this._edgesLayer.clearActiveEdges();
             const activeEdges = this.neighbourhoodEdges[this._nodesLayer.hoveredNode.id];
             this._edgesLayer.setActiveEdges(activeEdges);
           }
