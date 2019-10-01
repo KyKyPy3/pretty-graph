@@ -595,7 +595,7 @@ export class PretyGraph {
           let nodes;
           if (this._nodesLayer && this._nodesLayer.activeNodes.length) {
             const hasHoveredNode = this._nodesLayer.activeNodes.find((n) => {
-              if (this._nodesLayer) {
+              if (this._nodesLayer && this._nodesLayer.hoveredNode) {
                 return n.id === this._nodesLayer.hoveredNode.id
               }
 
