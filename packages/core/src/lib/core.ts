@@ -703,17 +703,19 @@ export class PretyGraph {
         if (event.altKey) {
           this._nodesLayer.setActiveNodes([this._nodesLayer.hoveredNode, ...this._nodesLayer.activeNodes]);
         } else {
-          const activeNodes = [this._nodesLayer.hoveredNode, ...this.neighbourhoodNodes[this._nodesLayer.hoveredNode.id]];
-          this._nodesLayer.setActiveNodes(activeNodes);
+          if (this._nodesLayer.hoveredNode) {
+            const activeNodes = [this._nodesLayer.hoveredNode, ...this.neighbourhoodNodes[this._nodesLayer.hoveredNode.id]];
+            this._nodesLayer.setActiveNodes(activeNodes);
 
-          if (this._edgesLayer) {
-            this._edgesLayer.clearActiveEdges();
-            const activeEdges = this.neighbourhoodEdges[this._nodesLayer.hoveredNode.id];
-            this._edgesLayer.setActiveEdges(activeEdges);
-          }
+            if (this._edgesLayer) {
+              this._edgesLayer.clearActiveEdges();
+              const activeEdges = this.neighbourhoodEdges[this._nodesLayer.hoveredNode.id];
+              this._edgesLayer.setActiveEdges(activeEdges);
+            }
 
-          if (this._arrowsLayer) {
-            this._arrowsLayer.recalculate();
+            if (this._arrowsLayer) {
+              this._arrowsLayer.recalculate();
+            }
           }
         }
 
