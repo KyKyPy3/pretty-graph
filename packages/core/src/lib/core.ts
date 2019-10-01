@@ -700,7 +700,7 @@ export class PretyGraph {
       }
     } else {
       if (this._nodesLayer && !this._dragInProgress) {
-        if (event.altKey) {
+        if (event.ctrlKey) {
           this._nodesLayer.setActiveNodes([this._nodesLayer.hoveredNode, ...this._nodesLayer.activeNodes]);
         } else {
           if (this._nodesLayer.hoveredNode) {
@@ -738,7 +738,11 @@ export class PretyGraph {
       this._controls.enabled = false;
       this._dragging = true;
     } else {
-      if (this._selectMode) {
+      if (this._selectMode || event.shiftKey) {
+        if (!this._selectMode) {
+          this.activateSelectMode();
+        }
+
         if (this._nodesLayer) {
           this._nodesLayer.clearActiveNodes();
 
@@ -753,6 +757,11 @@ export class PretyGraph {
         this._selectBox.style.top = position.y + 'px';
         this._selectBox.style.width = '0px';
         this._selectBox.style.height = '0px';
+        this._selectBox.style.zIndex = '10001';
+        this._selectBox.style.backgroundColor = 'rgba(75, 160, 255, 0.3)';
+        this._selectBox.style.position = 'absolute';
+        this._selectBox.style.border = '1px solid red';
+        this._selectBox.style.pointerEvents = 'none';
 
         this._startPoint = new Vector2();
         this._pointBottomRight = new Vector2();
