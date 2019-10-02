@@ -700,7 +700,7 @@ export class PretyGraph {
       }
     } else {
       if (this._nodesLayer && !this._dragInProgress) {
-        if (event.ctrlKey) {
+        if (event.ctrlKey && this._nodesLayer.hoveredNode) {
           this._nodesLayer.setActiveNodes([this._nodesLayer.hoveredNode, ...this._nodesLayer.activeNodes]);
         } else {
           if (this._nodesLayer.hoveredNode) {
