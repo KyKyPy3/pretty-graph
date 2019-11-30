@@ -29,14 +29,5 @@
     "webpack-cli": "3.3.10",
     "worker-loader": "2.0.0"
   },
-  "gitHead": "ee0b8028acc1d64c4e5864ee38cd66935e95b6fd",
-  "__processed_by_ivy_ngcc__": {
-    "fesm2015": "9.0.0-rc.4",
-    "fesm5": "9.0.0-rc.4",
-    "es2015": "9.0.0-rc.4",
-    "esm2015": "9.0.0-rc.4",
-    "esm5": "9.0.0-rc.4",
-    "main": "9.0.0-rc.4",
-    "module": "9.0.0-rc.4"
-  }
+  "gitHead": "6cbdf95c3991c0babe2224070bd626f62953893c"
 }
