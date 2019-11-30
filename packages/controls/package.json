@@ -22,8 +22,7 @@
     "clean": "rimraf dist",
     "build": "run-p build:dev build:prod",
     "build:dev": "webpack --profile --progress --env.development",
-    "build:prod": "webpack --profile --progress --env.production",
-    "prepublishOnly": "node --eval \"console.error('ERROR: Trying to publish a package that has been compiled by NGCC. This is not allowed.\\nPlease delete and rebuild the package, without compiling with NGCC, before attempting to publish.\\nNote that NGCC may have been run by importing this package into another project that is being built with Ivy enabled.\\n')\" && exit 1"
+    "build:prod": "webpack --profile --progress --env.production"
   },
   "files": [
     "src/**/*",
@@ -43,5 +42,5 @@
     "webpack": "4.41.2",
     "webpack-cli": "3.3.10"
   },
-  "gitHead": "9c7476ce57952797135066f18600ef370492f637"
+  "gitHead": "60cca76d16c17aeb29f4a7c783ddbf2eae77d72b"
 }
