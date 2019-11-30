@@ -14,7 +14,7 @@ export declare class EdgesLayer extends EventDispatcher {
     private _hoveredEdges;
     private _activeEdges;
     constructor(graph: any);
-    readonly hoveredEdge: any;
+    get hoveredEdge(): any;
     onResize(): void;
     onScale(scale: number): void;
     draw(): void;

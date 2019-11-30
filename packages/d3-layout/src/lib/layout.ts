@@ -1,4 +1,13 @@
-import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation, Simulation, forceX, forceY } from 'd3-force';
+import {
+  forceCenter,
+  forceCollide,
+  forceLink,
+  forceManyBody,
+  forceSimulation,
+  forceX,
+  forceY,
+  Simulation,
+} from 'd3-force';
 
 import { EventEmitter } from './emitter';
 

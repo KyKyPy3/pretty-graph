@@ -17,16 +17,26 @@
     "clean": "rimraf dist",
     "build": "run-p build:dev build:prod",
     "build:dev": "webpack --profile --progress --env.development",
-    "build:prod": "webpack --profile --progress --env.production"
+    "build:prod": "webpack --profile --progress --env.production",
+    "prepublishOnly": "node --eval \"console.error('ERROR: Trying to publish a package that has been compiled by NGCC. This is not allowed.\\nPlease delete and rebuild the package, without compiling with NGCC, before attempting to publish.\\nNote that NGCC may have been run by importing this package into another project that is being built with Ivy enabled.\\n')\" && exit 1"
   },
   "dependencies": {
     "d3-force": "2.0.1"
   },
   "devDependencies": {
-    "ts-loader": "6.0.4",
-    "webpack": "4.39.1",
-    "webpack-cli": "3.3.6",
+    "ts-loader": "6.2.1",
+    "webpack": "4.41.2",
+    "webpack-cli": "3.3.10",
     "worker-loader": "2.0.0"
   },
-  "gitHead": "ee0b8028acc1d64c4e5864ee38cd66935e95b6fd"
+  "gitHead": "ee0b8028acc1d64c4e5864ee38cd66935e95b6fd",
+  "__processed_by_ivy_ngcc__": {
+    "fesm2015": "9.0.0-rc.4",
+    "fesm5": "9.0.0-rc.4",
+    "es2015": "9.0.0-rc.4",
+    "esm2015": "9.0.0-rc.4",
+    "esm5": "9.0.0-rc.4",
+    "main": "9.0.0-rc.4",
+    "module": "9.0.0-rc.4"
+  }
 }

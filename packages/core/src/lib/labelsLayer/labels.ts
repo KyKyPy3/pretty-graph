@@ -25,15 +25,22 @@ export class LabelsLayer {
 
     this._textContext.font = "12px Roboto";
 
-    (CanvasRenderingContext2D.prototype as any).roundRect = function (x, y, w, h, r) {
-      if (w < 2 * r) r = w / 2;
-      if (h < 2 * r) r = h / 2;
+    (CanvasRenderingContext2D.prototype as any).roundRect = function(x, y, w, h, r) {
+      let newR;
+
+      if (w < 2 * r) {
+        newR = w / 2;
+      };
+      if (h < 2 * r) {
+        newR = h / 2;
+      }
+
       this.beginPath();
-      this.moveTo(x+r, y);
-      this.arcTo(x+w, y,   x+w, y+h, r);
-      this.arcTo(x+w, y+h, x,   y+h, r);
-      this.arcTo(x,   y+h, x,   y,   r);
-      this.arcTo(x,   y,   x+w, y,   r);
+      this.moveTo(x+newR, y);
+      this.arcTo(x+w, y,   x+w, y+h, newR);
+      this.arcTo(x+w, y+h, x,   y+h, newR);
+      this.arcTo(x,   y+h, x,   y,   newR);
+      this.arcTo(x,   y,   x+w, y,   newR);
       this.closePath();
       return this;
     }
@@ -116,10 +123,10 @@ export class LabelsLayer {
     }
     const bounds = this._graph._container.getBoundingClientRect();
 
-    for (let i = 0; i < this._labels.length; i++) {
-      const coords = this._graph._translateCoordinates(this._labels[i].x, this._labels[i].y);
-      if (coords.x > 0 && coords.x < bounds.width && coords.y > 0 && coords.y < bounds.height && this._labels[i].nodeSize * 7 * this._graph._controls.scale > 45) {
-        this._drawText(this._labels[i].text, coords, this._labels[i].nodeSize, canvasCtx);
+    for (const label of this._labels) {
+      const coords = this._graph._translateCoordinates(label.x, label.y);
+      if (coords.x > 0 && coords.x < bounds.width && coords.y > 0 && coords.y < bounds.height && label.nodeSize * 7 * this._graph._controls.scale > 45) {
+        this._drawText(label.text, coords, label.nodeSize, canvasCtx);
       }
     }
   }
@@ -132,10 +139,10 @@ export class LabelsLayer {
     this._clearTextLayer();
     const bounds = this._graph._container.getBoundingClientRect();
 
-    for (let i = 0; i < this._labels.length; i++) {
-      const coords = this._graph._translateCoordinates(this._labels[i].x, this._labels[i].y);
-      if (coords.x > 0 && coords.x < bounds.width && coords.y > 0 && coords.y < bounds.height && this._labels[i].nodeSize * 7 * this._graph._controls.scale > 45) {
-        this._drawText(this._labels[i].text, coords, this._labels[i].nodeSize);
+    for (const label of this._labels) {
+      const coords = this._graph._translateCoordinates(label.x, label.y);
+      if (coords.x > 0 && coords.x < bounds.width && coords.y > 0 && coords.y < bounds.height && label.nodeSize * 7 * this._graph._controls.scale > 45) {
+        this._drawText(label.text, coords, label.nodeSize);
       }
     }
   }

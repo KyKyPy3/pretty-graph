@@ -52,7 +52,8 @@ export declare class PretyGraph {
     private _onMouseUpListener;
     private _onRotateListener;
     constructor(options: GraphOptions);
-    options: GraphOptions;
+    set options(options: GraphOptions);
+    get options(): GraphOptions;
     zoomIn(): boolean;
     zoomOut(): boolean;
     showLabels(): void;

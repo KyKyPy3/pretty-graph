@@ -3,6 +3,7 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
+  DynamicDrawUsage,
   Event as ThreeEvent,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
@@ -13,7 +14,7 @@ import {
   Vector2,
   Vector3,
   VertexColors,
-  WebGLRenderTarget
+  WebGLRenderTarget,
 } from "three";
 
 import {
@@ -197,18 +198,18 @@ export class NodesLayer {
     this._nodesInstancedGeometry.index = this._nodesBufferGeometry.index;
     this._nodesInstancedGeometry.attributes = this._nodesBufferGeometry.attributes;
 
-    this._nodesInstancedGeometry.addAttribute('position', new BufferAttribute(new Float32Array([0, 0, 0]), 3));
+    this._nodesInstancedGeometry.setAttribute('position', new BufferAttribute(new Float32Array([0, 0, 0]), 3));
 
     this._nodeTranslateAttribute = new InstancedBufferAttribute(translateArray, 3);
-    this._nodeTranslateAttribute.setDynamic(true);
+    this._nodeTranslateAttribute.setUsage(DynamicDrawUsage);
     this._nodeColorAttribute = new InstancedBufferAttribute(colors, 3);
-    this._nodeColorAttribute.setDynamic(true);
+    this._nodeColorAttribute.setUsage(DynamicDrawUsage);
 
-    this._nodesInstancedGeometry.addAttribute('translation', this._nodeTranslateAttribute);
-    this._nodesInstancedGeometry.addAttribute('color', this._nodeColorAttribute);
-    this._nodesInstancedGeometry.addAttribute('size', new InstancedBufferAttribute(sizes, 1));
-    this._nodesInstancedGeometry.addAttribute('image', new InstancedBufferAttribute(images, 1));
-    this._nodesInstancedGeometry.addAttribute('showDot', new InstancedBufferAttribute(showDot, 1));
+    this._nodesInstancedGeometry.setAttribute('translation', this._nodeTranslateAttribute);
+    this._nodesInstancedGeometry.setAttribute('color', this._nodeColorAttribute);
+    this._nodesInstancedGeometry.setAttribute('size', new InstancedBufferAttribute(sizes, 1));
+    this._nodesInstancedGeometry.setAttribute('image', new InstancedBufferAttribute(images, 1));
+    this._nodesInstancedGeometry.setAttribute('showDot', new InstancedBufferAttribute(showDot, 1));
 
     this._nodesMaterial = new RawShaderMaterial({
       depthTest: false,
@@ -274,7 +275,7 @@ export class NodesLayer {
     });
 
     this._nodesPickingGeometry = this._nodeMesh.geometry.clone() as BufferGeometry;
-    this._nodesPickingGeometry.addAttribute('color', new InstancedBufferAttribute(pickingColors, 3));
+    this._nodesPickingGeometry.setAttribute('color', new InstancedBufferAttribute(pickingColors, 3));
     this._nodesPickingsMesh = new Points(this._nodesPickingGeometry, this._nodesPickingMaterial);
     this._nodesPickingsMesh.frustumCulled = false;
 
@@ -428,8 +429,8 @@ export class NodesLayer {
     }
 
     if (this._nodesInstancedGeometry) {
-      (this._nodesInstancedGeometry.attributes.translation as InstancedBufferAttribute).setArray(translateArray);
-      (this._nodesInstancedGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+      const newTranslation = new InstancedBufferAttribute(translateArray, 3);
+      this._nodesInstancedGeometry.setAttribute('translation', newTranslation);
     }
   }
 
@@ -443,8 +444,8 @@ export class NodesLayer {
     }
 
     if (this._nodesPickingGeometry) {
-      (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).setArray(translateArray);
-      (this._nodesPickingGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+      const newTranslation = new InstancedBufferAttribute(translateArray, 3);
+      this._nodesPickingGeometry.setAttribute('translation', newTranslation);
     }
   }
 

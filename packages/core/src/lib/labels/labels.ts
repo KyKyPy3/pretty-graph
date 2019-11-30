@@ -99,9 +99,9 @@ export class LabelsLayer extends EventDispatcher {
 
     this._labelsTranslateAttribute = new InstancedBufferAttribute(translateArray, 3);
 
-    this._labelsInstancedGeometry.addAttribute('translation', this._labelsTranslateAttribute);
-    this._labelsInstancedGeometry.addAttribute('size', new InstancedBufferAttribute(sizes, 1));
-    this._labelsInstancedGeometry.addAttribute('image', new InstancedBufferAttribute(images, 1));
+    this._labelsInstancedGeometry.setAttribute('translation', this._labelsTranslateAttribute);
+    this._labelsInstancedGeometry.setAttribute('size', new InstancedBufferAttribute(sizes, 1));
+    this._labelsInstancedGeometry.setAttribute('image', new InstancedBufferAttribute(images, 1));
 
     this._labelsMaterial = new RawShaderMaterial({
       depthTest: false,
@@ -143,8 +143,8 @@ export class LabelsLayer extends EventDispatcher {
       translateArray[ i3 + 2 ] = 0;
     }
 
-    (this._labelsInstancedGeometry.attributes.translation as InstancedBufferAttribute).setArray(translateArray);
-    (this._labelsInstancedGeometry.attributes.translation as InstancedBufferAttribute).needsUpdate = true;
+    const newTranslation = new InstancedBufferAttribute(translateArray, 3);
+    this._labelsInstancedGeometry.setAttribute('translation', newTranslation);
   }
 
   public dispose(): void {

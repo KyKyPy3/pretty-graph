@@ -1,6 +1,7 @@
 import {
   Color,
   CubicBezierCurve3,
+  DynamicDrawUsage,
   EventDispatcher,
   InstancedBufferAttribute,
   LinearFilter,
@@ -249,16 +250,16 @@ export class EdgesLayer extends EventDispatcher {
     this._lineGeometry.setColors(linesData.colors);
 
     const lineWidthAttr = new InstancedBufferAttribute(new Float32Array(linesData.sizes), 1);
-    lineWidthAttr.setDynamic(true);
+    lineWidthAttr.setUsage(DynamicDrawUsage);
 
     const dashedAttr = new InstancedBufferAttribute(new Float32Array(linesData.isDashed), 1);
-    dashedAttr.setDynamic(true);
+    dashedAttr.setUsage(DynamicDrawUsage);
 
-    this._lineGeometry.addAttribute('linewidth', lineWidthAttr);
-    this._lineGeometry.addAttribute('dashed', dashedAttr);
+    this._lineGeometry.setAttribute('linewidth', lineWidthAttr);
+    this._lineGeometry.setAttribute('dashed', dashedAttr);
 
-    this._lineGeometry.attributes.instanceStart.data.dynamic = true;
-    this._lineGeometry.attributes.instanceEnd.data.dynamic = true;
+    this._lineGeometry.attributes.instanceStart.data.usage = DynamicDrawUsage;
+    this._lineGeometry.attributes.instanceEnd.data.usage = DynamicDrawUsage;
 
     this._lineMaterial = new LineMaterial({
       dashScale: 0.1,
@@ -283,16 +284,16 @@ export class EdgesLayer extends EventDispatcher {
     this._linesPickingGeometry.setColors(linesData.pickingColors);
 
     const lineWidthAttr = new InstancedBufferAttribute(new Float32Array(linesData.sizes), 1);
-    lineWidthAttr.setDynamic(true);
+    lineWidthAttr.setUsage(DynamicDrawUsage);
 
     const dashedAttr = new InstancedBufferAttribute(new Float32Array(linesData.isDashed), 1);
-    dashedAttr.setDynamic(true);
+    dashedAttr.setUsage(DynamicDrawUsage);
 
-    this._linesPickingGeometry.addAttribute('linewidth', lineWidthAttr);
-    this._linesPickingGeometry.addAttribute('dashed', dashedAttr);
+    this._linesPickingGeometry.setAttribute('linewidth', lineWidthAttr);
+    this._linesPickingGeometry.setAttribute('dashed', dashedAttr);
 
-    this._linesPickingGeometry.attributes.instanceStart.data.dynamic = true;
-    this._linesPickingGeometry.attributes.instanceEnd.data.dynamic = true;
+    this._linesPickingGeometry.attributes.instanceStart.data.usage = DynamicDrawUsage;
+    this._linesPickingGeometry.attributes.instanceEnd.data.usage = DynamicDrawUsage;
 
     this._linePickingMaterial = new LineMaterial({
       dashScale: 0.1,

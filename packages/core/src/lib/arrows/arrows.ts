@@ -3,6 +3,7 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
+  DynamicDrawUsage,
   EventDispatcher,
   Float32BufferAttribute,
   Mesh,
@@ -51,8 +52,8 @@ export class ArrowsLayer extends EventDispatcher {
 
     this._arrowGeometry.boundingSphere = this._computeBoundingSphere(vertices);
 
-    (this._arrowGeometry.attributes.position as BufferAttribute).setArray(vertices);
-    (this._arrowGeometry.attributes.position as BufferAttribute).needsUpdate = true;
+    const newPosition = new BufferAttribute(vertices, this._arrowGeometry.attributes.position.itemSize, this._arrowGeometry.attributes.position.normalized);
+    this._arrowGeometry.setAttribute('position', newPosition);
   }
 
   public draw(): void {
@@ -62,8 +63,8 @@ export class ArrowsLayer extends EventDispatcher {
 
     const { vertices, colors } = this._calculateArrowData();
 
-    this._arrowGeometry.addAttribute('position', new BufferAttribute(vertices, 2).setDynamic(true));
-    this._arrowGeometry.addAttribute('color', new Float32BufferAttribute( colors, 3 ).setDynamic(true));
+    this._arrowGeometry.setAttribute('position', new BufferAttribute(vertices, 2).setUsage(DynamicDrawUsage));
+    this._arrowGeometry.setAttribute('color', new Float32BufferAttribute( colors, 3 ).setUsage(DynamicDrawUsage));
 
     this._arrowGeometry.computeVertexNormals();
     this._arrowGeometry.boundingSphere = this._computeBoundingSphere(vertices);
