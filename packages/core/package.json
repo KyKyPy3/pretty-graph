@@ -19,12 +19,12 @@
     "build:prod": "webpack --profile --progress --env.production"
   },
   "dependencies": {
-    "three": "0.111.0"
+    "three": "0.113.2"
   },
   "devDependencies": {
     "ts-loader": "6.2.1",
-    "webpack": "4.41.2",
-    "webpack-cli": "3.3.10"
+    "webpack": "4.41.6",
+    "webpack-cli": "3.3.11"
   },
   "gitHead": "60cca76d16c17aeb29f4a7c783ddbf2eae77d72b"
 }

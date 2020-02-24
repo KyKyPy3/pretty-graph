@@ -26,5 +26,10 @@
       "es2018",
       "dom"
     ]
+  },
+  "angularCompilerOptions": {
+    "disableTypeScriptVersionCheck": true,
+    "fullTemplateTypeCheck": true,
+    "strictInjectionParameters": true
   }
 }

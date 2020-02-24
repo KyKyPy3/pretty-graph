@@ -20,21 +20,21 @@
   },
   "license": "MIT",
   "scripts": {
-    "bootstrap": "npm run clean:all && yarn install && lerna bootstrap",
+    "bootstrap": "npm run clean:all && npm ci && lerna bootstrap",
     "build": "lerna run clean && lerna run build",
-    "clean:all": "rimraf node_modules packages/*/node_modules",
+    "clean:all": "rimraf packages/*/node_modules",
     "tslint": "tslint -c tslint.json \"packages/**/*.ts\""
   },
   "devDependencies": {
-    "jest": "24.9.0",
-    "lerna": "3.19.0",
+    "jest": "25.1.0",
+    "lerna": "3.20.2",
     "npm-run-all": "4.1.5",
     "prettier": "1.19.1",
-    "rimraf": "3.0.0",
-    "tslint": "5.20.1",
+    "rimraf": "3.0.2",
+    "tslint": "6.0.0",
     "tslint-config-prettier": "1.18.0",
-    "typescript": "3.7.2",
-    "webpack": "4.41.2"
+    "typescript": "3.8.2",
+    "webpack": "4.41.6"
   },
   "workspaces": [
     "packages/*"
