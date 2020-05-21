@@ -82,6 +82,10 @@ export class AppComponent implements OnInit {
         console.log('Double click', data);
       });
 
+      this._graph.onEvent.on('edgeClick', (data) => {
+        console.log('Edge click', data);
+      });
+
       this._graph.onEvent.on('workspaceClick', () => {
         console.log('Workspace click');
       });

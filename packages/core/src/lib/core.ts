@@ -783,6 +783,10 @@ export class PretyGraph {
       this.onEvent.emit('nodeClick', { node: this._nodesLayer.hoveredNode, ...coordinates, scale: this._controls.scale });
     }
 
+    if (this._edgesLayer && this._edgesLayer.hoveredEdge) {
+      this.onEvent.emit('edgeClick', { edge: this._edgesLayer.hoveredEdge, scale: this._controls.scale });
+    }
+
     if (this._nodesLayer && !this._nodesLayer.hoveredNode && this._edgesLayer && !this._edgesLayer.hoveredEdge) {
       this.onEvent.emit('workspaceClick');
     }

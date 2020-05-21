@@ -10,7 +10,6 @@ import {
   ShaderMaterial,
   Sphere,
   Vector2,
-  VertexColors,
 } from 'three';
 
 import { fragmentShader, vertexShader } from './shaders';
@@ -74,7 +73,7 @@ export class ArrowsLayer extends EventDispatcher {
       fragmentShader,
       side: BackSide,
       transparent: false,
-      vertexColors: VertexColors,
+      vertexColors: true,
       vertexShader,
     });
 

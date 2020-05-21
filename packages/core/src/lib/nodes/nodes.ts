@@ -13,7 +13,6 @@ import {
   Scene,
   Vector2,
   Vector3,
-  VertexColors,
   WebGLRenderTarget,
 } from "three";
 
@@ -236,7 +235,7 @@ export class NodesLayer {
           value: this._imageCanvas.textureMap
         }
       },
-      vertexColors: VertexColors,
+      vertexColors: true,
       vertexShader,
     });
 
