@@ -40,6 +40,7 @@ export class PrettyGraphControls extends EventDispatcher {
   public init(): void {
     this._zoom = zoom()
       .filter(() => this.enabled && !event.ctrlKey)
+      .on('end', this._onZoomEnd.bind(this))
       .on('zoom', () => this._zoomHandler(event.transform));
 
     this._selection
@@ -139,7 +140,14 @@ export class PrettyGraphControls extends EventDispatcher {
       .on('dblclick', null)
       .on('click', null)
       .on('wheel', null)
-      .on('.zoom', null);
+      .on('.zoom', null)
+      .on('end', null);
+  }
+
+  private _onZoomEnd(): void {
+    if (event.sourceEvent?.type === 'mouseup') {
+      this._onMouseUp();
+    }
   }
 
   private _onRotate(): void {
@@ -192,6 +200,7 @@ export class PrettyGraphControls extends EventDispatcher {
     const [mouseX, mouseY] = mouse(this._selection.node());
 
     this._moved = false;
+    window.clearTimeout(this._wait);
     this._startPosition = mouse(this._selection.node());
 
     if (!this._renderer.domElement.contains(event.target)) {
@@ -209,7 +218,9 @@ export class PrettyGraphControls extends EventDispatcher {
   }
 
   private _onMouseUp(): void {
-    if (!this._renderer.domElement.contains(event.target)) {
+    const target = event.sourceEvent?.target || event.target;
+
+    if (!this._renderer.domElement.contains(target)) {
       return;
     }
 
