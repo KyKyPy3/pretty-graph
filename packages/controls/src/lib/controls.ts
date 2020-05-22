@@ -25,6 +25,8 @@ export class PrettyGraphControls extends EventDispatcher {
 
   private _moved: boolean = false;
 
+  private _wait: any = null;
+
   private _onResize!: (event: ThreeEvent) => void;
 
   constructor(camera: PerspectiveCamera, container: HTMLElement | HTMLDocument, renderer: any) {
@@ -45,8 +47,6 @@ export class PrettyGraphControls extends EventDispatcher {
       .on('mousedown', this._onMouseDown.bind(this))
       .on('mousemove', this._onMouseMove.bind(this))
       .on('mouseup', this._onMouseUp.bind(this))
-      .on('dblclick', this._onDblClick.bind(this))
-      .on('click', this._onClick.bind(this))
       .call(this._zoom)
       .on('wheel', this._onRotate.bind(this))
       .on('dblclick.zoom', null);
@@ -167,10 +167,14 @@ export class PrettyGraphControls extends EventDispatcher {
     });
   }
 
+  private _dist(a, b): number {
+    return Math.sqrt(Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2));
+  }
+
   private _onMouseMove(): void {
     const [mouseX, mouseY] = mouse(this._selection.node());
 
-    if (this._startPosition && (Math.abs(this._startPosition.x - mouseX) > 5 || Math.abs(this._startPosition.y - mouseY) > 5)) {
+    if (this._startPosition && this._dist(this._startPosition, mouse(this._selection.node())) > 5) {
       this._moved = true;
     }
 
@@ -188,10 +192,7 @@ export class PrettyGraphControls extends EventDispatcher {
     const [mouseX, mouseY] = mouse(this._selection.node());
 
     this._moved = false;
-    this._startPosition = {
-      x: mouseX,
-      y: mouseY
-    };
+    this._startPosition = mouse(this._selection.node());
 
     if (!this._renderer.domElement.contains(event.target)) {
       return;
@@ -207,55 +208,46 @@ export class PrettyGraphControls extends EventDispatcher {
     });
   }
 
-  private _onDblClick(): void {
-    if (!this.enabled || !this._renderer.domElement.contains(event.target)) {
-      return;
-    }
-
-    if (this._moved) {
-      this._moved = false;
-      return;
-    }
-
-    const [mouseX, mouseY] = mouse(this._selection.node());
-
-    this.dispatchEvent({
-      position: {
-        x: mouseX,
-        y: mouseY
-      },
-      type: 'dblclick'
-    });
-  }
-
-  private _onClick(): void {
-    if (!this.enabled || !this._renderer.domElement.contains(event.target)) {
-      return;
-    }
-
-    if (this._moved) {
-      this._moved = false;
-      return;
-    }
-
-    const [mouseX, mouseY] = mouse(this._selection.node());
-
-    this.dispatchEvent({
-      event,
-      position: {
-        x: mouseX,
-        y: mouseY
-      },
-      type: 'click'
-    });
-  }
-
   private _onMouseUp(): void {
     if (!this._renderer.domElement.contains(event.target)) {
       return;
     }
 
     this.dispatchEvent({ event, type: 'mouseup' });
+
+    if (this.enabled && this._dist(mouse(this._selection.node()), this._startPosition) < 5) {
+      if (this._moved) {
+        this._moved = false;
+        return;
+      }
+
+      const [mouseX, mouseY] = mouse(this._selection.node());
+
+      if (this._wait) {
+        window.clearTimeout(this._wait);
+        this._wait = null;
+        this.dispatchEvent({
+          position: {
+            x: mouseX,
+            y: mouseY
+          },
+          type: 'dblclick'
+        });
+      } else {
+        this._wait = window.setTimeout(() => {
+          this._wait = null;
+          this.dispatchEvent({
+            event,
+            position: {
+              x: mouseX,
+              y: mouseY
+            },
+            type: 'click'
+          });
+        }, 250);
+      }
+    }
+
   }
 
   private _zoomHandler(transform: any): void {
