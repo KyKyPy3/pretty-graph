@@ -6,6 +6,8 @@ export declare class PrettyGraphControls extends EventDispatcher {
     private _zoom;
     private _selection;
     private _renderer;
+    private _startPosition;
+    private _moved;
     private _onResize;
     constructor(camera: PerspectiveCamera, container: HTMLElement | HTMLDocument, renderer: any);
     init(): void;

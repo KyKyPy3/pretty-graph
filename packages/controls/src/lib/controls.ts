@@ -21,6 +21,10 @@ export class PrettyGraphControls extends EventDispatcher {
 
   private _renderer!: any;
 
+  private _startPosition!: any;
+
+  private _moved: boolean = false;
+
   private _onResize!: (event: ThreeEvent) => void;
 
   constructor(camera: PerspectiveCamera, container: HTMLElement | HTMLDocument, renderer: any) {
@@ -166,6 +170,10 @@ export class PrettyGraphControls extends EventDispatcher {
   private _onMouseMove(): void {
     const [mouseX, mouseY] = mouse(this._selection.node());
 
+    if (this._startPosition && (Math.abs(this._startPosition.x - mouseX) > 5 || Math.abs(this._startPosition.y - mouseY) > 5)) {
+      this._moved = true;
+    }
+
     this.dispatchEvent({
       event,
       position: {
@@ -178,6 +186,12 @@ export class PrettyGraphControls extends EventDispatcher {
 
   private _onMouseDown(): void {
     const [mouseX, mouseY] = mouse(this._selection.node());
+
+    this._moved = false;
+    this._startPosition = {
+      x: mouseX,
+      y: mouseY
+    };
 
     if (!this._renderer.domElement.contains(event.target)) {
       return;
@@ -198,6 +212,11 @@ export class PrettyGraphControls extends EventDispatcher {
       return;
     }
 
+    if (this._moved) {
+      this._moved = false;
+      return;
+    }
+
     const [mouseX, mouseY] = mouse(this._selection.node());
 
     this.dispatchEvent({
@@ -211,6 +230,11 @@ export class PrettyGraphControls extends EventDispatcher {
 
   private _onClick(): void {
     if (!this.enabled || !this._renderer.domElement.contains(event.target)) {
+      return;
+    }
+
+    if (this._moved) {
+      this._moved = false;
       return;
     }
 
