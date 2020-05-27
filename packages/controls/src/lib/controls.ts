@@ -145,7 +145,7 @@ export class PrettyGraphControls extends EventDispatcher {
   }
 
   private _onZoomEnd(): void {
-    if (event.sourceEvent?.type === 'mouseup') {
+    if (event.sourceEvent?.type === 'mouseup' && event.sourceEvent?.which === 1) {
       this._onMouseUp();
     }
   }
