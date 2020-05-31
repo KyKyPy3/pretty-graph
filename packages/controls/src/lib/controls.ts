@@ -39,7 +39,8 @@ export class PrettyGraphControls extends EventDispatcher {
 
   public init(): void {
     this._zoom = zoom()
-      .filter(() => this.enabled && !event.ctrlKey)
+      .clickDistance(4)
+      .filter(() => this.enabled && !event.ctrlKey && event.which === 1)
       .on('end', this._onZoomEnd.bind(this))
       .on('zoom', () => this._zoomHandler(event.transform));
 
