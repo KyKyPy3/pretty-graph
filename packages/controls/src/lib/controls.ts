@@ -41,7 +41,10 @@ export class PrettyGraphControls extends EventDispatcher {
     this._zoom = zoom()
       .clickDistance(4)
       .filter(() => {
-        if (event instanceof MouseEvent && event.which !== 1) {
+        if (
+          !(event instanceof WheelEvent) && 
+          event instanceof MouseEvent && event.which !== 1
+        ) {
           return false;
         }
 
