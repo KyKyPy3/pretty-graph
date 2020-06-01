@@ -901,6 +901,7 @@ export class PretyGraph {
     this._renderer.setSize(this._container.clientWidth, this._container.clientHeight, false);
 
     this._renderer.domElement.style.position = 'absolute';
+    this._renderer.domElement.style.userSelect = 'none';
 
     // Add the canvas to the DOM
     this._container.appendChild(this._renderer.domElement);
