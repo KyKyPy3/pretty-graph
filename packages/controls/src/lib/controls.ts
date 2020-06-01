@@ -170,12 +170,15 @@ export class PrettyGraphControls extends EventDispatcher {
     event.preventDefault();
     event.stopPropagation();
 
+    console.log('Context menu in');
+
     if (!this.enabled) {
       return;
     }
 
     const [mouseX, mouseY] = mouse(this._selection.node());
 
+    console.log('Context menu out');
     this.dispatchEvent({
       position: {
         x: mouseX,
@@ -209,6 +212,8 @@ export class PrettyGraphControls extends EventDispatcher {
   private _onMouseDown(): void {
     const [mouseX, mouseY] = mouse(this._selection.node());
 
+    console.log('Mouse down in');
+
     this._moved = false;
     window.clearTimeout(this._wait);
     this._startPosition = mouse(this._selection.node());
@@ -217,6 +222,7 @@ export class PrettyGraphControls extends EventDispatcher {
       return;
     }
 
+    console.log('Mouse down out');
     this.dispatchEvent({
       event,
       position: {
@@ -231,11 +237,13 @@ export class PrettyGraphControls extends EventDispatcher {
     const target = event.sourceEvent?.target || event.target;
     const e = event.sourceEvent || event;
 
+    console.log('Mouse up in');
+
+    this.dispatchEvent({ event, type: 'mouseup' });
+
     if (!this._renderer.domElement.contains(target) || e.which !== 1) {
       return;
     }
-
-    this.dispatchEvent({ event, type: 'mouseup' });
 
     if (this.enabled && this._dist(mouse(this._selection.node()), this._startPosition) < 5) {
       if (this._moved) {
@@ -248,6 +256,8 @@ export class PrettyGraphControls extends EventDispatcher {
       if (this._wait) {
         window.clearTimeout(this._wait);
         this._wait = null;
+
+        console.log('Dblclk out');
         this.dispatchEvent({
           position: {
             x: mouseX,
@@ -258,6 +268,7 @@ export class PrettyGraphControls extends EventDispatcher {
       } else {
         this._wait = window.setTimeout(() => {
           this._wait = null;
+          console.log('click out');
           this.dispatchEvent({
             event,
             position: {
@@ -312,6 +323,7 @@ export class PrettyGraphControls extends EventDispatcher {
 
         this._camera.position.set(x, y, z);
 
+        console.log('Scale out');
         this.dispatchEvent({
           canZoom,
           scale,
@@ -319,6 +331,7 @@ export class PrettyGraphControls extends EventDispatcher {
           zoomDirection
         });
       } else {
+        console.log('Rotate out');
         this.dispatchEvent({
           delta: event.sourceEvent.deltaY,
           type: 'rotate'
