@@ -42,7 +42,7 @@ export class PrettyGraphControls extends EventDispatcher {
       .clickDistance(4)
       .filter(() => {
         if (
-          !(event instanceof WheelEvent) && 
+          !(event instanceof WheelEvent) &&
           event instanceof MouseEvent && event.which !== 1
         ) {
           return false;
@@ -229,8 +229,9 @@ export class PrettyGraphControls extends EventDispatcher {
 
   private _onMouseUp(): void {
     const target = event.sourceEvent?.target || event.target;
+    const e = event.sourceEvent || event;
 
-    if (!this._renderer.domElement.contains(target)) {
+    if (!this._renderer.domElement.contains(target) || e.which !== 1) {
       return;
     }
 
