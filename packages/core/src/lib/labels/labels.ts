@@ -111,7 +111,6 @@ export class LabelsLayer extends EventDispatcher {
       transparent: true,
       uniforms: {
         nodeScalingFactor: {
-          type: 'f',
           value: this._nodeScalingFactor
         },
         spriteDim: {
@@ -121,7 +120,6 @@ export class LabelsLayer extends EventDispatcher {
           value: new Vector2(this._textCanvas.canvasWidth, this._textCanvas.canvasHeight)
         },
         textureMap: {
-          type: 't',
           value: this._textCanvas.textureMap
         }
       },

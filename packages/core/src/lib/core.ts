@@ -360,6 +360,14 @@ export class PretyGraph {
     }
   }
 
+  public getActiveNodes(): any[] {
+    if (this._nodesLayer) {
+      return this._nodesLayer.activeNodes;
+    }
+
+    return [];
+  }
+
   public getNodeByID(nodeID: string): any {
     const node = this._indexedNodes[nodeID];
 

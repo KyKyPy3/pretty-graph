@@ -217,11 +217,9 @@ export class NodesLayer {
       transparent: false,
       uniforms: {
         nodeScalingFactor: {
-          type: 'f',
           value: this._graph.nodeScalingFactor
         },
         scale: {
-          type: 'f',
           value: this._graph._controls ? this._graph._controls.scale : 1.0
         },
         spriteDim: {
@@ -231,7 +229,6 @@ export class NodesLayer {
           value: new Vector2(this._imageCanvas.canvasWidth, this._imageCanvas.canvasHeight)
         },
         textureMap: {
-          type: 't',
           value: this._imageCanvas.textureMap
         }
       },
@@ -262,11 +259,9 @@ export class NodesLayer {
       fragmentShader: pickingFragmentShader,
       uniforms: {
         nodeScalingFactor: {
-          type: 'f',
           value: this._graph.nodeScalingFactor
         },
         scale: {
-          type: 'f',
           value: this._graph._controls ? this._graph._controls.scale : 1.0
         }
       },
