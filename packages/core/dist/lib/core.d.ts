@@ -17,7 +17,6 @@ export declare class PretyGraph {
     private _container;
     private _fov;
     private _far;
-    private _nodes;
     private _edges;
     private _center;
     private _controls;
@@ -27,7 +26,6 @@ export declare class PretyGraph {
     private _raycaster;
     private _intersection;
     private _offset;
-    private _indexedNodes;
     private _labelsLayer;
     private _arrowsLayer;
     private _edgesLayer;
@@ -51,6 +49,7 @@ export declare class PretyGraph {
     private _onMouseDownListener;
     private _onMouseUpListener;
     private _onRotateListener;
+    private _layers;
     constructor(options: GraphOptions);
     set options(options: GraphOptions);
     get options(): GraphOptions;
@@ -63,7 +62,7 @@ export declare class PretyGraph {
     toggleLabels(): void;
     setData(data: any, options?: any): void;
     getActiveNodes(): any[];
-    getNodeByID(nodeID: string): any;
+    getNodeByID(nodeID: string): any | null;
     getScreenshot(): string;
     destroy(): void;
     private _addControlsListeners;
@@ -87,9 +86,5 @@ export declare class PretyGraph {
     private _setupRenderer;
     private _render;
     private _collectNeighbourhoods;
-    private _indexingNodes;
-    private _moveNodes;
-    private _getRandomFromRange;
-    private _interpolate;
     private _animate;
 }

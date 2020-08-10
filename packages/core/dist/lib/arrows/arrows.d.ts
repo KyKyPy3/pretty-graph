@@ -10,6 +10,8 @@ export declare class ArrowsLayer extends EventDispatcher {
     recalculate(): void;
     draw(): void;
     dispose(): void;
+    onBeforeAnimation(): void;
+    onAfterAnimation(): void;
     private _clearInternalState;
     private _calculateArrowData;
     private _calculateArrowVertices;

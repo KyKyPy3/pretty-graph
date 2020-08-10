@@ -22,8 +22,13 @@ export declare class NodesLayer {
     private _buffer;
     private _hoveredNodes;
     private _activeNodes;
+    private _nodeList;
     constructor(graph: any);
     get activeNodes(): any[];
+    getNodeByID(nodeID: string): any;
+    setNodes(nodes: any[], options: {
+        animate: boolean;
+    }): void;
     setSilent(silent: boolean): void;
     draw(): void;
     getSize(): Vector3;
@@ -39,5 +44,8 @@ export declare class NodesLayer {
     onResize(): void;
     dispose(): void;
     refreshBuffer(): void;
+    nodesAnimationStep(p: any): void;
+    onBeforeAnimation(): void;
+    onAfterAnimation(): void;
     private _disposeInternal;
 }

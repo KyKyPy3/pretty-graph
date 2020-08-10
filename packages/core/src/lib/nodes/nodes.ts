@@ -24,41 +24,7 @@ import {
 } from './shaders';
 
 import { ImageCanvas } from './imageCanvas';
-
-function throttle(func: any, wait: number, options: any = {}): any {
-  let args;
-  let result;
-  let timeout: any = null;
-  let previous = 0;
-
-  function later(): void {
-    previous = options.leading === false ? 0 : +new Date();
-    timeout = null;
-    result = func.apply(null, args);
-  }
-
-  return (...data: any[]): any => {
-    const now = +new Date();
-
-    if (!previous && options.leading === false) {
-      previous = now;
-    }
-
-    const remaining = wait - (now - previous);
-    args = data;
-
-    if (remaining <= 0) {
-      clearTimeout(timeout);
-      timeout = null;
-      previous = now;
-      result = func.apply(null, args);
-    } else if (!timeout && options.trailing !== false) {
-      timeout = setTimeout(later, remaining);
-    }
-
-    return result;
-  };
-}
+import { throttle, getRandomFromRange } from '../utils';
 
 export class NodesLayer {
 
@@ -106,6 +72,8 @@ export class NodesLayer {
 
   private _activeNodes: any[] = [];
 
+  private _nodeList: Map<string, any> = new Map();
+
   constructor(graph: any) {
     this._graph = graph;
 
@@ -131,6 +99,57 @@ export class NodesLayer {
     return this._activeNodes;
   }
 
+  public getNodeByID(nodeID: string): any {
+    return this._nodeList.get(nodeID);
+  }
+
+  public setNodes(nodes: any[], options: { animate: boolean }): void {
+    let prevNodeList;
+
+    if (options.animate) {
+      prevNodeList = this._nodeList;
+    }
+
+    this._nodeList = new Map();
+
+    for (const node of nodes) {
+      if (this._nodeList.has(node.id)) {
+        /* tslint:disable-next-line no-console */
+        console.error(`Node with id ${node.id} already exists`);
+      }
+
+      // Клонируем ноду чтобы не иметь связи с изночальным объектом
+      this._nodeList.set(node.id, JSON.parse(JSON.stringify(node)));
+
+      if (options.animate) {
+        const nodeItem = this._nodeList.get(node.id);
+        nodeItem.toX = nodeItem.x;
+        nodeItem.toY = nodeItem.y;
+
+        if (prevNodeList && prevNodeList.has(node.id)) {
+          const prev = prevNodeList.get(node.id);
+
+          nodeItem.fromX = prev.x;
+          nodeItem.fromY = prev.y;
+          nodeItem.x = prev.x;
+          nodeItem.y = prev.y;
+        } else {
+          if (this._graph._center && node.id === this._graph._center.id) {
+            nodeItem.fromX = this._graph._center.x;
+            nodeItem.fromY = this._graph._center.y;
+            nodeItem.x = this._graph._center.x;
+            nodeItem.y = this._graph._center.y;
+          } else {
+            nodeItem.fromX = getRandomFromRange(-this._graph._container.clientWidth, this._graph._container.clientWidth);
+            nodeItem.fromY = getRandomFromRange(-this._graph._container.clientHeight, this._graph._container.clientHeight);
+            nodeItem.x = getRandomFromRange(-this._graph._container.clientWidth, this._graph._container.clientWidth);
+            nodeItem.y = getRandomFromRange(-this._graph._container.clientHeight, this._graph._container.clientHeight);
+          }
+        }
+      }
+    }
+  }
+
   public setSilent(silent: boolean): void {
     this._silent = silent;
   }
@@ -140,52 +159,70 @@ export class NodesLayer {
     if (this._graph._labelsLayer) {
       this._graph._labelsLayer.clear();
     }
+    const nodesLength = this._nodeList.size;
 
-    const translateArray = new Float32Array(this._graph._nodes.length * 3);
-    const colors = new Float32Array(this._graph._nodes.length * 3);
-    const sizes = new Float32Array(this._graph._nodes.length);
-    const images = new Float32Array(this._graph._nodes.length);
-    const showDot = new Float32Array(this._graph._nodes.length);
+    const translateArray = new Float32Array(nodesLength * 3);
+    const colors = new Float32Array(nodesLength * 3);
+    const sizes = new Float32Array(nodesLength);
+    const images = new Float32Array(nodesLength);
+    const showDot = new Float32Array(nodesLength);
+    const pickingColors = new Float32Array(nodesLength * 3);
 
-    for (let i = 0, i3 = 0, l = this._graph._nodes.length; i < l; i ++, i3 += 3 ) {
-      translateArray[ i3 + 0 ] = this._graph._nodes[i].x;
-      translateArray[ i3 + 1 ] = this._graph._nodes[i].y;
+    let i3 = 0;
+    let i = 0;
+
+    for (const node of this._nodeList.values()) {
+      translateArray[ i3 + 0 ] = node.x;
+      translateArray[ i3 + 1 ] = node.y;
       translateArray[ i3 + 2 ] = 0;
 
       if (this._color) {
-        this._color.setHex(this._graph._nodes[i].color);
+        this._color.setHex(node.color);
 
         colors[ i3 + 0 ] = this._color.r;
         colors[ i3 + 1 ] = this._color.g;
         colors[ i3 + 2 ] = this._color.b;
       }
 
-      sizes[i] = this._graph._nodes[i].size;
+      sizes[i] = node.size;
 
-      if (this._graph._nodes[i].img) {
-        const imageIndex = this._imageCanvas.loadImage(this._graph._nodes[i].img);
-        this._graph._nodes[i]._imageIndex = imageIndex;
+      if (node.img) {
+        const imageIndex = this._imageCanvas.loadImage(node.img);
+        node._imageIndex = imageIndex;
         images[i] = imageIndex;
       } else {
         images[i] = -1;
       }
 
-      this._graph._nodes[i].__positionIndex = i;
+      node.__positionIndex = i;
 
-      if (this._graph._nodes[i].showDot) {
+      if (node.showDot) {
         showDot[i] = 1.0;
       } else {
         showDot[i] = 0.0;
       }
 
-      if (this._graph._labelsLayer && this._graph._nodes[i].label) {
-        this._graph._nodes[i].__labelIndex = this._graph._labelsLayer.addLabel(
-          this._graph._nodes[i].label,
-          this._graph._nodes[i].x,
-          this._graph._nodes[i].y,
-          this._graph._nodes[i].size
+      if (this._graph._labelsLayer && node.label) {
+        node.__labelIndex = this._graph._labelsLayer.addLabel(
+          node.label,
+          node.x,
+          node.y,
+          node.size
         );
       }
+
+      if (this._color) {
+        this._color.setHex(i + 1);
+
+        pickingColors[ i3 + 0 ] = this._color.r;
+        pickingColors[ i3 + 1 ] = this._color.g;
+        pickingColors[ i3 + 2 ] = this._color.b;
+      }
+
+      this._colorToNodeID[i + 1] = node.id;
+
+      i++;
+      i3 += 3;
     }
 
     const boundingBox = new Box3();
@@ -240,20 +277,6 @@ export class NodesLayer {
     this._nodeMesh.frustumCulled = false;
     this._nodeMesh.renderOrder = 10;
     this._graph._scene.add(this._nodeMesh);
-
-    // Add duplicates for GPU picking
-    const pickingColors = new Float32Array(this._graph._nodes.length * 3);
-    for (let i = 0, i3 = 0, l = this._graph._nodes.length; i < l; i ++, i3 += 3 ) {
-      if (this._color) {
-        this._color.setHex(i + 1);
-
-        pickingColors[ i3 + 0 ] = this._color.r;
-        pickingColors[ i3 + 1 ] = this._color.g;
-        pickingColors[ i3 + 2 ] = this._color.b;
-      }
-
-      this._colorToNodeID[i + 1] = this._graph._nodes[i].id;
-    }
 
     this._nodesPickingMaterial = new RawShaderMaterial({
       fragmentShader: pickingFragmentShader,
@@ -355,7 +378,7 @@ export class NodesLayer {
       /* tslint:disable-next-line */
       const id = (pixelBuffer[0]<<16)|(pixelBuffer[1]<<8)|(pixelBuffer[2]);
       if (id) {
-        const node = this._graph._indexedNodes[this._colorToNodeID[id]];
+        const node = this._nodeList.get(this._colorToNodeID[id]);
         if (this.hoveredNode !== node) {
           // clear last nodes
           const unhoveringNodes = this._hoveredNodes.filter((n) => n.__active === undefined || n.__active === false);
@@ -401,7 +424,7 @@ export class NodesLayer {
       /* tslint:disable-next-line */
       const id = (pixel[0]<<16)|(pixel[1]<<8)|(pixel[2]);
       if (id) {
-        return this._graph._indexedNodes[this._colorToNodeID[id]];
+        return this._nodeList.get(this._colorToNodeID[id]);
       }
     }
 
@@ -409,17 +432,23 @@ export class NodesLayer {
   }
 
   public recalculate(): void {
-    const translateArray = new Float32Array(this._graph._nodes.length * 3);
-    for (let i = 0, i3 = 0, l = this._graph._nodes.length; i < l; i ++, i3 += 3 ) {
-      translateArray[ i3 + 0 ] = this._graph._nodes[i].x;
-      translateArray[ i3 + 1 ] = this._graph._nodes[i].y;
+    const translateArray = new Float32Array(this._nodeList.size * 3);
+    let i = 0;
+    let i3 = 0;
+
+    for (const node of this._nodeList.values()) {
+      translateArray[ i3 + 0 ] = node.x;
+      translateArray[ i3 + 1 ] = node.y;
       translateArray[ i3 + 2 ] = 0;
 
-      this._graph._nodes[i].__positionIndex = i;
+      node.__positionIndex = i;
 
-      if (this._graph._labelsLayer && this._graph._nodes[i].__labelIndex !== undefined) {
-        this._graph._labelsLayer.setLabelPosition(this._graph._nodes[i].__labelIndex, { x: this._graph._nodes[i].x, y: this._graph._nodes[i].y, z: 0}, false);
+      if (this._graph._labelsLayer && node.__labelIndex !== undefined) {
+        this._graph._labelsLayer.setLabelPosition(node.__labelIndex, { x: node.x, y: node.y, z: 0}, false);
       }
+
+      i++;
+      i3 += 3;
     }
 
     if (this._nodesInstancedGeometry) {
@@ -429,12 +458,15 @@ export class NodesLayer {
   }
 
   public recalculatePicking(): void {
-    const translateArray = new Float32Array(this._graph._nodes.length * 3);
+    const translateArray = new Float32Array(this._nodeList.size * 3);
+    let i3 = 0;
 
-    for (let i = 0, i3 = 0, l = this._graph._nodes.length; i < l; i ++, i3 += 3 ) {
-      translateArray[ i3 + 0 ] = this._graph._nodes[i].x;
-      translateArray[ i3 + 1 ] = this._graph._nodes[i].y;
+    for (const node of this._nodeList.values()) {
+      translateArray[ i3 + 0 ] = node.x;
+      translateArray[ i3 + 1 ] = node.y;
       translateArray[ i3 + 2 ] = 0;
+
+      i3 += 3;
     }
 
     if (this._nodesPickingGeometry) {
@@ -490,6 +522,26 @@ export class NodesLayer {
       this._buffer = new Uint8Array(4 * this._pickingTexture.width * this._pickingTexture.height);
       this._graph._renderer.readRenderTargetPixels(this._pickingTexture, 0, 0, this._pickingTexture.width, this._pickingTexture.height, this._buffer);
     }
+  }
+
+  public nodesAnimationStep(p): void {
+    for (const value of this._nodeList.values()) {
+      if (p >= 1) {
+        value.x = value.toX;
+        value.y = value.toY;
+      } else {
+        value.x = value.toX * p + value.fromX * (1 - p);
+        value.y = value.toY * p + value.fromY * (1 - p);
+      }
+    }
+  }
+
+  public onBeforeAnimation(): void {
+    this.setSilent(true);
+  }
+
+  public onAfterAnimation(): void {
+    this.setSilent(false);
   }
 
   private _disposeInternal(): void {
