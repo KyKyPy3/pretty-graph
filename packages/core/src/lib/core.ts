@@ -16,6 +16,7 @@ import { ArrowsLayer } from './arrows/arrows';
 import { EdgesLayer } from './edges/edges';
 import { LabelsLayer } from './labelsLayer/labels';
 import { NodesLayer } from './nodes/nodes';
+import { interpolate } from './utils';
 
 export class PretyGraph {
 
@@ -43,8 +44,6 @@ export class PretyGraph {
 
   private _far: number = 10000;
 
-  private _nodes: any[] = [];
-
   private _edges: any[] = [];
 
   private _center: any = null;
@@ -62,8 +61,6 @@ export class PretyGraph {
   private _intersection = new Vector3()
 
   private _offset = new Vector3();
-
-  private _indexedNodes: { [id: string]: any; } = {};
 
   private _labelsLayer: LabelsLayer | null = null;
 
@@ -113,6 +110,8 @@ export class PretyGraph {
 
   private _onRotateListener: any;
 
+  private _layers: any[] = [];
+
   constructor(options: GraphOptions) {
     this.options = options;
 
@@ -141,10 +140,14 @@ export class PretyGraph {
       if (!this.options.showLabels) {
         this._labelsLayer.hide();
       }
+      this._layers.push(this._labelsLayer);
     }
     this._arrowsLayer = new ArrowsLayer(this);
+    this._layers.push(this._arrowsLayer);
     this._edgesLayer = new EdgesLayer(this);
+    this._layers.push(this._edgesLayer);
     this._nodesLayer = new NodesLayer(this);
+    this._layers.push(this._nodesLayer);
 
     this._resizeHandler = () => {
       clearTimeout(this._resizeTimeout);
@@ -244,15 +247,18 @@ export class PretyGraph {
   }
 
   public setData(data: any, options: any = { animate: false, locate: false }): void {
-    this._nodes = data.nodes;
     this._edges = data.links;
 
-    const lastIndexedNodes = JSON.parse(JSON.stringify(this._indexedNodes));
-    this._indexingNodes();
+    if (this._nodesLayer) {
+      this._nodesLayer.setNodes(data.nodes, { animate: options.animate });
+    }
+
     this._collectNeighbourhoods();
 
     if (data.center) {
-      this._center = this._indexedNodes[data.center];
+      if (this._nodesLayer) {
+        this._center = this._nodesLayer.getNodeByID(data.center);
+      }
       if (this._center && options.locate && this._controls) {
         this._controls.setTransform(this._center);
       }
@@ -273,65 +279,24 @@ export class PretyGraph {
       }
     }
 
+    if (this._edgesLayer) {
+      this._edgesLayer.draw();
+    }
+    if (this._arrowsLayer) {
+      this._arrowsLayer.draw();
+    }
+    if (this._nodesLayer) {
+      this._nodesLayer.draw();
+    }
+
+    if (this._labelsLayer) {
+      this._labelsLayer.draw();
+    }
+
+    this._render();
+
     if (options.animate) {
-        for (const k in this._indexedNodes) {
-          if (lastIndexedNodes[k]) {
-            this._indexedNodes[k].toX = this._indexedNodes[k].x;
-            this._indexedNodes[k].toY = this._indexedNodes[k].y;
-            this._indexedNodes[k].fromX = lastIndexedNodes[k].x;
-            this._indexedNodes[k].fromY = lastIndexedNodes[k].y;
-            this._indexedNodes[k].x = lastIndexedNodes[k].x;
-            this._indexedNodes[k].y = lastIndexedNodes[k].y;
-          } else {
-            this._indexedNodes[k].toX = this._indexedNodes[k].x;
-            this._indexedNodes[k].toY = this._indexedNodes[k].y;
-            if (this._center && this._indexedNodes[k].id === this._center.id) {
-              this._indexedNodes[k].fromX = this._center.x;
-              this._indexedNodes[k].fromY = this._center.y;
-              this._indexedNodes[k].x = this._center.x;
-              this._indexedNodes[k].y = this._center.y;
-            } else {
-              this._indexedNodes[k].fromX = this._getRandomFromRange(-this._container.clientWidth, this._container.clientWidth);
-              this._indexedNodes[k].fromY = this._getRandomFromRange(-this._container.clientHeight, this._container.clientHeight);
-              this._indexedNodes[k].x = this._getRandomFromRange(-this._container.clientWidth, this._container.clientWidth);
-              this._indexedNodes[k].y = this._getRandomFromRange(-this._container.clientHeight, this._container.clientHeight);
-            }
-          }
-        }
-
-        if (this._edgesLayer) {
-          this._edgesLayer.draw();
-        }
-        if (this._arrowsLayer) {
-          this._arrowsLayer.draw();
-        }
-        if (this._nodesLayer) {
-          this._nodesLayer.draw();
-        }
-
-        if (this._labelsLayer) {
-          this._labelsLayer.draw();
-        }
-
-        this._render();
-
-        requestAnimationFrame(this._animate.bind(this));
-    } else {
-      if (this._edgesLayer) {
-        this._edgesLayer.draw();
-      }
-      if (this._arrowsLayer) {
-        this._arrowsLayer.draw();
-      }
-      if (this._nodesLayer) {
-        this._nodesLayer.draw();
-      }
-
-      if (this._labelsLayer) {
-        this._labelsLayer.draw();
-      }
-
-      this._render();
+      requestAnimationFrame(this._animate.bind(this));
     }
 
     if (this._camera && this._nodesLayer) {
@@ -368,16 +333,19 @@ export class PretyGraph {
     return [];
   }
 
-  public getNodeByID(nodeID: string): any {
-    const node = this._indexedNodes[nodeID];
+  public getNodeByID(nodeID: string): any | null {
+    if (this._nodesLayer) {
+      const node = this._nodesLayer.getNodeByID(nodeID)
+      const coordinates = this._translateCoordinates(node.x, node.y);
+  
+      return {
+        node,
+        ...coordinates,
+        scale: this._controls.scale
+      };
+    }
 
-    const coordinates = this._translateCoordinates(node.x, node.y);
-
-    return {
-      node,
-      ...coordinates,
-      scale: this._controls.scale
-    };
+    return null;
   }
 
   public getScreenshot(): string {
@@ -451,11 +419,10 @@ export class PretyGraph {
       this._controls = null;
     }
 
-    this._nodes = [];
     this._edges = [];
     this._center = null;
-    this._indexedNodes = {};
     this._scene = null;
+    this._layers = [];
   }
 
   private _addControlsListeners(): void {
@@ -951,110 +918,54 @@ export class PretyGraph {
     }
   }
 
-  private _indexingNodes(): void {
-    this._indexedNodes = {};
-
-    for (const node of this._nodes) {
-      if (this._indexedNodes[node.id]) {
-        /* tslint:disable-next-line no-console */
-        console.error(`Node with id ${node.id} already exists`);
-      }
-
-      this._indexedNodes[node.id] = node;
-    }
-  }
-
-  private _moveNodes(last: boolean = false): void {
-    if (this._nodesLayer) {
-      this._nodesLayer.recalculate();
-    }
-
-    if (this._labelsLayer) {
-      this._labelsLayer.recalculate();
-    }
-
-    if (this._edgesLayer) {
-      this._edgesLayer.recalculate();
-    }
-
-    if (this._arrowsLayer) {
-      this._arrowsLayer.recalculate();
-    }
-
-    if (last) {
-      if (this._nodesLayer) {
-        this._nodesLayer.recalculatePicking();
-      }
-
-      if (this._edgesLayer) {
-        this._edgesLayer.recalculatePicking();
-      }
-    }
-  }
-
-  private _getRandomFromRange(min, max): number {
-    return Math.floor(Math.random() * (max - min)) + min;
-  }
-
-  private _interpolate(val: number): number {
-    let newValue = val;
-
-    /* tslint:disable-next-line no-conditional-assignment */
-    if ((newValue *= 2) < 1) {
-      return 0.5 * newValue * newValue;
-    }
-    return - 0.5 * (--newValue * (newValue - 2) - 1);
-  }
-
   private _animate(): void {
     const start = Date.now();
 
-    if (this._arrowsLayer) {
-      this._arrowsLayer.hide();
-    }
-    if (this._labelsLayer) {
-      this._labelsLayer.hide();
-    }
-    if (this._nodesLayer) {
-      this._nodesLayer.setSilent(true);
-    }
+    this._layers.forEach(layer => {
+      if (layer.onBeforeAnimation) {
+        layer.onBeforeAnimation();
+      }
+    });
 
     const step = () => {
       let p = (Date.now() - start) / this.animationTime;
 
       if (p >= 1) {
-        for (const k in this._indexedNodes) {
-          if (this._indexedNodes[k]) {
-            this._indexedNodes[k].x = this._indexedNodes[k].toX;
-            this._indexedNodes[k].y = this._indexedNodes[k].toY;
-          }
+        if (this._nodesLayer) {
+          this._nodesLayer.nodesAnimationStep(p);
         }
 
         // ADD change node positions
-        this._moveNodes(true);
+        this._layers.forEach(layer => {
+          layer.recalculate();
+        });
 
-        if (this._arrowsLayer) {
-          this._arrowsLayer.show();
-        }
-        if (this._labelsLayer && this.options.showLabels) {
-          this._labelsLayer.show();
-        }
         if (this._nodesLayer) {
-          this._nodesLayer.setSilent(false);
+          this._nodesLayer.recalculatePicking();
         }
+  
+        if (this._edgesLayer) {
+          this._edgesLayer.recalculatePicking();
+        }
+
+        this._layers.forEach(layer => {
+          if (layer.onAfterAnimation) {
+            layer.onAfterAnimation();
+          }
+        });
 
         this._render();
       } else {
-        p = this._interpolate(p);
-        for (const k in this._indexedNodes) {
-          if (this._indexedNodes[k]) {
-            this._indexedNodes[k].x = this._indexedNodes[k].toX * p + this._indexedNodes[k].fromX * (1 - p);
-            this._indexedNodes[k].y = this._indexedNodes[k].toY * p + this._indexedNodes[k].fromY * (1 - p);
-          }
+        p = interpolate(p);
+
+        if (this._nodesLayer) {
+          this._nodesLayer.nodesAnimationStep(p);
         }
 
         // ADD change node positions
-        this._moveNodes();
+        this._layers.forEach(layer => {
+          layer.recalculate();
+        });
 
         this._render();
         requestAnimationFrame(step);

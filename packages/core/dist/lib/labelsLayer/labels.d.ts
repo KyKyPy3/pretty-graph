@@ -24,6 +24,8 @@ export declare class LabelsLayer {
     draw(canvasCtx?: CanvasRenderingContext2D): void;
     recalculate(): void;
     dispose(): void;
+    onBeforeAnimation(): void;
+    onAfterAnimation(): void;
     private _clearTextLayer;
     private _drawText;
 }

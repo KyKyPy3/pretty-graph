@@ -29,6 +29,8 @@
     "listFiles": false /* Print names of files part of the compilation. */,
     "pretty": true /* Stylize errors and messages using color and context. */,
 
+    "downlevelIteration": true,
+
     "lib": ["es2017", "dom"],
     "types": [],
     "typeRoots": ["node_modules/@types", "packages"]

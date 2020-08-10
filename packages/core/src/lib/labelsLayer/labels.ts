@@ -152,6 +152,16 @@ export class LabelsLayer {
     this._labels = [];
   }
 
+  public onBeforeAnimation(): void {
+    this.hide();
+  }
+
+  public onAfterAnimation(): void {
+    if (this._graph.options.showLabels) {
+      this.show();
+    }
+  }
+
   private _clearTextLayer(): void {
     this._textContext.clearRect(0, 0, this._textContext.canvas.width, this._textContext.canvas.height);
   }

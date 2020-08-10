@@ -89,6 +89,14 @@ export class ArrowsLayer extends EventDispatcher {
     this._graph = null;
   }
 
+  public onBeforeAnimation(): void {
+    this.hide();
+  }
+
+  public onAfterAnimation(): void {
+    this.show();
+  }
+
   private _clearInternalState(): void {
     if (this._arrowMesh) {
       this._graph._scene.remove(this._arrowMesh);

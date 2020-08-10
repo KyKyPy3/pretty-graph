@@ -153,7 +153,7 @@ export class AppComponent implements OnInit {
       });
 
       this._agent.onEvent.on('tick', (progress) => {
-        console.log(progress);
+        // console.log(progress);
       });
 
       this._agent.onEvent.on('end', (data) => {
