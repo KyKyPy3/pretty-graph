@@ -1,11 +1,10 @@
-module.exports = env => {
+module.exports = (_env, argv) => {
 
   return {
     entry: __dirname + '/src/index.ts',
-    mode: env.production ? 'production' : 'development',
     output: {
       path: __dirname + '/dist',
-      filename: env.production ? 'd3-layout.min.js' : 'd3-layout.js',
+      filename: argv.mode === 'production' ? 'd3-layout.min.js' : 'd3-layout.js',
       library: 'd3Layout',
       libraryTarget: 'umd',
       umdNamedDefine: true,

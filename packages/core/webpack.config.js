@@ -1,11 +1,10 @@
-module.exports = env => {
+module.exports = (_env, argv) => {
 
   return {
     entry: __dirname + '/src/index.ts',
-    mode: env.production ? 'production' : 'development',
     output: {
       path: __dirname + '/dist',
-      filename: env.production ? 'core.min.js' : 'core.js',
+      filename: argv.mode === 'production' ? 'core.min.js' : 'core.js',
       library: 'prettyGraphCore',
       libraryTarget: 'umd',
       umdNamedDefine: true,

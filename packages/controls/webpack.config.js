@@ -1,11 +1,12 @@
-module.exports = env => {
+module.exports = (_env, argv) => {
+
+
 
   return {
     entry: __dirname + '/src/index.ts',
-    mode: env.production ? 'production' : 'development',
     output: {
       path: __dirname + '/dist',
-      filename: env.production ? 'controls.min.js' : 'controls.js',
+      filename: argv.mode == 'production' ? 'controls.min.js' : 'controls.js',
       library: 'prettyGraphControls',
       libraryTarget: 'umd',
       umdNamedDefine: true,

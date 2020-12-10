@@ -1,5 +1,5 @@
 /* tslint:disable-next-line */
-import Worker from 'worker-loader?inline,fallback=false!./d3.worker';
+import Worker from 'worker-loader?inline=no-fallback!./d3.worker';
 
 import { EventEmitter } from './emitter';
 import { Layout } from './layout';
