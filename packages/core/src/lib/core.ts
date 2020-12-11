@@ -244,11 +244,24 @@ export class PretyGraph {
   }
 
   public setData(data: any, options: any = { animate: false, locate: false }): void {
-    this._nodes = data.nodes;
-    this._edges = data.links;
-
+    // Клонируем переданные узлы
+    this._nodes = JSON.parse(JSON.stringify(data.nodes));
     const lastIndexedNodes = JSON.parse(JSON.stringify(this._indexedNodes));
     this._indexingNodes();
+
+    // rkjybhetv ht,hf
+    this._edges = JSON.parse(JSON.stringify(data.links));
+
+    // Мапим ребра на склонированные узлы
+    this._edges.forEach(edge => {
+      if (edge.target) {
+        edge.target = this._indexedNodes[edge.target.id];
+      }
+      if (edge.source) {
+        edge.source = this._indexedNodes[edge.source.id];
+      }
+    });
+
     this._collectNeighbourhoods();
 
     if (data.center) {
@@ -436,10 +449,6 @@ export class PretyGraph {
     if (this._nodesLayer) {
       this._nodesLayer.dispose();
       this._nodesLayer = null;
-    }
-
-    if (this._scene) {
-      (this._scene as any).dispose();
     }
 
     this._disposeRenderer();

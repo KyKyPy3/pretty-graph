@@ -93,7 +93,6 @@ export class EdgesLayer extends EventDispatcher {
     this._disposeInternal();
 
     if (this._pickingLineScene) {
-      (this._pickingLineScene as any).dispose();
       this._pickingLineScene = null;
     }
 

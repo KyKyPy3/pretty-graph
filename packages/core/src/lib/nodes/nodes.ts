@@ -466,7 +466,6 @@ export class NodesLayer {
     }
 
     if (this._pickingNodesScene) {
-      (this._pickingNodesScene as any).dispose();
       this._pickingNodesScene = null;
     }
 
