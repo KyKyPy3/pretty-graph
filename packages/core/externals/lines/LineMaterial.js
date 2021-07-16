@@ -25,8 +25,8 @@ UniformsLib.line = {
 	resolution: { value: new Vector2( 1, 1 ) },
 	dashScale: { value: 1 },
 	useColor: { value: 0 },
-  dashSize: { value: 1 },
-  scale: { value: 1 },
+  	dashSize: { value: 1 },
+  	scale: { value: 1 },
 	gapSize: { value: 1 } // todo FIX - maybe change to totalSize
 
 };
@@ -47,24 +47,24 @@ ShaderLib[ 'line' ] = {
 		#include <logdepthbuf_pars_vertex>
 		#include <clipping_planes_pars_vertex>
 
-    uniform vec2 resolution;
-    uniform float scale;
+    	uniform vec2 resolution;
+    	uniform float scale;
 
 		attribute vec3 instanceStart;
 		attribute vec3 instanceEnd;
-    attribute float linewidth;
-    attribute float dashed;
+    	attribute float linewidth;
+    	attribute float dashed;
 
 		attribute vec3 instanceColorStart;
 		attribute vec3 instanceColorEnd;
 
-    varying vec2 vUv;
-    varying float vDashed;
+    	varying vec2 vUv;
+    	varying float vDashed;
 
-    uniform float dashScale;
-    attribute float instanceDistanceStart;
-    attribute float instanceDistanceEnd;
-    varying float vLineDistance;
+		uniform float dashScale;
+		attribute float instanceDistanceStart;
+		attribute float instanceDistanceEnd;
+		varying float vLineDistance;
 
 		void trimSegment( const in vec4 start, inout vec4 end ) {
 
@@ -92,12 +92,12 @@ ShaderLib[ 'line' ] = {
 
 				vLineDistance = ( position.y < 0.5 ) ? dashScale * instanceDistanceStart : dashScale * instanceDistanceEnd;
 
-      }
+      		}
 
 			float aspect = resolution.x / resolution.y;
 
-      vUv = uv;
-      vDashed = dashed;
+      		vUv = uv;
+      		vDashed = dashed;
 
 			// camera space
 			vec4 start = modelViewMatrix * vec4( instanceStart, 1.0 );
@@ -160,8 +160,8 @@ ShaderLib[ 'line' ] = {
 
 			}
 
-      // adjust for linewidth
-      offset *= linewidth * scale;
+      		// adjust for linewidth
+      		offset *= linewidth * scale;
 
 			// adjust for clip-space to screen-space conversion // maybe resolution should be based on viewport ...
 			offset /= resolution.y;
@@ -191,8 +191,8 @@ ShaderLib[ 'line' ] = {
 		uniform float opacity;
 		uniform float useColor;
 
-    uniform float dashSize;
-    uniform float gapSize;
+    	uniform float dashSize;
+    	uniform float gapSize;
 
 		varying float vLineDistance;
 
@@ -202,8 +202,8 @@ ShaderLib[ 'line' ] = {
 		#include <logdepthbuf_pars_fragment>
 		#include <clipping_planes_pars_fragment>
 
-    varying vec2 vUv;
-    varying float vDashed;
+    	varying vec2 vUv;
+    	varying float vDashed;
 
 		void main() {
 
@@ -215,7 +215,7 @@ ShaderLib[ 'line' ] = {
 
 				if ( mod( vLineDistance, dashSize + gapSize ) > dashSize ) discard; // todo - FIX
 
-      }
+      		}
 
 			if ( abs( vUv.y ) > 1.0 ) {
 
@@ -247,173 +247,119 @@ ShaderLib[ 'line' ] = {
 		`
 };
 
-function LineMaterial( parameters ) {
+class LineMaterial extends ShaderMaterial {
+	constructor( parameters ) {
 
-	ShaderMaterial.call( this, {
+        super( {
+            type: 'LineMaterial',
+            uniforms: UniformsUtils.clone( ShaderLib[ 'line' ].uniforms ),
+            vertexShader: ShaderLib[ 'line' ].vertexShader,
+            fragmentShader: ShaderLib[ 'line' ].fragmentShader,
+            clipping: true // required for clipping support
+        } );
 
-		type: 'LineMaterial',
+        this.dashed = false;
+        Object.defineProperties( this, {
+            color: {
+                enumerable: true,
+                get: function () {
 
-		uniforms: UniformsUtils.clone( ShaderLib[ 'line' ].uniforms ),
+                    return this.uniforms.diffuse.value;
 
-		vertexShader: ShaderLib[ 'line' ].vertexShader,
-		fragmentShader: ShaderLib[ 'line' ].fragmentShader
+                },
+                set: function ( value ) {
 
-	} );
+                    this.uniforms.diffuse.value = value;
 
-	this.dashed = false;
+                }
+            },
+			useColor: {
 
-	Object.defineProperties( this, {
+				enumerable: true,
 
-		color: {
+				get: function () {
 
-			enumerable: true,
+					return this.uniforms.useColor.value;
 
-			get: function () {
+				},
 
-				return this.uniforms.diffuse.value;
+				set: function ( value ) {
 
-			},
+					this.uniforms.useColor.value = value;
 
-			set: function ( value ) {
-
-				this.uniforms.diffuse.value = value;
-
-			}
-
-		},
-
-		useColor: {
-
-			enumerable: true,
-
-			get: function () {
-
-				return this.uniforms.useColor.value;
-
-			},
-
-			set: function ( value ) {
-
-				this.uniforms.useColor.value = value;
-
-			}
-
-		},
-
-		dashScale: {
-
-			enumerable: true,
-
-			get: function () {
-
-				return this.uniforms.dashScale.value;
+				}
 
 			},
+            dashScale: {
+                enumerable: true,
+                get: function () {
 
-			set: function ( value ) {
+                    return this.uniforms.dashScale.value;
 
-				this.uniforms.dashScale.value = value;
+                },
+                set: function ( value ) {
 
-			}
+                    this.uniforms.dashScale.value = value;
 
-		},
+                }
+            },
+            dashSize: {
+                enumerable: true,
+                get: function () {
 
-		dashSize: {
+                    return this.uniforms.dashSize.value;
 
-			enumerable: true,
+                },
+                set: function ( value ) {
 
-			get: function () {
+                    this.uniforms.dashSize.value = value;
 
-				return this.uniforms.dashSize.value;
+                }
+            },
+            gapSize: {
+                enumerable: true,
+                get: function () {
 
+                    return this.uniforms.gapSize.value;
+
+                },
+                set: function ( value ) {
+
+                    this.uniforms.gapSize.value = value;
+
+                }
+            },
+			scale: {
+				enumerable: true,
+				get: function () {
+
+					return this.uniforms.scale.value;
+
+				},
+				set: function ( value ) {
+
+					this.uniforms.scale.value =  value;
+
+				}
 			},
+            resolution: {
+                enumerable: true,
+                get: function () {
 
-			set: function ( value ) {
+                    return this.uniforms.resolution.value;
 
-				this.uniforms.dashSize.value = value;
+                },
+                set: function ( value ) {
 
-			}
+                    this.uniforms.resolution.value.copy( value );
 
-		},
-
-		gapSize: {
-
-			enumerable: true,
-
-			get: function () {
-
-				return this.uniforms.gapSize.value;
-
-			},
-
-			set: function ( value ) {
-
-				this.uniforms.gapSize.value = value;
-
-			}
-
-    },
-
-    scale: {
-
-			enumerable: true,
-
-			get: function () {
-
-				return this.uniforms.scale.value;
-
-			},
-
-			set: function ( value ) {
-
-				this.uniforms.scale.value =  value;
-
-			}
-
-		},
-
-		resolution: {
-
-			enumerable: true,
-
-			get: function () {
-
-				return this.uniforms.resolution.value;
-
-			},
-
-			set: function ( value ) {
-
-				this.uniforms.resolution.value.copy( value );
-
-			}
-
-		}
-
-	} );
-
-	this.setValues( parameters );
-
-};
-
-LineMaterial.prototype = Object.create( ShaderMaterial.prototype );
-LineMaterial.prototype.constructor = LineMaterial;
+                }
+            },
+        } );
+        this.setValues( parameters );
+    }
+}
 
 LineMaterial.prototype.isLineMaterial = true;
 
-LineMaterial.prototype.copy = function ( source ) {
-
-	ShaderMaterial.prototype.copy.call( this, source );
-
-	this.color.copy( source.color );
-
-  this.resolution = source.resolution;
-
-	// todo
-
-	return this;
-
-};
-
 export { LineMaterial };
-

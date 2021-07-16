@@ -19,12 +19,13 @@
     "build:prod": "webpack --profile --progress --mode=production"
   },
   "dependencies": {
-    "three": "0.123.0"
+    "@types/three": "0.130.0",
+    "three": "0.130.1"
   },
   "devDependencies": {
-    "ts-loader": "8.0.11",
-    "webpack": "5.10.0",
-    "webpack-cli": "4.2.0"
+    "ts-loader": "9.2.3",
+    "webpack": "5.44.0",
+    "webpack-cli": "4.7.2"
   },
   "gitHead": "60cca76d16c17aeb29f4a7c783ddbf2eae77d72b"
 }

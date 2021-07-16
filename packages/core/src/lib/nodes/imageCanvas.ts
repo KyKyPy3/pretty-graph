@@ -1,4 +1,7 @@
-import { CanvasTexture, EventDispatcher } from 'three';
+import {
+  CanvasTexture,
+  EventDispatcher
+} from 'three';
 
 export class ImageCanvas extends EventDispatcher {
 

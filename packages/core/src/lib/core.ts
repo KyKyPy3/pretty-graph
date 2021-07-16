@@ -381,6 +381,14 @@ export class PretyGraph {
     return [];
   }
 
+  public getNodes(): any[] {
+    if (this._nodes) {
+      return JSON.parse(JSON.stringify(this._nodes));
+    }
+
+    return [];
+  }
+
   public getNodeByID(nodeID: string): any {
     const node = this._indexedNodes[nodeID];
 

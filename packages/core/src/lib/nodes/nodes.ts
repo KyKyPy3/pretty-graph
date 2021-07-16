@@ -171,6 +171,8 @@ export class NodesLayer {
       }
 
       this._graph._nodes[i].__positionIndex = i;
+      const coordinates = this._graph._translateCoordinates(this._graph._nodes[i].x, this._graph._nodes[i].y);
+      this._graph._nodes[i].coordinates = coordinates;
 
       if (this._graph._nodes[i].showDot) {
         showDot[i] = 1.0;
@@ -334,6 +336,9 @@ export class NodesLayer {
         if (this._nodesInstancedGeometry && this._nodesPickingGeometry) {
           node.x -= offset.x;
           node.y -= offset.y;
+
+          const coordinates = this._graph._translateCoordinates(node.x, node.y);
+          node.coordinates = coordinates;
 
           this._nodesInstancedGeometry.attributes.translation.setXYZ(node.__positionIndex, node.x, node.y, 0);
           this._nodesPickingGeometry.attributes.translation.setXYZ(node.__positionIndex, node.x, node.y, 0);

@@ -7,7 +7,6 @@ import {
   LinearFilter,
   Scene,
   Vector3,
-  VertexColors,
   WebGLRenderTarget
 } from 'three';
 
@@ -266,7 +265,7 @@ export class EdgesLayer extends EventDispatcher {
       depthTest: false,
       gapSize: 1,
       scale: this._graph._controls ? this._graph._controls.scale : 1.0,
-      vertexColors: VertexColors
+      vertexColors: true
     });
 
     this._lineMaterial.useColor = 1.0;
@@ -300,7 +299,7 @@ export class EdgesLayer extends EventDispatcher {
       depthTest: false,
       gapSize: 1,
       scale: this._graph._controls ? this._graph._controls.scale : 1.0,
-      vertexColors: VertexColors
+      vertexColors: true
     });
 
     this._linePickingMaterial.useColor = 1.0;

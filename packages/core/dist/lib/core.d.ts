@@ -63,6 +63,7 @@ export declare class PretyGraph {
     toggleLabels(): void;
     setData(data: any, options?: any): void;
     getActiveNodes(): any[];
+    getNodes(): any[];
     getNodeByID(nodeID: string): any;
     getScreenshot(): string;
     destroy(): void;

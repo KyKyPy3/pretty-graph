@@ -5,7 +5,11 @@ import {
   zoomIdentity,
   zoomTransform
 } from 'd3-zoom';
-import { Event as ThreeEvent, EventDispatcher, PerspectiveCamera } from 'three';
+import {
+  Event as ThreeEvent,
+  EventDispatcher,
+  PerspectiveCamera,
+} from 'three';
 
 export class PrettyGraphControls extends EventDispatcher {
 
