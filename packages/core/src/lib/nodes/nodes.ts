@@ -421,6 +421,8 @@ export class NodesLayer {
       translateArray[ i3 + 2 ] = 0;
 
       this._graph._nodes[i].__positionIndex = i;
+      const coordinates = this._graph._translateCoordinates(this._graph._nodes[i].x, this._graph._nodes[i].y);
+      this._graph._nodes[i].coordinates = coordinates;
 
       if (this._graph._labelsLayer && this._graph._nodes[i].__labelIndex !== undefined) {
         this._graph._labelsLayer.setLabelPosition(this._graph._nodes[i].__labelIndex, { x: this._graph._nodes[i].x, y: this._graph._nodes[i].y, z: 0}, false);
