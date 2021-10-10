@@ -54,6 +54,7 @@ export declare class PretyGraph {
     constructor(options: GraphOptions);
     set options(options: GraphOptions);
     get options(): GraphOptions;
+    resize(): void;
     zoomIn(): boolean;
     zoomOut(): boolean;
     showLabels(): void;

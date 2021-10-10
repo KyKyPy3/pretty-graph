@@ -205,6 +205,10 @@ export class PretyGraph {
     return this._options;
   }
 
+  public resize() {
+    this._resizeHandler();
+  }
+
   public zoomIn(): boolean {
     return this._controls.zoomIn();
   }
