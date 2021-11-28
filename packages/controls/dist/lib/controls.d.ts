@@ -1,4 +1,4 @@
-import { EventDispatcher, PerspectiveCamera } from 'three';
+import { EventDispatcher, PerspectiveCamera, WebGLRenderer } from 'three';
 export declare class PrettyGraphControls extends EventDispatcher {
     enabled: boolean;
     scale: number;
@@ -10,7 +10,7 @@ export declare class PrettyGraphControls extends EventDispatcher {
     private _moved;
     private _wait;
     private _onResize;
-    constructor(camera: PerspectiveCamera, container: HTMLElement | HTMLDocument, renderer: any);
+    constructor(camera: PerspectiveCamera, container: Element, renderer: WebGLRenderer);
     init(): void;
     zoomIn(): boolean;
     zoomOut(): boolean;

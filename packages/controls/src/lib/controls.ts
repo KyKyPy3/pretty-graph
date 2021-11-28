@@ -1,4 +1,8 @@
-import { event, mouse, select } from 'd3-selection';
+import {
+  pointer,
+  select,
+  Selection,
+} from 'd3-selection';
 import {
   zoom,
   ZoomBehavior,
@@ -9,6 +13,7 @@ import {
   Event as ThreeEvent,
   EventDispatcher,
   PerspectiveCamera,
+  WebGLRenderer,
 } from 'three';
 
 export class PrettyGraphControls extends EventDispatcher {
@@ -19,13 +24,13 @@ export class PrettyGraphControls extends EventDispatcher {
 
   private _camera!: PerspectiveCamera;
 
-  private _zoom!: ZoomBehavior<Element, {}>;
+  private _zoom!: ZoomBehavior<Element, unknown>;
 
-  private _selection!: any;
+  private _selection!: Selection<Element, unknown, null, undefined>;
 
-  private _renderer!: any;
+  private _renderer!: WebGLRenderer;
 
-  private _startPosition!: any;
+  private _startPosition!: [number, number];
 
   private _moved: boolean = false;
 
@@ -33,7 +38,7 @@ export class PrettyGraphControls extends EventDispatcher {
 
   private _onResize!: (event: ThreeEvent) => void;
 
-  constructor(camera: PerspectiveCamera, container: HTMLElement | HTMLDocument, renderer: any) {
+  constructor(camera: PerspectiveCamera, container: Element, renderer: WebGLRenderer) {
     super();
 
     this._camera = camera;
@@ -41,10 +46,10 @@ export class PrettyGraphControls extends EventDispatcher {
     this._selection = select(container);
   }
 
-  public init(): void {
+  public init() {
     this._zoom = zoom()
       .clickDistance(4)
-      .filter(() => {
+      .filter(event => {
         if (
           !(event instanceof WheelEvent) &&
           event instanceof MouseEvent && event.which !== 1
@@ -55,65 +60,76 @@ export class PrettyGraphControls extends EventDispatcher {
         return this.enabled && !event.ctrlKey;
       })
       .on('end', this._onZoomEnd.bind(this))
-      .on('zoom', () => this._zoomHandler(event.transform));
+      .on('zoom', event => this._zoomHandler(event));
 
     this._selection
-      .on('contextmenu', this._onContextMenu.bind(this))
-      .on('mousedown', this._onMouseDown.bind(this))
-      .on('mousemove', this._onMouseMove.bind(this))
-      .on('mouseup', this._onMouseUp.bind(this))
+      .on('contextmenu', this._onContextMenu.bind(this) as OmitThisParameter<typeof this._onContextMenu>)
+      .on('mousedown', this._onMouseDown.bind(this) as OmitThisParameter<typeof this._onMouseDown>)
+      .on('mousemove', this._onMouseMove.bind(this) as OmitThisParameter<typeof this._onMouseMove>)
+      .on('mouseup', this._onMouseUp.bind(this) as OmitThisParameter<typeof this._onMouseUp>)
       .call(this._zoom)
       .on('wheel', this._onRotate.bind(this))
       .on('dblclick.zoom', null);
 
     this._onResize = () => {
-      this._zoomHandler(zoomTransform(this._selection.node()));
+      const node = this._selection.node();
+      if (node) {
+        this._zoomHandler(node);
+      }
     }
 
     window.addEventListener('resize', this._onResize, false);
   }
 
-  public zoomIn(): boolean {
+  public zoomIn() {
     let canZoomIn: boolean = true;
-    const currentTransform = zoomTransform(this._selection.node());
-    const targetZoom = currentTransform.k * (1.2);
-    let z = this._getZFromScale(targetZoom);
+    const node = this._selection.node();
 
-    if (z < this._camera.near + 1) {
-      z = this._camera.near + 1;
-      canZoomIn = false;
-    }
-    const scale = this._getScaleFromZ(z);
+    if (node) {
+      const currentTransform = zoomTransform(node);
+      const targetZoom = currentTransform.k * (1.2);
+      let z = this._getZFromScale(targetZoom);
 
-    if (this.scale !== scale) {
-      const initialTransform = zoomIdentity.translate(currentTransform.x, currentTransform.y).scale(scale);
-      this._zoom.transform(this._selection, initialTransform);
+      if (z < this._camera.near + 1) {
+        z = this._camera.near + 1;
+        canZoomIn = false;
+      }
+      const scale = this._getScaleFromZ(z);
+
+      if (this.scale !== scale) {
+        const initialTransform = zoomIdentity.translate(currentTransform.x, currentTransform.y).scale(scale);
+        this._zoom.transform(this._selection, initialTransform);
+      }
     }
 
     return canZoomIn;
   }
 
-  public zoomOut(): boolean {
+  public zoomOut() {
     let canZoomIn: boolean = true;
-    const currentTransform = zoomTransform(this._selection.node());
-    const targetZoom = currentTransform.k * (0.8);
-    let z = this._getZFromScale(targetZoom);
+    const node = this._selection.node();
 
-    if (z > this._camera.far - 1) {
-      z = this._camera.far - 1;
-      canZoomIn = false;
-    }
-    const scale = this._getScaleFromZ(z);
+    if (node) {
+      const currentTransform = zoomTransform(node);
+      const targetZoom = currentTransform.k * (0.8);
+      let z = this._getZFromScale(targetZoom);
 
-    if (this.scale !== scale) {
-      const initialTransform = zoomIdentity.translate(currentTransform.x, currentTransform.y).scale(scale);
-      this._zoom.transform(this._selection, initialTransform);
+      if (z > this._camera.far - 1) {
+        z = this._camera.far - 1;
+        canZoomIn = false;
+      }
+      const scale = this._getScaleFromZ(z);
+
+      if (this.scale !== scale) {
+        const initialTransform = zoomIdentity.translate(currentTransform.x, currentTransform.y).scale(scale);
+        this._zoom.transform(this._selection, initialTransform);
+      }
     }
 
     return canZoomIn;
   }
 
-  public setZoomExtent(): void {
+  public setZoomExtent() {
     const start = this._camera.near + 1;
     const end = this._camera.far - 1;
     this._zoom.scaleExtent([this._getScaleFromZ(end), this._getScaleFromZ(start)]);
@@ -123,27 +139,36 @@ export class PrettyGraphControls extends EventDispatcher {
     }
   }
 
-  public setCameraPosition(z: number): void {
+  public setCameraPosition(z: number) {
     // Set camera position
     this._camera.position.set(0, 0, z);
     this._camera.lookAt(0, 0, 0);
 
     this.scale = this._getScaleFromZ(z);
-    const dimensions = this._selection.node().getBoundingClientRect();
-    const initialTransform = zoomIdentity.translate(dimensions.width / 2, dimensions.height / 2).scale(this.scale);
-    this._zoom.transform(this._selection, initialTransform);
+
+    const node = this._selection.node();
+
+    if (node) {
+      const dimensions = node.getBoundingClientRect();
+      const initialTransform = zoomIdentity.translate(dimensions.width / 2, dimensions.height / 2).scale(this.scale);
+      this._zoom.transform(this._selection, initialTransform);
+    }
   }
 
-  public setTransform(position: { x: number, y: number }): void {
-    const dimensions = this._selection.node().getBoundingClientRect();
-    const x = dimensions.width / 2 - this.scale * position.x;
-    const y = this.scale * position.y + dimensions.height / 2;
+  public setTransform(position: { x: number, y: number }) {
+    const node = this._selection.node();
 
-    const initialTransform = zoomIdentity.translate(x, y).scale(this.scale);
-    this._zoom.transform(this._selection, initialTransform);
+    if (node) {
+      const dimensions = node.getBoundingClientRect();
+      const x = dimensions.width / 2 - this.scale * position.x;
+      const y = this.scale * position.y + dimensions.height / 2;
+
+      const initialTransform = zoomIdentity.translate(x, y).scale(this.scale);
+      this._zoom.transform(this._selection, initialTransform);
+    }
   }
 
-  public dispose(): void {
+  public dispose() {
     window.removeEventListener('resize', this._onResize);
 
     this._selection
@@ -158,19 +183,19 @@ export class PrettyGraphControls extends EventDispatcher {
       .on('end', null);
   }
 
-  private _onZoomEnd(): void {
+  private _onZoomEnd(event) {
     if (event.sourceEvent?.type === 'mouseup' && event.sourceEvent?.which === 1) {
-      this._onMouseUp();
+      this._onMouseUp(event);
     }
   }
 
-  private _onRotate(): void {
+  private _onRotate() {
     // this.dispatchEvent({
     //   type: 'rotate'
     // });
   }
 
-  private _onContextMenu(): void {
+  private _onContextMenu(event) {
     event.preventDefault();
     event.stopPropagation();
 
@@ -178,7 +203,7 @@ export class PrettyGraphControls extends EventDispatcher {
       return;
     }
 
-    const [mouseX, mouseY] = mouse(this._selection.node());
+    const [mouseX, mouseY] = pointer(event);
 
     this.dispatchEvent({
       position: {
@@ -189,14 +214,14 @@ export class PrettyGraphControls extends EventDispatcher {
     });
   }
 
-  private _dist(a, b): number {
+  private _dist(a, b) {
     return Math.sqrt(Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2));
   }
 
-  private _onMouseMove(): void {
-    const [mouseX, mouseY] = mouse(this._selection.node());
+  private _onMouseMove(event) {
+    const [mouseX, mouseY] = pointer(event);
 
-    if (this._startPosition && this._dist(this._startPosition, mouse(this._selection.node())) > 5) {
+    if (this._startPosition && this._dist(this._startPosition, [mouseX, mouseY]) > 5) {
       this._moved = true;
     }
 
@@ -210,12 +235,12 @@ export class PrettyGraphControls extends EventDispatcher {
     });
   }
 
-  private _onMouseDown(): void {
-    const [mouseX, mouseY] = mouse(this._selection.node());
+  private _onMouseDown(event) {
+    const [mouseX, mouseY] = pointer(event);
 
     this._moved = false;
     window.clearTimeout(this._wait);
-    this._startPosition = mouse(this._selection.node());
+    this._startPosition = [mouseX, mouseY];
 
     if (!this._renderer.domElement.contains(event.target)) {
       return;
@@ -231,7 +256,7 @@ export class PrettyGraphControls extends EventDispatcher {
     });
   }
 
-  private _onMouseUp(): void {
+  private _onMouseUp(event) {
     const target = event.sourceEvent?.target || event.target;
     const e = event.sourceEvent || event;
 
@@ -241,13 +266,13 @@ export class PrettyGraphControls extends EventDispatcher {
       return;
     }
 
-    if (this.enabled && this._dist(mouse(this._selection.node()), this._startPosition) < 5) {
+    if (this.enabled && this._dist(pointer(event), this._startPosition) < 5) {
       if (this._moved) {
         this._moved = false;
         return;
       }
 
-      const [mouseX, mouseY] = mouse(this._selection.node());
+      const [mouseX, mouseY] = pointer(event);
 
       if (this._wait) {
         window.clearTimeout(this._wait);
@@ -277,91 +302,107 @@ export class PrettyGraphControls extends EventDispatcher {
 
   }
 
-  private _zoomHandler(transform: any): void {
+  private _zoomHandler(event) {
     if (!this.enabled) {
       return;
     }
 
+    const transform = event.transform;
     let canZoom: boolean = true;
     let zoomDirection: string = '';
-    const dimensions = this._selection.node().getBoundingClientRect();
-    let ctrlKey = false;
+    const node = this._selection.node();
 
-    if (event && event.sourceEvent && event.sourceEvent.ctrlKey) {
-      ctrlKey = true
-    };
+    if (node) {
+      const dimensions = node.getBoundingClientRect();
+      let ctrlKey = false;
 
-    let z = this._getZFromScale(transform.k);
-    if (z >= this._camera.far - 1) {
-      z = this._camera.far - 1;
-      canZoom = false;
-    }
+      if (event && event.sourceEvent && event.sourceEvent.ctrlKey) {
+        ctrlKey = true
+      };
 
-    if (z <= this._camera.near + 1) {
-      z = this._camera.near + 1;
-      canZoom = false;
-    }
-    const scale = this._getScaleFromZ(z);
-
-    if (scale !== this.scale) {
-      if (scale > this.scale) {
-        zoomDirection = 'in';
-      } else {
-        zoomDirection = 'out';
+      let z = this._getZFromScale(transform.k);
+      if (z >= this._camera.far - 1) {
+        z = this._camera.far - 1;
+        canZoom = false;
       }
 
-      if (!ctrlKey) {
-        this.scale = scale;
-        const x = -(transform.x - dimensions.width / 2) / scale;
-        const y = (transform.y - dimensions.height / 2) / scale;
+      if (z <= this._camera.near + 1) {
+        z = this._camera.near + 1;
+        canZoom = false;
+      }
+      const scale = this._getScaleFromZ(z);
+
+      if (scale !== this.scale) {
+        if (scale > this.scale) {
+          zoomDirection = 'in';
+        } else {
+          zoomDirection = 'out';
+        }
+
+        if (!ctrlKey) {
+          this.scale = scale;
+          const x = -(transform.x - dimensions.width / 2) / scale;
+          const y = (transform.y - dimensions.height / 2) / scale;
+
+          this._camera.position.set(x, y, z);
+
+          this.dispatchEvent({
+            canZoom,
+            scale,
+            type: 'scale',
+            zoomDirection
+          });
+        } else {
+          this.dispatchEvent({
+            delta: event.sourceEvent.deltaY,
+            type: 'rotate'
+          });
+        }
+      } else {
+        const x = -(transform.x - dimensions.width / 2) / this.scale;
+        const y = (transform.y - dimensions.height / 2) / this.scale;
 
         this._camera.position.set(x, y, z);
 
         this.dispatchEvent({
-          canZoom,
-          scale,
-          type: 'scale',
-          zoomDirection
-        });
-      } else {
-        this.dispatchEvent({
-          delta: event.sourceEvent.deltaY,
-          type: 'rotate'
+          scale: this.scale,
+          type: 'pan'
         });
       }
-    } else {
-      const x = -(transform.x - dimensions.width / 2) / this.scale;
-      const y = (transform.y - dimensions.height / 2) / this.scale;
-
-      this._camera.position.set(x, y, z);
-
-      this.dispatchEvent({
-        scale: this.scale,
-        type: 'pan'
-      });
     }
   }
 
-  private _getScaleFromZ (z: number): number {
-    const dimensions = this._selection.node().getBoundingClientRect();
-    const halfFov = this._camera.fov / 2;
-    const halfFovRadians = this._toRadians(halfFov);
-    const halfFovHeight = Math.tan(halfFovRadians) * z;
-    const fovHeight = halfFovHeight * 2;
+  private _getScaleFromZ (z: number) {
+    const node = this._selection.node();
 
-    return dimensions.height / fovHeight;
+    if (node) {
+      const dimensions = node.getBoundingClientRect();
+      const halfFov = this._camera.fov / 2;
+      const halfFovRadians = this._toRadians(halfFov);
+      const halfFovHeight = Math.tan(halfFovRadians) * z;
+      const fovHeight = halfFovHeight * 2;
+
+      return dimensions.height / fovHeight;
+    }
+
+    return 0;
   }
 
-  private _getZFromScale(scale: number): number {
-    const dimensions = this._selection.node().getBoundingClientRect();
-    const halfFov = this._camera.fov / 2;
-    const halfFovRadians = this._toRadians(halfFov);
-    const scaleHeight = dimensions.height / scale;
+  private _getZFromScale(scale: number) {
+    const node = this._selection.node();
+    if (node) {
+      const dimensions = node.getBoundingClientRect();
+      const scaleHeight = dimensions.height / scale;
+      const halfFov = this._camera.fov / 2;
+      const halfFovRadians = this._toRadians(halfFov);
 
-    return scaleHeight / (2 * Math.tan(halfFovRadians));
+      return scaleHeight / (2 * Math.tan(halfFovRadians));
+    }
+
+    return 0;
   }
 
-  private _toRadians(angle: number): number {
+  private _toRadians(angle: number) {
     return angle * (Math.PI / 180);
   }
 }
