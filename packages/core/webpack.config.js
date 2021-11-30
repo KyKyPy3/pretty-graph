@@ -10,6 +10,7 @@ module.exports = (_env, argv) => {
       umdNamedDefine: true,
       globalObject: "typeof self !== 'undefined' ? self : this"
     },
+    devtool: false,
     externals: {
       "three": "three"
     },

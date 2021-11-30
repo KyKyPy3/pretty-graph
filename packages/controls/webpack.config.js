@@ -1,7 +1,4 @@
 module.exports = (_env, argv) => {
-
-
-
   return {
     entry: __dirname + '/src/index.ts',
     output: {
@@ -13,8 +10,9 @@ module.exports = (_env, argv) => {
       globalObject: "typeof self !== 'undefined' ? self : this"
     },
     externals: {
-      "three": "three"
+      "three": "three",
     },
+    devtool: false,
     resolve: {
       modules: [
         'node_modules',
