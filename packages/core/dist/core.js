@@ -12,6 +12,979 @@ return /******/ (() => { // webpackBootstrap
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
+/***/ "./externals/lines/Line2.js":
+/*!**********************************!*\
+  !*** ./externals/lines/Line2.js ***!
+  \**********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "Line2": () => (/* binding */ Line2)
+/* harmony export */ });
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "three");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(three__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _LineSegments2__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./LineSegments2 */ "./externals/lines/LineSegments2.js");
+/**
+ * @author WestLangley / http://github.com/WestLangley
+ *
+ */
+
+
+
+
+
+class Line2 extends _LineSegments2__WEBPACK_IMPORTED_MODULE_1__.LineSegments2 {
+	constructor(
+		geometry = new three__WEBPACK_IMPORTED_MODULE_0__.LineGeometry(),
+		material = new three__WEBPACK_IMPORTED_MODULE_0__.LineMaterial({
+			color: Math.random() * 0xffffff
+		})
+	) {
+		super( geometry, material );
+		this.type = 'Line2';
+	}
+}
+
+Line2.prototype.isLine2 = true;
+
+
+
+
+/***/ }),
+
+/***/ "./externals/lines/LineMaterial.js":
+/*!*****************************************!*\
+  !*** ./externals/lines/LineMaterial.js ***!
+  \*****************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "LineMaterial": () => (/* binding */ LineMaterial)
+/* harmony export */ });
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "three");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(three__WEBPACK_IMPORTED_MODULE_0__);
+/**
+ * @author WestLangley / http://github.com/WestLangley
+ *
+ * parameters = {
+ *  color: <hex>,
+ *  linewidth: <float>,
+ *  dashed: <boolean>,
+ *  dashScale: <float>,
+ *  dashSize: <float>,
+ *  gapSize: <float>,
+ *  resolution: <Vector2>, // to be set by renderer
+ * }
+ */
+
+
+
+three__WEBPACK_IMPORTED_MODULE_0__.UniformsLib.line = {
+
+	resolution: { value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector2( 1, 1 ) },
+	dashScale: { value: 1 },
+	useColor: { value: 0 },
+  	dashSize: { value: 1 },
+  	scale: { value: 1 },
+	gapSize: { value: 1 } // todo FIX - maybe change to totalSize
+
+};
+
+three__WEBPACK_IMPORTED_MODULE_0__.ShaderLib.line = {
+
+	uniforms: three__WEBPACK_IMPORTED_MODULE_0__.UniformsUtils.merge( [
+		three__WEBPACK_IMPORTED_MODULE_0__.UniformsLib.common,
+		three__WEBPACK_IMPORTED_MODULE_0__.UniformsLib.fog,
+		three__WEBPACK_IMPORTED_MODULE_0__.UniformsLib.line
+	] ),
+
+	vertexShader:
+		`
+		#include <common>
+		#include <color_pars_vertex>
+		#include <fog_pars_vertex>
+		#include <logdepthbuf_pars_vertex>
+		#include <clipping_planes_pars_vertex>
+
+    	uniform vec2 resolution;
+    	uniform float scale;
+
+		attribute vec3 instanceStart;
+		attribute vec3 instanceEnd;
+    	attribute float linewidth;
+    	attribute float dashed;
+
+		attribute vec3 instanceColorStart;
+		attribute vec3 instanceColorEnd;
+
+    	varying vec2 vUv;
+    	varying float vDashed;
+
+		uniform float dashScale;
+		attribute float instanceDistanceStart;
+		attribute float instanceDistanceEnd;
+		varying float vLineDistance;
+
+		void trimSegment( const in vec4 start, inout vec4 end ) {
+
+			// trim end segment so it terminates between the camera plane and the near plane
+
+			// conservative estimate of the near plane
+			float a = projectionMatrix[ 2 ][ 2 ]; // 3nd entry in 3th column
+			float b = projectionMatrix[ 3 ][ 2 ]; // 3nd entry in 4th column
+			float nearEstimate = - 0.5 * b / a;
+
+			float alpha = ( nearEstimate - start.z ) / ( end.z - start.z );
+
+			end.xyz = mix( start.xyz, end.xyz, alpha );
+
+		}
+
+		void main() {
+			#ifdef USE_COLOR
+
+				vColor.xyz = ( position.y < 0.5 ) ? instanceColorStart : instanceColorEnd;
+
+			#endif
+
+			if (dashed > 0.5) {
+
+				vLineDistance = ( position.y < 0.5 ) ? dashScale * instanceDistanceStart : dashScale * instanceDistanceEnd;
+
+      		}
+
+			float aspect = resolution.x / resolution.y;
+
+      		vUv = uv;
+      		vDashed = dashed;
+
+			// camera space
+			vec4 start = modelViewMatrix * vec4( instanceStart, 1.0 );
+			vec4 end = modelViewMatrix * vec4( instanceEnd, 1.0 );
+
+			// special case for perspective projection, and segments that terminate either in, or behind, the camera plane
+			// clearly the gpu firmware has a way of addressing this issue when projecting into ndc space
+			// but we need to perform ndc-space calculations in the shader, so we must address this issue directly
+			// perhaps there is a more elegant solution -- WestLangley
+
+			bool perspective = ( projectionMatrix[ 2 ][ 3 ] == - 1.0 ); // 4th entry in the 3rd column
+
+			if ( perspective ) {
+
+				if ( start.z < 0.0 && end.z >= 0.0 ) {
+
+					trimSegment( start, end );
+
+				} else if ( end.z < 0.0 && start.z >= 0.0 ) {
+
+					trimSegment( end, start );
+
+				}
+
+			}
+
+			// clip space
+			vec4 clipStart = projectionMatrix * start;
+			vec4 clipEnd = projectionMatrix * end;
+
+			// ndc space
+			vec2 ndcStart = clipStart.xy / clipStart.w;
+			vec2 ndcEnd = clipEnd.xy / clipEnd.w;
+
+			// direction
+			vec2 dir = ndcEnd - ndcStart;
+
+			// account for clip-space aspect ratio
+			dir.x *= aspect;
+			dir = normalize( dir );
+
+			// perpendicular to dir
+			vec2 offset = vec2( dir.y, - dir.x );
+
+			// undo aspect ratio adjustment
+			dir.x /= aspect;
+			offset.x /= aspect;
+
+			// sign flip
+			if ( position.x < 0.0 ) offset *= - 1.0;
+
+			// endcaps
+			if ( position.y < 0.0 ) {
+
+				offset += - dir;
+
+			} else if ( position.y > 1.0 ) {
+
+				offset += dir;
+
+			}
+
+      		// adjust for linewidth
+      		offset *= linewidth * scale;
+
+			// adjust for clip-space to screen-space conversion // maybe resolution should be based on viewport ...
+			offset /= resolution.y;
+
+			// select end
+			vec4 clip = ( position.y < 0.5 ) ? clipStart : clipEnd;
+
+			// back to clip space
+			offset *= clip.w;
+
+			clip.xy += offset;
+
+			gl_Position = clip;
+
+			vec4 mvPosition = ( position.y < 0.5 ) ? start : end; // this is an approximation
+
+			#include <logdepthbuf_vertex>
+			#include <clipping_planes_vertex>
+			#include <fog_vertex>
+
+		}
+		`,
+
+	fragmentShader:
+		`
+		uniform vec3 diffuse;
+		uniform float opacity;
+		uniform float useColor;
+
+    	uniform float dashSize;
+    	uniform float gapSize;
+
+		varying float vLineDistance;
+
+		#include <common>
+		#include <color_pars_fragment>
+		#include <fog_pars_fragment>
+		#include <logdepthbuf_pars_fragment>
+		#include <clipping_planes_pars_fragment>
+
+    	varying vec2 vUv;
+    	varying float vDashed;
+
+		void main() {
+
+			#include <clipping_planes_fragment>
+
+			if (vDashed > 0.5) {
+
+				if ( vUv.y < - 1.0 || vUv.y > 1.0 ) discard; // discard endcaps
+
+				if ( mod( vLineDistance, dashSize + gapSize ) > dashSize ) discard; // todo - FIX
+
+      		}
+
+			if ( abs( vUv.y ) > 1.0 ) {
+
+				float a = vUv.x;
+				float b = ( vUv.y > 0.0 ) ? vUv.y - 1.0 : vUv.y + 1.0;
+				float len2 = a * a + b * b;
+
+				if ( len2 > 1.0 ) discard;
+
+			}
+
+			vec4 diffuseColor = vec4( diffuse, opacity );
+
+			#include <logdepthbuf_fragment>
+			#include <color_fragment>
+
+			if (useColor == 1.0) {
+				gl_FragColor = vec4( vColor, 1.0 );
+			} else {
+				gl_FragColor = vec4( diffuseColor.rgb, diffuseColor.a );
+			}
+
+			#include <premultiplied_alpha_fragment>
+			#include <tonemapping_fragment>
+			#include <encodings_fragment>
+			#include <fog_fragment>
+
+		}
+		`
+};
+
+class LineMaterial extends three__WEBPACK_IMPORTED_MODULE_0__.ShaderMaterial {
+	constructor( parameters ) {
+
+        super( {
+            type: 'LineMaterial',
+            uniforms: three__WEBPACK_IMPORTED_MODULE_0__.UniformsUtils.clone( three__WEBPACK_IMPORTED_MODULE_0__.ShaderLib.line.uniforms ),
+            vertexShader: three__WEBPACK_IMPORTED_MODULE_0__.ShaderLib.line.vertexShader,
+            fragmentShader: three__WEBPACK_IMPORTED_MODULE_0__.ShaderLib.line.fragmentShader,
+            clipping: true // required for clipping support
+        } );
+
+        this.dashed = false;
+        Object.defineProperties( this, {
+            color: {
+                enumerable: true,
+                get: function () {
+
+                    return this.uniforms.diffuse.value;
+
+                },
+                set: function ( value ) {
+
+                    this.uniforms.diffuse.value = value;
+
+                }
+            },
+			useColor: {
+
+				enumerable: true,
+
+				get: function () {
+
+					return this.uniforms.useColor.value;
+
+				},
+
+				set: function ( value ) {
+
+					this.uniforms.useColor.value = value;
+
+				}
+
+			},
+            dashScale: {
+                enumerable: true,
+                get: function () {
+
+                    return this.uniforms.dashScale.value;
+
+                },
+                set: function ( value ) {
+
+                    this.uniforms.dashScale.value = value;
+
+                }
+            },
+            dashSize: {
+                enumerable: true,
+                get: function () {
+
+                    return this.uniforms.dashSize.value;
+
+                },
+                set: function ( value ) {
+
+                    this.uniforms.dashSize.value = value;
+
+                }
+            },
+            gapSize: {
+                enumerable: true,
+                get: function () {
+
+                    return this.uniforms.gapSize.value;
+
+                },
+                set: function ( value ) {
+
+                    this.uniforms.gapSize.value = value;
+
+                }
+            },
+			scale: {
+				enumerable: true,
+				get: function () {
+
+					return this.uniforms.scale.value;
+
+				},
+				set: function ( value ) {
+
+					this.uniforms.scale.value =  value;
+
+				}
+			},
+            resolution: {
+                enumerable: true,
+                get: function () {
+
+                    return this.uniforms.resolution.value;
+
+                },
+                set: function ( value ) {
+
+                    this.uniforms.resolution.value.copy( value );
+
+                }
+            },
+        } );
+        this.setValues( parameters );
+    }
+}
+
+LineMaterial.prototype.isLineMaterial = true;
+
+
+
+
+/***/ }),
+
+/***/ "./externals/lines/LineSegments2.js":
+/*!******************************************!*\
+  !*** ./externals/lines/LineSegments2.js ***!
+  \******************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "LineSegments2": () => (/* binding */ LineSegments2)
+/* harmony export */ });
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "three");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(three__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _LineMaterial__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./LineMaterial */ "./externals/lines/LineMaterial.js");
+/* harmony import */ var _LineSegmentsGeometry__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./LineSegmentsGeometry */ "./externals/lines/LineSegmentsGeometry.js");
+/**
+ * @author WestLangley / http://github.com/WestLangley
+ *
+ */
+
+
+
+
+
+
+
+
+class LineSegments2 extends three__WEBPACK_IMPORTED_MODULE_0__.Mesh {
+
+
+	constructor(
+		geometry = new THREE.LineSegmentsGeometry(),
+		material = new THREE.LineMaterial( {
+			color: Math.random() * 0xffffff
+		} )
+	) {
+
+		super( geometry, material );
+		this.type = 'LineSegments2';
+
+	} // for backwards-compatability, but could be a method of THREE.LineSegmentsGeometry...
+
+	computeLineDistances = ( function () { // for backwards-compatability, but could be a method of LineSegmentsGeometry...
+
+		var start = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
+		var end = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
+
+		return function computeLineDistances() {
+
+			var geometry = this.geometry;
+
+			var instanceStart = geometry.attributes.instanceStart;
+			var instanceEnd = geometry.attributes.instanceEnd;
+			var lineDistances = new Float32Array( 2 * instanceStart.data.count );
+
+			for ( var i = 0, j = 0, l = instanceStart.data.count; i < l; i ++, j += 2 ) {
+
+				start.fromBufferAttribute( instanceStart, i );
+				end.fromBufferAttribute( instanceEnd, i );
+
+				lineDistances[ j ] = ( j === 0 ) ? 0 : lineDistances[ j - 1 ];
+				lineDistances[ j + 1 ] = lineDistances[ j ] + start.distanceTo( end );
+
+			}
+
+			var instanceDistanceBuffer = new three__WEBPACK_IMPORTED_MODULE_0__.InstancedInterleavedBuffer( lineDistances, 2, 1 ); // d0, d1
+
+			geometry.setAttribute( 'instanceDistanceStart', new three__WEBPACK_IMPORTED_MODULE_0__.InterleavedBufferAttribute( instanceDistanceBuffer, 1, 0 ) ); // d0
+			geometry.setAttribute( 'instanceDistanceEnd', new three__WEBPACK_IMPORTED_MODULE_0__.InterleavedBufferAttribute( instanceDistanceBuffer, 1, 1 ) ); // d1
+
+			return this;
+
+		};
+
+	}() );
+
+	raycast = ( function () {
+		const sphere = new three__WEBPACK_IMPORTED_MODULE_0__.Sphere();
+		const clipToWorldVector = new three__WEBPACK_IMPORTED_MODULE_0__.Vector4();
+		const box = new three__WEBPACK_IMPORTED_MODULE_0__.Box3();
+		const ssOrigin = new three__WEBPACK_IMPORTED_MODULE_0__.Vector4();
+		const ssOrigin3 = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
+		const mvMatrix = new three__WEBPACK_IMPORTED_MODULE_0__.Matrix4();
+
+
+		const start4 = new three__WEBPACK_IMPORTED_MODULE_0__.Vector4();
+		const end4 = new three__WEBPACK_IMPORTED_MODULE_0__.Vector4();
+		const line = new three__WEBPACK_IMPORTED_MODULE_0__.Line3();
+		const closestPoint = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
+
+		return function raycast(raycaster, intersects) {
+			if ( raycaster.camera === null ) {
+				console.error( 'LineSegments2: "Raycaster.camera" needs to be set in order to raycast against LineSegments2.' );
+			}
+
+			const threshold = raycaster.params.Line2 !== undefined ? raycaster.params.Line2.threshold || 0 : 0;
+			const ray = raycaster.ray;
+			const camera = raycaster.camera;
+			const projectionMatrix = camera.projectionMatrix;
+			const matrixWorld = this.matrixWorld;
+			const geometry = this.geometry;
+			const material = this.material;
+			const resolution = material.resolution;
+			const lineWidth = material.linewidth + threshold;
+			const instanceStart = geometry.attributes.instanceStart;
+			const instanceEnd = geometry.attributes.instanceEnd; // camera forward is negative
+
+			const near = - camera.near; // clip space is [ - 1, 1 ] so multiply by two to get the full
+			// width in clip space
+
+			const ssMaxWidth = 2.0 * Math.max( lineWidth / resolution.width, lineWidth / resolution.height ); //
+			// check if we intersect the sphere bounds
+
+			if ( geometry.boundingSphere === null ) {
+
+				geometry.computeBoundingSphere();
+
+			}
+
+			sphere.copy( geometry.boundingSphere ).applyMatrix4( matrixWorld );
+
+			const distanceToSphere = Math.max( camera.near, sphere.distanceToPoint( ray.origin ) ); // get the w component to scale the world space line width
+
+			clipToWorldVector.set( 0, 0, - distanceToSphere, 1.0 ).applyMatrix4( camera.projectionMatrix );
+
+			clipToWorldVector.multiplyScalar( 1.0 / clipToWorldVector.w );
+
+			clipToWorldVector.applyMatrix4( camera.projectionMatrixInverse ); // increase the sphere bounds by the worst case line screen space width
+
+
+			const sphereMargin = Math.abs( ssMaxWidth / clipToWorldVector.w ) * 0.5;
+			sphere.radius += sphereMargin;
+
+			if ( raycaster.ray.intersectsSphere( sphere ) === false ) {
+
+				return;
+
+			} //
+			// check if we intersect the box bounds
+
+
+			if ( geometry.boundingBox === null ) {
+
+				geometry.computeBoundingBox();
+
+			}
+
+			box.copy( geometry.boundingBox ).applyMatrix4( matrixWorld );
+
+			const distanceToBox = Math.max( camera.near, box.distanceToPoint( ray.origin ) ); // get the w component to scale the world space line width
+
+			clipToWorldVector.set( 0, 0, - distanceToBox, 1.0 ).applyMatrix4( camera.projectionMatrix );
+
+			clipToWorldVector.multiplyScalar( 1.0 / clipToWorldVector.w );
+
+			clipToWorldVector.applyMatrix4( camera.projectionMatrixInverse ); // increase the sphere bounds by the worst case line screen space width
+
+
+			const boxMargin = Math.abs( ssMaxWidth / clipToWorldVector.w ) * 0.5;
+			box.max.x += boxMargin;
+			box.max.y += boxMargin;
+			box.max.z += boxMargin;
+			box.min.x -= boxMargin;
+			box.min.y -= boxMargin;
+			box.min.z -= boxMargin;
+
+			if ( raycaster.ray.intersectsBox( box ) === false ) {
+
+				return;
+
+			} //
+			// pick a point 1 unit out along the ray to avoid the ray origin
+			// sitting at the camera origin which will cause "w" to be 0 when
+			// applying the projection matrix.
+
+
+			ray.at( 1, ssOrigin ); // ndc space [ - 1.0, 1.0 ]
+
+			ssOrigin.w = 1;
+
+			ssOrigin.applyMatrix4( camera.matrixWorldInverse );
+
+			ssOrigin.applyMatrix4( projectionMatrix );
+
+			ssOrigin.multiplyScalar( 1 / ssOrigin.w ); // screen space
+
+
+			ssOrigin.x *= resolution.x / 2;
+			ssOrigin.y *= resolution.y / 2;
+			ssOrigin.z = 0;
+
+			ssOrigin3.copy( ssOrigin );
+
+			mvMatrix.multiplyMatrices( camera.matrixWorldInverse, matrixWorld );
+
+			for ( let i = 0, l = instanceStart.count; i < l; i ++ ) {
+
+				start4.fromBufferAttribute( instanceStart, i );
+
+				end4.fromBufferAttribute( instanceEnd, i );
+
+				start4.w = 1;
+				end4.w = 1; // camera space
+
+				start4.applyMatrix4( mvMatrix );
+
+				end4.applyMatrix4( mvMatrix ); // skip the segment if it's entirely behind the camera
+
+
+				var isBehindCameraNear = start4.z > near && end4.z > near;
+
+				if ( isBehindCameraNear ) {
+
+					continue;
+
+				} // trim the segment if it extends behind camera near
+
+
+				if ( start4.z > near ) {
+
+					const deltaDist = start4.z - end4.z;
+					const t = ( start4.z - near ) / deltaDist;
+
+					start4.lerp( end4, t );
+
+				} else if ( end4.z > near ) {
+
+					const deltaDist = end4.z - start4.z;
+					const t = ( end4.z - near ) / deltaDist;
+
+					end4.lerp( start4, t );
+
+				} // clip space
+
+
+				start4.applyMatrix4( projectionMatrix );
+
+				end4.applyMatrix4( projectionMatrix ); // ndc space [ - 1.0, 1.0 ]
+
+
+				start4.multiplyScalar( 1 / start4.w );
+
+				end4.multiplyScalar( 1 / end4.w ); // screen space
+
+
+				start4.x *= resolution.x / 2;
+				start4.y *= resolution.y / 2;
+				end4.x *= resolution.x / 2;
+				end4.y *= resolution.y / 2; // create 2d segment
+
+				line.start.copy( start4 );
+
+				line.start.z = 0;
+
+				line.end.copy( end4 );
+
+				line.end.z = 0; // get closest point on ray to segment
+
+				const param = line.closestPointToPointParameter( ssOrigin3, true );
+
+				line.at( param, closestPoint ); // check if the intersection point is within clip space
+
+
+				const zPos = THREE.MathUtils.lerp( start4.z, end4.z, param );
+				const isInClipSpace = zPos >= - 1 && zPos <= 1;
+				const isInside = ssOrigin3.distanceTo( closestPoint ) < lineWidth * 0.5;
+
+				if ( isInClipSpace && isInside ) {
+
+					line.start.fromBufferAttribute( instanceStart, i );
+
+					line.end.fromBufferAttribute( instanceEnd, i );
+
+					line.start.applyMatrix4( matrixWorld );
+
+					line.end.applyMatrix4( matrixWorld );
+
+					const pointOnLine = new THREE.Vector3();
+					const point = new THREE.Vector3();
+					ray.distanceSqToSegment( line.start, line.end, point, pointOnLine );
+					intersects.push( {
+						point: point,
+						pointOnLine: pointOnLine,
+						distance: ray.origin.distanceTo( point ),
+						object: this,
+						face: null,
+						faceIndex: i,
+						uv: null,
+						uv2: null
+					} );
+				}
+			}
+		}
+
+	}() );
+}
+
+LineSegments2.prototype.LineSegments2 = true;
+
+
+
+
+/***/ }),
+
+/***/ "./externals/lines/LineSegmentsGeometry.js":
+/*!*************************************************!*\
+  !*** ./externals/lines/LineSegmentsGeometry.js ***!
+  \*************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "LineSegmentsGeometry": () => (/* binding */ LineSegmentsGeometry)
+/* harmony export */ });
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "three");
+/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(three__WEBPACK_IMPORTED_MODULE_0__);
+/**
+ * @author WestLangley / http://github.com/WestLangley
+ *
+ */
+
+
+
+
+class LineSegmentsGeometry  extends three__WEBPACK_IMPORTED_MODULE_0__.InstancedBufferGeometry {
+	constructor() {
+
+		super();
+		this.type = 'LineSegmentsGeometry';
+		const positions = [ - 1, 2, 0, 1, 2, 0, - 1, 1, 0, 1, 1, 0, - 1, 0, 0, 1, 0, 0, - 1, - 1, 0, 1, - 1, 0 ];
+		const uvs = [ - 1, 2, 1, 2, - 1, 1, 1, 1, - 1, - 1, 1, - 1, - 1, - 2, 1, - 2 ];
+		const index = [ 0, 2, 1, 2, 3, 1, 2, 4, 3, 4, 5, 3, 4, 6, 5, 6, 7, 5 ];
+		this.setIndex( index );
+		this.setAttribute( 'position', new three__WEBPACK_IMPORTED_MODULE_0__.Float32BufferAttribute( positions, 3 ) );
+		this.setAttribute( 'uv', new three__WEBPACK_IMPORTED_MODULE_0__.Float32BufferAttribute( uvs, 2 ) );
+
+	}
+
+	computeBoundingBox = function () {
+
+		var box = new three__WEBPACK_IMPORTED_MODULE_0__.Box3();
+
+		return function computeBoundingBox() {
+
+			if ( this.boundingBox === null ) {
+
+				this.boundingBox = new three__WEBPACK_IMPORTED_MODULE_0__.Box3();
+
+			}
+
+			var start = this.attributes.instanceStart;
+			var end = this.attributes.instanceEnd;
+
+			if ( start !== undefined && end !== undefined ) {
+
+				this.boundingBox.setFromBufferAttribute( start );
+
+				box.setFromBufferAttribute( end );
+
+				this.boundingBox.union( box );
+
+			}
+
+		};
+
+	}();
+
+	computeBoundingSphere = function () {
+
+		var vector = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
+
+		return function computeBoundingSphere() {
+
+			if ( this.boundingSphere === null ) {
+
+				this.boundingSphere = new three__WEBPACK_IMPORTED_MODULE_0__.Sphere();
+
+			}
+
+			if ( this.boundingBox === null ) {
+
+				this.computeBoundingBox();
+
+			}
+
+			var start = this.attributes.instanceStart;
+			var end = this.attributes.instanceEnd;
+
+			if ( start !== undefined && end !== undefined ) {
+
+				var center = this.boundingSphere.center;
+
+				this.boundingBox.getCenter( center );
+
+				var maxRadiusSq = 0;
+
+				for ( var i = 0, il = start.count; i < il; i ++ ) {
+
+					vector.fromBufferAttribute( start, i );
+					maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( vector ) );
+
+					vector.fromBufferAttribute( end, i );
+					maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( vector ) );
+
+				}
+
+				this.boundingSphere.radius = Math.sqrt( maxRadiusSq );
+
+				if ( isNaN( this.boundingSphere.radius ) ) {
+
+					console.error( 'LineSegmentsGeometry.computeBoundingSphere(): Computed radius is NaN. The instanced position data is likely to have NaN values.', this );
+
+				}
+
+			}
+
+		};
+
+	}();
+
+	applyMatrix4( matrix ) {
+
+		const start = this.attributes.instanceStart;
+		const end = this.attributes.instanceEnd;
+
+		if ( start !== undefined ) {
+
+			start.applyMatrix4( matrix );
+			end.applyMatrix4( matrix );
+			start.needsUpdate = true;
+
+		}
+
+		if ( this.boundingBox !== null ) {
+
+			this.computeBoundingBox();
+
+		}
+
+		if ( this.boundingSphere !== null ) {
+
+			this.computeBoundingSphere();
+
+		}
+
+		return this;
+
+	}
+
+	setPositions( array ) {
+
+		let lineSegments;
+
+		if ( array instanceof Float32Array ) {
+
+			lineSegments = array;
+
+		} else if ( Array.isArray( array ) ) {
+
+			lineSegments = new Float32Array( array );
+
+		}
+
+		const instanceBuffer = new three__WEBPACK_IMPORTED_MODULE_0__.InstancedInterleavedBuffer( lineSegments, 6, 1 ); // xyz, xyz
+
+		this.setAttribute( 'instanceStart', new three__WEBPACK_IMPORTED_MODULE_0__.InterleavedBufferAttribute( instanceBuffer, 3, 0 ) ); // xyz
+
+		this.setAttribute( 'instanceEnd', new three__WEBPACK_IMPORTED_MODULE_0__.InterleavedBufferAttribute( instanceBuffer, 3, 3 ) ); // xyz
+		//
+
+		this.computeBoundingBox();
+		this.computeBoundingSphere();
+		return this;
+
+	}
+
+	setColors( array ) {
+
+		let colors;
+
+		if ( array instanceof Float32Array ) {
+
+			colors = array;
+
+		} else if ( Array.isArray( array ) ) {
+
+			colors = new Float32Array( array );
+
+		}
+
+		const instanceColorBuffer = new three__WEBPACK_IMPORTED_MODULE_0__.InstancedInterleavedBuffer( colors, 6, 1 ); // rgb, rgb
+
+		this.setAttribute( 'instanceColorStart', new three__WEBPACK_IMPORTED_MODULE_0__.InterleavedBufferAttribute( instanceColorBuffer, 3, 0 ) ); // rgb
+
+		this.setAttribute( 'instanceColorEnd', new three__WEBPACK_IMPORTED_MODULE_0__.InterleavedBufferAttribute( instanceColorBuffer, 3, 3 ) ); // rgb
+
+		return this;
+
+	}
+
+	fromWireframeGeometry( geometry ) {
+
+		this.setPositions( geometry.attributes.position.array );
+		return this;
+
+	}
+
+	fromEdgesGeometry( geometry ) {
+
+		this.setPositions( geometry.attributes.position.array );
+		return this;
+
+	}
+
+	fromMesh( mesh ) {
+
+		this.fromWireframeGeometry( new three__WEBPACK_IMPORTED_MODULE_0__.WireframeGeometry( mesh.geometry ) ); // set colors, maybe
+
+		return this;
+
+	}
+
+	fromLineSegments( lineSegments ) {
+
+		const geometry = lineSegments.geometry;
+
+		if ( geometry.isGeometry ) {
+
+			console.error( 'THREE.LineSegmentsGeometry no longer supports Geometry. Use THREE.BufferGeometry instead.' );
+			return;
+
+		} else if ( geometry.isBufferGeometry ) {
+
+			this.setPositions( geometry.attributes.position.array ); // assumes non-indexed
+
+		} // set colors, maybe
+
+
+		return this;
+
+	}
+
+	toJSON() { // todo
+	}
+
+	applyMatrix( matrix ) {
+
+		console.warn( 'THREE.LineSegmentsGeometry: applyMatrix() has been renamed to applyMatrix4().' );
+		return this.applyMatrix4( matrix );
+
+	}
+}
+
+
+
+
+/***/ }),
+
 /***/ "./src/lib/arrows/arrows.ts":
 /*!**********************************!*\
   !*** ./src/lib/arrows/arrows.ts ***!
@@ -2366,979 +3339,6 @@ const pickingFragmentShader = `
   }
 `;
 //# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoic2hhZGVycy5qcyIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzIjpbIi4uLy4uLy4uL3NyYy9saWIvbm9kZXMvc2hhZGVycy50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiQUFBQSxNQUFNLENBQUMsTUFBTSxZQUFZLEdBQVc7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7OztDQTZDbkMsQ0FBQztBQUVGLE1BQU0sQ0FBQyxNQUFNLGNBQWMsR0FBVzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Q0FrR3JDLENBQUM7QUFFRixNQUFNLENBQUMsTUFBTSxtQkFBbUIsR0FBVzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Q0F1QjFDLENBQUM7QUFFRixNQUFNLENBQUMsTUFBTSxxQkFBcUIsR0FBVzs7Ozs7Ozs7Ozs7Ozs7Ozs7OztDQW1CNUMsQ0FBQyJ9
-
-/***/ }),
-
-/***/ "./externals/lines/Line2.js":
-/*!**********************************!*\
-  !*** ./externals/lines/Line2.js ***!
-  \**********************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "Line2": () => (/* binding */ Line2)
-/* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "three");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(three__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _LineSegments2__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./LineSegments2 */ "./externals/lines/LineSegments2.js");
-/**
- * @author WestLangley / http://github.com/WestLangley
- *
- */
-
-
-
-
-
-class Line2 extends _LineSegments2__WEBPACK_IMPORTED_MODULE_1__.LineSegments2 {
-	constructor(
-		geometry = new three__WEBPACK_IMPORTED_MODULE_0__.LineGeometry(),
-		material = new three__WEBPACK_IMPORTED_MODULE_0__.LineMaterial({
-			color: Math.random() * 0xffffff
-		})
-	) {
-		super( geometry, material );
-		this.type = 'Line2';
-	}
-}
-
-Line2.prototype.isLine2 = true;
-
-
-
-
-/***/ }),
-
-/***/ "./externals/lines/LineMaterial.js":
-/*!*****************************************!*\
-  !*** ./externals/lines/LineMaterial.js ***!
-  \*****************************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "LineMaterial": () => (/* binding */ LineMaterial)
-/* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "three");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(three__WEBPACK_IMPORTED_MODULE_0__);
-/**
- * @author WestLangley / http://github.com/WestLangley
- *
- * parameters = {
- *  color: <hex>,
- *  linewidth: <float>,
- *  dashed: <boolean>,
- *  dashScale: <float>,
- *  dashSize: <float>,
- *  gapSize: <float>,
- *  resolution: <Vector2>, // to be set by renderer
- * }
- */
-
-
-
-three__WEBPACK_IMPORTED_MODULE_0__.UniformsLib.line = {
-
-	resolution: { value: new three__WEBPACK_IMPORTED_MODULE_0__.Vector2( 1, 1 ) },
-	dashScale: { value: 1 },
-	useColor: { value: 0 },
-  	dashSize: { value: 1 },
-  	scale: { value: 1 },
-	gapSize: { value: 1 } // todo FIX - maybe change to totalSize
-
-};
-
-three__WEBPACK_IMPORTED_MODULE_0__.ShaderLib.line = {
-
-	uniforms: three__WEBPACK_IMPORTED_MODULE_0__.UniformsUtils.merge( [
-		three__WEBPACK_IMPORTED_MODULE_0__.UniformsLib.common,
-		three__WEBPACK_IMPORTED_MODULE_0__.UniformsLib.fog,
-		three__WEBPACK_IMPORTED_MODULE_0__.UniformsLib.line
-	] ),
-
-	vertexShader:
-		`
-		#include <common>
-		#include <color_pars_vertex>
-		#include <fog_pars_vertex>
-		#include <logdepthbuf_pars_vertex>
-		#include <clipping_planes_pars_vertex>
-
-    	uniform vec2 resolution;
-    	uniform float scale;
-
-		attribute vec3 instanceStart;
-		attribute vec3 instanceEnd;
-    	attribute float linewidth;
-    	attribute float dashed;
-
-		attribute vec3 instanceColorStart;
-		attribute vec3 instanceColorEnd;
-
-    	varying vec2 vUv;
-    	varying float vDashed;
-
-		uniform float dashScale;
-		attribute float instanceDistanceStart;
-		attribute float instanceDistanceEnd;
-		varying float vLineDistance;
-
-		void trimSegment( const in vec4 start, inout vec4 end ) {
-
-			// trim end segment so it terminates between the camera plane and the near plane
-
-			// conservative estimate of the near plane
-			float a = projectionMatrix[ 2 ][ 2 ]; // 3nd entry in 3th column
-			float b = projectionMatrix[ 3 ][ 2 ]; // 3nd entry in 4th column
-			float nearEstimate = - 0.5 * b / a;
-
-			float alpha = ( nearEstimate - start.z ) / ( end.z - start.z );
-
-			end.xyz = mix( start.xyz, end.xyz, alpha );
-
-		}
-
-		void main() {
-			#ifdef USE_COLOR
-
-				vColor.xyz = ( position.y < 0.5 ) ? instanceColorStart : instanceColorEnd;
-
-			#endif
-
-			if (dashed > 0.5) {
-
-				vLineDistance = ( position.y < 0.5 ) ? dashScale * instanceDistanceStart : dashScale * instanceDistanceEnd;
-
-      		}
-
-			float aspect = resolution.x / resolution.y;
-
-      		vUv = uv;
-      		vDashed = dashed;
-
-			// camera space
-			vec4 start = modelViewMatrix * vec4( instanceStart, 1.0 );
-			vec4 end = modelViewMatrix * vec4( instanceEnd, 1.0 );
-
-			// special case for perspective projection, and segments that terminate either in, or behind, the camera plane
-			// clearly the gpu firmware has a way of addressing this issue when projecting into ndc space
-			// but we need to perform ndc-space calculations in the shader, so we must address this issue directly
-			// perhaps there is a more elegant solution -- WestLangley
-
-			bool perspective = ( projectionMatrix[ 2 ][ 3 ] == - 1.0 ); // 4th entry in the 3rd column
-
-			if ( perspective ) {
-
-				if ( start.z < 0.0 && end.z >= 0.0 ) {
-
-					trimSegment( start, end );
-
-				} else if ( end.z < 0.0 && start.z >= 0.0 ) {
-
-					trimSegment( end, start );
-
-				}
-
-			}
-
-			// clip space
-			vec4 clipStart = projectionMatrix * start;
-			vec4 clipEnd = projectionMatrix * end;
-
-			// ndc space
-			vec2 ndcStart = clipStart.xy / clipStart.w;
-			vec2 ndcEnd = clipEnd.xy / clipEnd.w;
-
-			// direction
-			vec2 dir = ndcEnd - ndcStart;
-
-			// account for clip-space aspect ratio
-			dir.x *= aspect;
-			dir = normalize( dir );
-
-			// perpendicular to dir
-			vec2 offset = vec2( dir.y, - dir.x );
-
-			// undo aspect ratio adjustment
-			dir.x /= aspect;
-			offset.x /= aspect;
-
-			// sign flip
-			if ( position.x < 0.0 ) offset *= - 1.0;
-
-			// endcaps
-			if ( position.y < 0.0 ) {
-
-				offset += - dir;
-
-			} else if ( position.y > 1.0 ) {
-
-				offset += dir;
-
-			}
-
-      		// adjust for linewidth
-      		offset *= linewidth * scale;
-
-			// adjust for clip-space to screen-space conversion // maybe resolution should be based on viewport ...
-			offset /= resolution.y;
-
-			// select end
-			vec4 clip = ( position.y < 0.5 ) ? clipStart : clipEnd;
-
-			// back to clip space
-			offset *= clip.w;
-
-			clip.xy += offset;
-
-			gl_Position = clip;
-
-			vec4 mvPosition = ( position.y < 0.5 ) ? start : end; // this is an approximation
-
-			#include <logdepthbuf_vertex>
-			#include <clipping_planes_vertex>
-			#include <fog_vertex>
-
-		}
-		`,
-
-	fragmentShader:
-		`
-		uniform vec3 diffuse;
-		uniform float opacity;
-		uniform float useColor;
-
-    	uniform float dashSize;
-    	uniform float gapSize;
-
-		varying float vLineDistance;
-
-		#include <common>
-		#include <color_pars_fragment>
-		#include <fog_pars_fragment>
-		#include <logdepthbuf_pars_fragment>
-		#include <clipping_planes_pars_fragment>
-
-    	varying vec2 vUv;
-    	varying float vDashed;
-
-		void main() {
-
-			#include <clipping_planes_fragment>
-
-			if (vDashed > 0.5) {
-
-				if ( vUv.y < - 1.0 || vUv.y > 1.0 ) discard; // discard endcaps
-
-				if ( mod( vLineDistance, dashSize + gapSize ) > dashSize ) discard; // todo - FIX
-
-      		}
-
-			if ( abs( vUv.y ) > 1.0 ) {
-
-				float a = vUv.x;
-				float b = ( vUv.y > 0.0 ) ? vUv.y - 1.0 : vUv.y + 1.0;
-				float len2 = a * a + b * b;
-
-				if ( len2 > 1.0 ) discard;
-
-			}
-
-			vec4 diffuseColor = vec4( diffuse, opacity );
-
-			#include <logdepthbuf_fragment>
-			#include <color_fragment>
-
-			if (useColor == 1.0) {
-				gl_FragColor = vec4( vColor, 1.0 );
-			} else {
-				gl_FragColor = vec4( diffuseColor.rgb, diffuseColor.a );
-			}
-
-			#include <premultiplied_alpha_fragment>
-			#include <tonemapping_fragment>
-			#include <encodings_fragment>
-			#include <fog_fragment>
-
-		}
-		`
-};
-
-class LineMaterial extends three__WEBPACK_IMPORTED_MODULE_0__.ShaderMaterial {
-	constructor( parameters ) {
-
-        super( {
-            type: 'LineMaterial',
-            uniforms: three__WEBPACK_IMPORTED_MODULE_0__.UniformsUtils.clone( three__WEBPACK_IMPORTED_MODULE_0__.ShaderLib.line.uniforms ),
-            vertexShader: three__WEBPACK_IMPORTED_MODULE_0__.ShaderLib.line.vertexShader,
-            fragmentShader: three__WEBPACK_IMPORTED_MODULE_0__.ShaderLib.line.fragmentShader,
-            clipping: true // required for clipping support
-        } );
-
-        this.dashed = false;
-        Object.defineProperties( this, {
-            color: {
-                enumerable: true,
-                get: function () {
-
-                    return this.uniforms.diffuse.value;
-
-                },
-                set: function ( value ) {
-
-                    this.uniforms.diffuse.value = value;
-
-                }
-            },
-			useColor: {
-
-				enumerable: true,
-
-				get: function () {
-
-					return this.uniforms.useColor.value;
-
-				},
-
-				set: function ( value ) {
-
-					this.uniforms.useColor.value = value;
-
-				}
-
-			},
-            dashScale: {
-                enumerable: true,
-                get: function () {
-
-                    return this.uniforms.dashScale.value;
-
-                },
-                set: function ( value ) {
-
-                    this.uniforms.dashScale.value = value;
-
-                }
-            },
-            dashSize: {
-                enumerable: true,
-                get: function () {
-
-                    return this.uniforms.dashSize.value;
-
-                },
-                set: function ( value ) {
-
-                    this.uniforms.dashSize.value = value;
-
-                }
-            },
-            gapSize: {
-                enumerable: true,
-                get: function () {
-
-                    return this.uniforms.gapSize.value;
-
-                },
-                set: function ( value ) {
-
-                    this.uniforms.gapSize.value = value;
-
-                }
-            },
-			scale: {
-				enumerable: true,
-				get: function () {
-
-					return this.uniforms.scale.value;
-
-				},
-				set: function ( value ) {
-
-					this.uniforms.scale.value =  value;
-
-				}
-			},
-            resolution: {
-                enumerable: true,
-                get: function () {
-
-                    return this.uniforms.resolution.value;
-
-                },
-                set: function ( value ) {
-
-                    this.uniforms.resolution.value.copy( value );
-
-                }
-            },
-        } );
-        this.setValues( parameters );
-    }
-}
-
-LineMaterial.prototype.isLineMaterial = true;
-
-
-
-
-/***/ }),
-
-/***/ "./externals/lines/LineSegments2.js":
-/*!******************************************!*\
-  !*** ./externals/lines/LineSegments2.js ***!
-  \******************************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "LineSegments2": () => (/* binding */ LineSegments2)
-/* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "three");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(three__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _LineMaterial__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./LineMaterial */ "./externals/lines/LineMaterial.js");
-/* harmony import */ var _LineSegmentsGeometry__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./LineSegmentsGeometry */ "./externals/lines/LineSegmentsGeometry.js");
-/**
- * @author WestLangley / http://github.com/WestLangley
- *
- */
-
-
-
-
-
-
-
-
-class LineSegments2 extends three__WEBPACK_IMPORTED_MODULE_0__.Mesh {
-
-
-	constructor(
-		geometry = new THREE.LineSegmentsGeometry(),
-		material = new THREE.LineMaterial( {
-			color: Math.random() * 0xffffff
-		} )
-	) {
-
-		super( geometry, material );
-		this.type = 'LineSegments2';
-
-	} // for backwards-compatability, but could be a method of THREE.LineSegmentsGeometry...
-
-	computeLineDistances = ( function () { // for backwards-compatability, but could be a method of LineSegmentsGeometry...
-
-		var start = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
-		var end = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
-
-		return function computeLineDistances() {
-
-			var geometry = this.geometry;
-
-			var instanceStart = geometry.attributes.instanceStart;
-			var instanceEnd = geometry.attributes.instanceEnd;
-			var lineDistances = new Float32Array( 2 * instanceStart.data.count );
-
-			for ( var i = 0, j = 0, l = instanceStart.data.count; i < l; i ++, j += 2 ) {
-
-				start.fromBufferAttribute( instanceStart, i );
-				end.fromBufferAttribute( instanceEnd, i );
-
-				lineDistances[ j ] = ( j === 0 ) ? 0 : lineDistances[ j - 1 ];
-				lineDistances[ j + 1 ] = lineDistances[ j ] + start.distanceTo( end );
-
-			}
-
-			var instanceDistanceBuffer = new three__WEBPACK_IMPORTED_MODULE_0__.InstancedInterleavedBuffer( lineDistances, 2, 1 ); // d0, d1
-
-			geometry.setAttribute( 'instanceDistanceStart', new three__WEBPACK_IMPORTED_MODULE_0__.InterleavedBufferAttribute( instanceDistanceBuffer, 1, 0 ) ); // d0
-			geometry.setAttribute( 'instanceDistanceEnd', new three__WEBPACK_IMPORTED_MODULE_0__.InterleavedBufferAttribute( instanceDistanceBuffer, 1, 1 ) ); // d1
-
-			return this;
-
-		};
-
-	}() );
-
-	raycast = ( function () {
-		const sphere = new three__WEBPACK_IMPORTED_MODULE_0__.Sphere();
-		const clipToWorldVector = new three__WEBPACK_IMPORTED_MODULE_0__.Vector4();
-		const box = new three__WEBPACK_IMPORTED_MODULE_0__.Box3();
-		const ssOrigin = new three__WEBPACK_IMPORTED_MODULE_0__.Vector4();
-		const ssOrigin3 = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
-		const mvMatrix = new three__WEBPACK_IMPORTED_MODULE_0__.Matrix4();
-
-
-		const start4 = new three__WEBPACK_IMPORTED_MODULE_0__.Vector4();
-		const end4 = new three__WEBPACK_IMPORTED_MODULE_0__.Vector4();
-		const line = new three__WEBPACK_IMPORTED_MODULE_0__.Line3();
-		const closestPoint = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
-
-		return function raycast(raycaster, intersects) {
-			if ( raycaster.camera === null ) {
-				console.error( 'LineSegments2: "Raycaster.camera" needs to be set in order to raycast against LineSegments2.' );
-			}
-
-			const threshold = raycaster.params.Line2 !== undefined ? raycaster.params.Line2.threshold || 0 : 0;
-			const ray = raycaster.ray;
-			const camera = raycaster.camera;
-			const projectionMatrix = camera.projectionMatrix;
-			const matrixWorld = this.matrixWorld;
-			const geometry = this.geometry;
-			const material = this.material;
-			const resolution = material.resolution;
-			const lineWidth = material.linewidth + threshold;
-			const instanceStart = geometry.attributes.instanceStart;
-			const instanceEnd = geometry.attributes.instanceEnd; // camera forward is negative
-
-			const near = - camera.near; // clip space is [ - 1, 1 ] so multiply by two to get the full
-			// width in clip space
-
-			const ssMaxWidth = 2.0 * Math.max( lineWidth / resolution.width, lineWidth / resolution.height ); //
-			// check if we intersect the sphere bounds
-
-			if ( geometry.boundingSphere === null ) {
-
-				geometry.computeBoundingSphere();
-
-			}
-
-			sphere.copy( geometry.boundingSphere ).applyMatrix4( matrixWorld );
-
-			const distanceToSphere = Math.max( camera.near, sphere.distanceToPoint( ray.origin ) ); // get the w component to scale the world space line width
-
-			clipToWorldVector.set( 0, 0, - distanceToSphere, 1.0 ).applyMatrix4( camera.projectionMatrix );
-
-			clipToWorldVector.multiplyScalar( 1.0 / clipToWorldVector.w );
-
-			clipToWorldVector.applyMatrix4( camera.projectionMatrixInverse ); // increase the sphere bounds by the worst case line screen space width
-
-
-			const sphereMargin = Math.abs( ssMaxWidth / clipToWorldVector.w ) * 0.5;
-			sphere.radius += sphereMargin;
-
-			if ( raycaster.ray.intersectsSphere( sphere ) === false ) {
-
-				return;
-
-			} //
-			// check if we intersect the box bounds
-
-
-			if ( geometry.boundingBox === null ) {
-
-				geometry.computeBoundingBox();
-
-			}
-
-			box.copy( geometry.boundingBox ).applyMatrix4( matrixWorld );
-
-			const distanceToBox = Math.max( camera.near, box.distanceToPoint( ray.origin ) ); // get the w component to scale the world space line width
-
-			clipToWorldVector.set( 0, 0, - distanceToBox, 1.0 ).applyMatrix4( camera.projectionMatrix );
-
-			clipToWorldVector.multiplyScalar( 1.0 / clipToWorldVector.w );
-
-			clipToWorldVector.applyMatrix4( camera.projectionMatrixInverse ); // increase the sphere bounds by the worst case line screen space width
-
-
-			const boxMargin = Math.abs( ssMaxWidth / clipToWorldVector.w ) * 0.5;
-			box.max.x += boxMargin;
-			box.max.y += boxMargin;
-			box.max.z += boxMargin;
-			box.min.x -= boxMargin;
-			box.min.y -= boxMargin;
-			box.min.z -= boxMargin;
-
-			if ( raycaster.ray.intersectsBox( box ) === false ) {
-
-				return;
-
-			} //
-			// pick a point 1 unit out along the ray to avoid the ray origin
-			// sitting at the camera origin which will cause "w" to be 0 when
-			// applying the projection matrix.
-
-
-			ray.at( 1, ssOrigin ); // ndc space [ - 1.0, 1.0 ]
-
-			ssOrigin.w = 1;
-
-			ssOrigin.applyMatrix4( camera.matrixWorldInverse );
-
-			ssOrigin.applyMatrix4( projectionMatrix );
-
-			ssOrigin.multiplyScalar( 1 / ssOrigin.w ); // screen space
-
-
-			ssOrigin.x *= resolution.x / 2;
-			ssOrigin.y *= resolution.y / 2;
-			ssOrigin.z = 0;
-
-			ssOrigin3.copy( ssOrigin );
-
-			mvMatrix.multiplyMatrices( camera.matrixWorldInverse, matrixWorld );
-
-			for ( let i = 0, l = instanceStart.count; i < l; i ++ ) {
-
-				start4.fromBufferAttribute( instanceStart, i );
-
-				end4.fromBufferAttribute( instanceEnd, i );
-
-				start4.w = 1;
-				end4.w = 1; // camera space
-
-				start4.applyMatrix4( mvMatrix );
-
-				end4.applyMatrix4( mvMatrix ); // skip the segment if it's entirely behind the camera
-
-
-				var isBehindCameraNear = start4.z > near && end4.z > near;
-
-				if ( isBehindCameraNear ) {
-
-					continue;
-
-				} // trim the segment if it extends behind camera near
-
-
-				if ( start4.z > near ) {
-
-					const deltaDist = start4.z - end4.z;
-					const t = ( start4.z - near ) / deltaDist;
-
-					start4.lerp( end4, t );
-
-				} else if ( end4.z > near ) {
-
-					const deltaDist = end4.z - start4.z;
-					const t = ( end4.z - near ) / deltaDist;
-
-					end4.lerp( start4, t );
-
-				} // clip space
-
-
-				start4.applyMatrix4( projectionMatrix );
-
-				end4.applyMatrix4( projectionMatrix ); // ndc space [ - 1.0, 1.0 ]
-
-
-				start4.multiplyScalar( 1 / start4.w );
-
-				end4.multiplyScalar( 1 / end4.w ); // screen space
-
-
-				start4.x *= resolution.x / 2;
-				start4.y *= resolution.y / 2;
-				end4.x *= resolution.x / 2;
-				end4.y *= resolution.y / 2; // create 2d segment
-
-				line.start.copy( start4 );
-
-				line.start.z = 0;
-
-				line.end.copy( end4 );
-
-				line.end.z = 0; // get closest point on ray to segment
-
-				const param = line.closestPointToPointParameter( ssOrigin3, true );
-
-				line.at( param, closestPoint ); // check if the intersection point is within clip space
-
-
-				const zPos = THREE.MathUtils.lerp( start4.z, end4.z, param );
-				const isInClipSpace = zPos >= - 1 && zPos <= 1;
-				const isInside = ssOrigin3.distanceTo( closestPoint ) < lineWidth * 0.5;
-
-				if ( isInClipSpace && isInside ) {
-
-					line.start.fromBufferAttribute( instanceStart, i );
-
-					line.end.fromBufferAttribute( instanceEnd, i );
-
-					line.start.applyMatrix4( matrixWorld );
-
-					line.end.applyMatrix4( matrixWorld );
-
-					const pointOnLine = new THREE.Vector3();
-					const point = new THREE.Vector3();
-					ray.distanceSqToSegment( line.start, line.end, point, pointOnLine );
-					intersects.push( {
-						point: point,
-						pointOnLine: pointOnLine,
-						distance: ray.origin.distanceTo( point ),
-						object: this,
-						face: null,
-						faceIndex: i,
-						uv: null,
-						uv2: null
-					} );
-				}
-			}
-		}
-
-	}() );
-}
-
-LineSegments2.prototype.LineSegments2 = true;
-
-
-
-
-/***/ }),
-
-/***/ "./externals/lines/LineSegmentsGeometry.js":
-/*!*************************************************!*\
-  !*** ./externals/lines/LineSegmentsGeometry.js ***!
-  \*************************************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "LineSegmentsGeometry": () => (/* binding */ LineSegmentsGeometry)
-/* harmony export */ });
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "three");
-/* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(three__WEBPACK_IMPORTED_MODULE_0__);
-/**
- * @author WestLangley / http://github.com/WestLangley
- *
- */
-
-
-
-
-class LineSegmentsGeometry  extends three__WEBPACK_IMPORTED_MODULE_0__.InstancedBufferGeometry {
-	constructor() {
-
-		super();
-		this.type = 'LineSegmentsGeometry';
-		const positions = [ - 1, 2, 0, 1, 2, 0, - 1, 1, 0, 1, 1, 0, - 1, 0, 0, 1, 0, 0, - 1, - 1, 0, 1, - 1, 0 ];
-		const uvs = [ - 1, 2, 1, 2, - 1, 1, 1, 1, - 1, - 1, 1, - 1, - 1, - 2, 1, - 2 ];
-		const index = [ 0, 2, 1, 2, 3, 1, 2, 4, 3, 4, 5, 3, 4, 6, 5, 6, 7, 5 ];
-		this.setIndex( index );
-		this.setAttribute( 'position', new three__WEBPACK_IMPORTED_MODULE_0__.Float32BufferAttribute( positions, 3 ) );
-		this.setAttribute( 'uv', new three__WEBPACK_IMPORTED_MODULE_0__.Float32BufferAttribute( uvs, 2 ) );
-
-	}
-
-	computeBoundingBox = function () {
-
-		var box = new three__WEBPACK_IMPORTED_MODULE_0__.Box3();
-
-		return function computeBoundingBox() {
-
-			if ( this.boundingBox === null ) {
-
-				this.boundingBox = new three__WEBPACK_IMPORTED_MODULE_0__.Box3();
-
-			}
-
-			var start = this.attributes.instanceStart;
-			var end = this.attributes.instanceEnd;
-
-			if ( start !== undefined && end !== undefined ) {
-
-				this.boundingBox.setFromBufferAttribute( start );
-
-				box.setFromBufferAttribute( end );
-
-				this.boundingBox.union( box );
-
-			}
-
-		};
-
-	}();
-
-	computeBoundingSphere = function () {
-
-		var vector = new three__WEBPACK_IMPORTED_MODULE_0__.Vector3();
-
-		return function computeBoundingSphere() {
-
-			if ( this.boundingSphere === null ) {
-
-				this.boundingSphere = new three__WEBPACK_IMPORTED_MODULE_0__.Sphere();
-
-			}
-
-			if ( this.boundingBox === null ) {
-
-				this.computeBoundingBox();
-
-			}
-
-			var start = this.attributes.instanceStart;
-			var end = this.attributes.instanceEnd;
-
-			if ( start !== undefined && end !== undefined ) {
-
-				var center = this.boundingSphere.center;
-
-				this.boundingBox.getCenter( center );
-
-				var maxRadiusSq = 0;
-
-				for ( var i = 0, il = start.count; i < il; i ++ ) {
-
-					vector.fromBufferAttribute( start, i );
-					maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( vector ) );
-
-					vector.fromBufferAttribute( end, i );
-					maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( vector ) );
-
-				}
-
-				this.boundingSphere.radius = Math.sqrt( maxRadiusSq );
-
-				if ( isNaN( this.boundingSphere.radius ) ) {
-
-					console.error( 'LineSegmentsGeometry.computeBoundingSphere(): Computed radius is NaN. The instanced position data is likely to have NaN values.', this );
-
-				}
-
-			}
-
-		};
-
-	}();
-
-	applyMatrix4( matrix ) {
-
-		const start = this.attributes.instanceStart;
-		const end = this.attributes.instanceEnd;
-
-		if ( start !== undefined ) {
-
-			start.applyMatrix4( matrix );
-			end.applyMatrix4( matrix );
-			start.needsUpdate = true;
-
-		}
-
-		if ( this.boundingBox !== null ) {
-
-			this.computeBoundingBox();
-
-		}
-
-		if ( this.boundingSphere !== null ) {
-
-			this.computeBoundingSphere();
-
-		}
-
-		return this;
-
-	}
-
-	setPositions( array ) {
-
-		let lineSegments;
-
-		if ( array instanceof Float32Array ) {
-
-			lineSegments = array;
-
-		} else if ( Array.isArray( array ) ) {
-
-			lineSegments = new Float32Array( array );
-
-		}
-
-		const instanceBuffer = new three__WEBPACK_IMPORTED_MODULE_0__.InstancedInterleavedBuffer( lineSegments, 6, 1 ); // xyz, xyz
-
-		this.setAttribute( 'instanceStart', new three__WEBPACK_IMPORTED_MODULE_0__.InterleavedBufferAttribute( instanceBuffer, 3, 0 ) ); // xyz
-
-		this.setAttribute( 'instanceEnd', new three__WEBPACK_IMPORTED_MODULE_0__.InterleavedBufferAttribute( instanceBuffer, 3, 3 ) ); // xyz
-		//
-
-		this.computeBoundingBox();
-		this.computeBoundingSphere();
-		return this;
-
-	}
-
-	setColors( array ) {
-
-		let colors;
-
-		if ( array instanceof Float32Array ) {
-
-			colors = array;
-
-		} else if ( Array.isArray( array ) ) {
-
-			colors = new Float32Array( array );
-
-		}
-
-		const instanceColorBuffer = new three__WEBPACK_IMPORTED_MODULE_0__.InstancedInterleavedBuffer( colors, 6, 1 ); // rgb, rgb
-
-		this.setAttribute( 'instanceColorStart', new three__WEBPACK_IMPORTED_MODULE_0__.InterleavedBufferAttribute( instanceColorBuffer, 3, 0 ) ); // rgb
-
-		this.setAttribute( 'instanceColorEnd', new three__WEBPACK_IMPORTED_MODULE_0__.InterleavedBufferAttribute( instanceColorBuffer, 3, 3 ) ); // rgb
-
-		return this;
-
-	}
-
-	fromWireframeGeometry( geometry ) {
-
-		this.setPositions( geometry.attributes.position.array );
-		return this;
-
-	}
-
-	fromEdgesGeometry( geometry ) {
-
-		this.setPositions( geometry.attributes.position.array );
-		return this;
-
-	}
-
-	fromMesh( mesh ) {
-
-		this.fromWireframeGeometry( new three__WEBPACK_IMPORTED_MODULE_0__.WireframeGeometry( mesh.geometry ) ); // set colors, maybe
-
-		return this;
-
-	}
-
-	fromLineSegments( lineSegments ) {
-
-		const geometry = lineSegments.geometry;
-
-		if ( geometry.isGeometry ) {
-
-			console.error( 'THREE.LineSegmentsGeometry no longer supports Geometry. Use THREE.BufferGeometry instead.' );
-			return;
-
-		} else if ( geometry.isBufferGeometry ) {
-
-			this.setPositions( geometry.attributes.position.array ); // assumes non-indexed
-
-		} // set colors, maybe
-
-
-		return this;
-
-	}
-
-	toJSON() { // todo
-	}
-
-	applyMatrix( matrix ) {
-
-		console.warn( 'THREE.LineSegmentsGeometry: applyMatrix() has been renamed to applyMatrix4().' );
-		return this.applyMatrix4( matrix );
-
-	}
-}
-
-
-
 
 /***/ }),
 

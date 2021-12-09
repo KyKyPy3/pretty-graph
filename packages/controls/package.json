@@ -32,16 +32,16 @@
     "url": "https://github.com/KyKyPy3/pretty-graph/issues"
   },
   "dependencies": {
-    "@types/three": "0.134.0",
+    "@types/three": "0.135.0",
     "d3-selection": "3.0.0",
     "d3-zoom": "3.0.0",
     "three": "0.135.0"
   },
   "devDependencies": {
-    "@types/d3-selection": "3.0.1",
+    "@types/d3-selection": "3.0.2",
     "@types/d3-zoom": "3.0.1",
     "ts-loader": "9.2.6",
-    "webpack": "5.64.4",
+    "webpack": "5.65.0",
     "webpack-cli": "4.9.1"
   },
   "gitHead": "60cca76d16c17aeb29f4a7c783ddbf2eae77d72b"

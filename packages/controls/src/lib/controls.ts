@@ -312,7 +312,7 @@ export class PrettyGraphControls extends EventDispatcher {
     let zoomDirection: string = '';
     const node = this._selection.node();
 
-    if (node) {
+    if (node && transform) {
       const dimensions = node.getBoundingClientRect();
       let ctrlKey = false;
 
