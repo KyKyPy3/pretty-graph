@@ -84,6 +84,7 @@ export declare class PretyGraph {
     private _onScale;
     private _disposeRenderer;
     private _translateCoordinates;
+    translateCoordinatesFromCamera(x: number, y: number): any;
     private _setupScene;
     private _setupCamera;
     private _setupRenderer;

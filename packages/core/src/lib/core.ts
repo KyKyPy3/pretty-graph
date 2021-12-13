@@ -907,6 +907,19 @@ export class PretyGraph {
     };
   }
 
+  public translateCoordinatesFromCamera(x: number, y: number): any {
+    const vector = new Vector3(x, y, 0);
+
+    if (this._camera && this._renderer) {
+      vector.project(this._camera);
+    }
+
+    return {
+      x: vector.x,
+      y: vector.y
+    };
+  }
+
   private _setupScene(): void {
     this._scene = new Scene();
     this._scene.background = new Color(this.options.backgroundColor || 'white');
