@@ -71,10 +71,10 @@ export class PrettyGraphControls extends EventDispatcher {
       .on('wheel', this._onRotate.bind(this))
       .on('dblclick.zoom', null);
 
-    this._onResize = () => {
+    this._onResize = event => {
       const node = this._selection.node();
       if (node) {
-        this._zoomHandler(node);
+        this._zoomHandler(event);
       }
     }
 
@@ -223,6 +223,20 @@ export class PrettyGraphControls extends EventDispatcher {
 
     if (this._startPosition && this._dist(this._startPosition, [mouseX, mouseY]) > 5) {
       this._moved = true;
+
+      if (this._wait) {
+        window.clearTimeout(this._wait);
+        this._wait = null;
+
+        this.dispatchEvent({
+          event,
+          position: {
+            x: mouseX,
+            y: mouseY
+          },
+          type: 'click'
+        });
+      }
     }
 
     this.dispatchEvent({

@@ -35,7 +35,7 @@
     "@types/three": "0.135.0",
     "d3-selection": "3.0.0",
     "d3-zoom": "3.0.0",
-    "three": "0.135.0"
+    "three": "0.136.0"
   },
   "devDependencies": {
     "@types/d3-selection": "3.0.2",

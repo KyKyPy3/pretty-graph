@@ -91,8 +91,6 @@ export class PretyGraph {
 
   private _selectMode: boolean = false;
 
-  private _skip: boolean = false;
-
   // Listeners
 
   private _onScaleListener: any;
@@ -700,7 +698,6 @@ export class PretyGraph {
   private _onMouseUp({ event }): void {
     if (this._selectMode) {
       this._selectMode = false;
-      this._skip = true;
       this.onEvent.emit('changeMode', { mode: 'view' });
 
       if (this._selectBox && this._selectBox.parentElement) {
@@ -803,10 +800,6 @@ export class PretyGraph {
   }
 
   private _onClick(): void {
-    if (this._skip) {
-      this._skip = false;
-      return
-    }
     if (this._nodesLayer && this._nodesLayer.hoveredNode) {
       const coordinates = this._translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
       this.onEvent.emit('nodeClick', { node: this._nodesLayer.hoveredNode, ...coordinates, scale: this._controls.scale });

@@ -41,7 +41,6 @@ export declare class PretyGraph {
     private _resizeTimeout;
     private _labelHidedOnMove;
     private _selectMode;
-    private _skip;
     private _onScaleListener;
     private _onPanListener;
     private _onMouseMoveListener;
