@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@types/three": "0.135.0",
-    "three": "0.136.0"
+    "three": "0.137.0"
   },
   "devDependencies": {
     "ts-loader": "9.2.6",
