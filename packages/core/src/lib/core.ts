@@ -763,6 +763,9 @@ export class PretyGraph {
     if (this._nodesLayer && this._nodesLayer.hoveredNode !== null && event.buttons === 1) {
       this._controls.enabled = false;
       this._dragging = true;
+    } else if(this._edgesLayer && this._edgesLayer.hoveredEdge !== null && event.buttons === 1){
+      this._controls.enabled = false;
+      this._dragging = true;
     } else {
       if (this._selectMode || event.shiftKey) {
         if (!this._selectMode) {
