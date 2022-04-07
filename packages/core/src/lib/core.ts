@@ -16,6 +16,7 @@ import { ArrowsLayer } from './arrows/arrows';
 import { EdgesLayer } from './edges/edges';
 import { LabelsLayer } from './labelsLayer/labels';
 import { NodesLayer } from './nodes/nodes';
+import { IGraphDataConfig } from './types';
 
 export class PretyGraph {
 
@@ -28,6 +29,18 @@ export class PretyGraph {
   public neighbourhoodNodes: { [id: string]: any; } = {};
 
   public neighbourhoodEdges: { [id: string]: any; } = {};
+
+  public dataConfig: IGraphDataConfig = {
+    showLabels: true,
+    animate: false,
+    locate: false,
+    colorsEvents: {
+      hoverEdge: '#547DE4',
+      selectEdge: '#547DE4',
+      hoverNode: '#547DE4',
+      selectNode: '#547DE4',
+    }
+  };
 
   private _camera!: PerspectiveCamera | null;
 
@@ -85,7 +98,7 @@ export class PretyGraph {
 
   private _iframe: HTMLIFrameElement;
 
-  private _resizeTimeout: number = 0;
+  private _resizeTimeout: any = 0;
 
   private _labelHidedOnMove: boolean = false;
 
@@ -245,7 +258,9 @@ export class PretyGraph {
     }
   }
 
-  public setData(data: any, options: any = { animate: false, locate: false }): void {
+  public setData(data: any, options: IGraphDataConfig = this.dataConfig): void {
+
+    this.dataConfig = options;
     // Клонируем переданные узлы
     this._nodes = JSON.parse(JSON.stringify(data.nodes));
     const lastIndexedNodes = JSON.parse(JSON.stringify(this._indexedNodes));
@@ -578,10 +593,7 @@ export class PretyGraph {
 
   private _onMouseMove({ position, event }: any): void {
     if (this._dragging && this._camera) {
-      if (this._labelsLayer && !this._labelsLayer.isHidden()) {
-        this._labelHidedOnMove = true;
-        this._labelsLayer.hide();
-      }
+
 
       // dragging node
       const mouse = new Vector3();
@@ -592,7 +604,13 @@ export class PretyGraph {
         y: 0
       };
 
-      if (this._nodesLayer) {
+      if (this._nodesLayer && this._nodesLayer.hoveredNode) {
+
+        if (this._labelsLayer && !this._labelsLayer.isHidden()) {
+          this._labelHidedOnMove = true;
+          this._labelsLayer.hide();
+        }
+
         newPos = {
           x: this._nodesLayer.hoveredNode ? this._nodesLayer.hoveredNode.x : 0,
           y: this._nodesLayer.hoveredNode ? this._nodesLayer.hoveredNode.y : 0
@@ -649,6 +667,7 @@ export class PretyGraph {
       }
 
       if (this._edgesLayer) {
+        this._edgesLayer.testEdge(position);
         this._edgesLayer.recalculate();
         this._edgesLayer.recalculatePicking();
       }
@@ -724,6 +743,7 @@ export class PretyGraph {
           this._render();
         }
       }
+
     } else {
       if (this._nodesLayer && !this._dragInProgress) {
         if (event.ctrlKey && this._nodesLayer.hoveredNode) {
@@ -734,15 +754,37 @@ export class PretyGraph {
             this._nodesLayer.setActiveNodes(activeNodes);
 
             if (this._edgesLayer) {
-              this._edgesLayer.clearActiveEdges();
+              this._edgesLayer.clearHoveredEdges();
               const activeEdges = this.neighbourhoodEdges[this._nodesLayer.hoveredNode.id];
-              this._edgesLayer.setActiveEdges(activeEdges);
+              this._edgesLayer.setHoveredEdges(activeEdges);
             }
 
             if (this._arrowsLayer) {
               this._arrowsLayer.recalculate();
             }
           }
+        }
+
+        this._render();
+      }
+
+      if(this._edgesLayer?.hoveredEdge){
+        console.log('try change color edge')
+        this._edgesLayer.clearActiveEdges()
+        const hoveredEdges = [this._edgesLayer.hoveredEdge];
+        hoveredEdges.forEach(edge => {
+          if(edge.__active){
+            this._edgesLayer?.setDeactivatedEdges([edge])
+            this._nodesLayer?.setActiveNodes([edge.source, edge.target])
+          } else {
+            this._edgesLayer?.setActiveEdges([edge])
+            this._nodesLayer?.clearActiveNodes();
+            this._nodesLayer?.setActiveNodes([edge.source, edge.target])
+          }
+        })
+
+        if (this._arrowsLayer) {
+          this._arrowsLayer.recalculate();
         }
 
         this._render();

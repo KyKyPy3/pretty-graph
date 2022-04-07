@@ -297,7 +297,7 @@ export class NodesLayer {
 
     const activatingNodes = this._activeNodes.filter((n) => n.__hovered === undefined || n.__hovered === false);
 
-    this.setNodesColor(activatingNodes, 0x4b7bec);
+    this.setNodesColor(activatingNodes, this._graph.dataConfig.colorsEvents.selectNode);
   }
 
   public clearActiveNodes(): void {
@@ -319,7 +319,7 @@ export class NodesLayer {
 
     for (const node of nodes) {
       if (newColor) {
-        color.setHex(newColor);
+        color.setStyle(newColor);
       } else {
         color.setHex(node.color);
       }
@@ -372,7 +372,7 @@ export class NodesLayer {
           this._hoveredNodes.forEach((n) => n.__hovered = true);
 
           const hoveringNodes = this._hoveredNodes.filter((n) => n.__active === undefined || n.__active === false);
-          this.setNodesColor(hoveringNodes, 0x4b7bec);
+          this.setNodesColor(hoveringNodes, this._graph.dataConfig.colorsEvents.hoverNode);
 
           const coordinates = this._graph._translateCoordinates(this.hoveredNode.x, this.hoveredNode.y);
           this._graph.onEvent.emit('nodeHover', { node: this.hoveredNode, ...coordinates, scale: this._graph._controls.scale });

@@ -24,6 +24,10 @@ export class EdgesLayer extends EventDispatcher {
 
   private _linesPickingGeometry!: LineSegmentsGeometry;
 
+  //private _linesInstancedGeometry!: InstancedBufferAttribute;
+
+ // private _linesColorAttribute!: InstancedBufferAttribute;
+
   private _graph: any;
 
   private _lineMesh!: Line2;
@@ -104,31 +108,37 @@ export class EdgesLayer extends EventDispatcher {
   }
 
   public setHoveredEdges(edges): void {
-    this._hoveredEdges = edges;
-    this._hoveredEdges.forEach((edge) => edge.__hovered = true);
-    const hoveringEdges = this._hoveredEdges.filter((edge) => edge.__active === undefined || edge.__active === false);
-    this._setEdgesSize(hoveringEdges, 1.3, 1);
+    this._hoveredEdges = edges.filter(edge => !edge.__hovered);
+    this._hoveredEdges.forEach(edge => edge.__hovered = true);
+    this._setEdgesSize(this._hoveredEdges, 1.3, 1);
   }
 
   public clearHoveredEdges(): void {
-    const unhoveringEdges = this._hoveredEdges.filter((edge) => edge.__active === undefined || edge.__active === false);
+    const unhoveringEdges = this._hoveredEdges.filter(edge => edge.__hovered);
     this._setEdgesSize(unhoveringEdges, 1, 1.3);
-    this._hoveredEdges.forEach((edge) => edge.__hovered = false);
+    this._hoveredEdges.forEach(edge => edge.__hovered = false);
     this._hoveredEdges = [];
   }
 
   public setActiveEdges(edges): void {
-    this._activeEdges = edges;
-    this._activeEdges.forEach((edge) => edge.__active = true);
 
-    const activatingEdges = this._activeEdges.filter((edge) => edge.__hovered === undefined || edge.__hovered === false);
-    this._setEdgesSize(activatingEdges, 1.3, 1);
+    this._activeEdges = edges.filter((edge) => !edge.__active);
+    this._activeEdges.forEach((edge) => edge.__active = true);
+    this._setEdgesColor(this._activeEdges, this._graph.dataConfig.colorsEvents.selectEdge)
+  }
+
+  public setDeactivatedEdges(edges){
+
+    const deactivateEdges = edges.filter(edges => edges.__active)
+    deactivateEdges.forEach(edge => edge.__active = false);
+    this._setEdgesColor(deactivateEdges)
   }
 
   public clearActiveEdges(): void {
-    const deactivatingEdges = this._activeEdges.filter((edge) => edge.__hovered === undefined || edge.__hovered === false);
+    const deactivatingEdges = this._activeEdges.filter((edge) => edge.__active === true && !edge.__hovered);
     this._setEdgesSize(deactivatingEdges, 1, 1.3);
-    this._activeEdges.forEach((edge) => edge.__active = false);
+    this._setEdgesColor(deactivatingEdges)
+    deactivatingEdges.forEach((edge) => edge.__active = false);
     this._activeEdges = [];
 
     this.recalculate();
@@ -171,6 +181,7 @@ export class EdgesLayer extends EventDispatcher {
 
       this._graph.onEvent.emit('edgeUnhover', { edge: this._hoveredEdge });
       this._hoveredEdge = null;
+      console.log('unset hoveredEdge')
       this._hoveredEdgeID = -1;
     }
   }
@@ -189,6 +200,8 @@ export class EdgesLayer extends EventDispatcher {
           this.resetHoverEdge();
 
           this._hoveredEdge = this._graph._edges[id - 1];
+          console.log('set hoveredEdge')
+
           this._hoveredEdge.__hovered = true;
           this._hoveredEdgeID = id - 1;
 
@@ -216,6 +229,27 @@ export class EdgesLayer extends EventDispatcher {
   public recalculatePicking(): void {
     const linesData = this._constructLines(this._graph._edges);
     this._linesPickingGeometry.setPositions(linesData.positions);
+  }
+
+  public _setEdgesColor(edges: any[], newColor?: any): void {
+    if (!edges.length) {
+      return;
+    }
+
+    const color = new Color();
+
+    for (const edge of edges) {
+      if (newColor) {
+        color.setStyle(newColor);
+      } else {
+        color.setHex(edge.color);
+      }
+      this._lineGeometry.attributes.instanceColorStart.setXYZ(edge.index, color.r, color.g, color.b);
+      this._lineGeometry.attributes.instanceColorEnd.setXYZ(edge.index, color.r, color.g, color.b);
+    }
+
+    this._lineGeometry.attributes.instanceColorStart.needsUpdate = true;
+    this._lineGeometry.attributes.instanceColorEnd.needsUpdate = true;
   }
 
   private _setPickingLineSize(edges): void {
