@@ -12,7 +12,8 @@ import {
   Float32BufferAttribute,
   Sphere,
   Vector3,
-  WireframeGeometry, DynamicDrawUsage
+  WireframeGeometry,
+  DynamicDrawUsage
 } from 'three';
 
 

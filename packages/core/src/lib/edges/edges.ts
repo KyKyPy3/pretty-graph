@@ -24,10 +24,6 @@ export class EdgesLayer extends EventDispatcher {
 
   private _linesPickingGeometry!: LineSegmentsGeometry;
 
-  //private _linesInstancedGeometry!: InstancedBufferAttribute;
-
- // private _linesColorAttribute!: InstancedBufferAttribute;
-
   private _graph: any;
 
   private _lineMesh!: Line2;
@@ -240,7 +236,7 @@ export class EdgesLayer extends EventDispatcher {
       if (newColor) {
         color.setStyle(newColor);
       } else {
-        color.setHex(edge.color);
+        color.setStyle(edge.color);
       }
 
       for (let i = edge._lineSizeRange[0]; i < edge._lineSizeRange[1]; i++){
@@ -420,7 +416,7 @@ export class EdgesLayer extends EventDispatcher {
         targetY = link.target.y - (((link.target.size / 2) * this._graph.nodeScalingFactor) + link.size * 1.5) * Math.sin(angle);
       }
 
-      color.setHex(link.color);
+      color.setStyle(link.color);
       pickingColor.setHex(index + 1);
 
       if (link.source.x === link.target.x && link.source.y === link.target.y) {

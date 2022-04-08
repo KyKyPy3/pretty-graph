@@ -522,7 +522,7 @@ export class PretyGraph {
 
     this.onEvent.on('nodeHover', this._onNodeHover.bind(this));
     this.onEvent.on('nodeUnhover', this._onNodeUnhover.bind(this));
-    this.onEvent.on('workspaceClick', this._onWorkspaceClick.bind(this));
+    this.onEvent.on('workspaceClick', this. _onWorkspaceClick.bind(this));
   }
 
   private _removeControlsListeners(): void {
@@ -539,13 +539,13 @@ export class PretyGraph {
     this.onEvent.removeAllListeners();
   }
 
-  private  _onWorkspaceClick(): void {
+  private _onWorkspaceClick(): void {
     if (this._nodesLayer) {
       this._nodesLayer.clearActiveNodes();
     }
 
     if (this._edgesLayer) {
-      this._edgesLayer.clearActiveEdges();
+      this._edgesLayer.clearHoveredEdges();
     }
 
     if (this._arrowsLayer) {
@@ -695,10 +695,7 @@ export class PretyGraph {
 		    this._selectBox.style.height = ( this._pointBottomRight.y - this._pointTopLeft.y ) + 'px';
       } else {
         if (this._nodesLayer && !this._nodesLayer.testNode(position)) {
-            setTimeout(() => {
               this._edgesLayer?.testEdge(position);
-            }, 30)
-
         } else {
           if (this._edgesLayer) {
             this._edgesLayer.resetHoverEdge();
@@ -758,8 +755,8 @@ export class PretyGraph {
 
             if (this._edgesLayer) {
               this._edgesLayer.clearHoveredEdges();
-              const activeEdges = this.neighbourhoodEdges[this._nodesLayer.hoveredNode.id];
-              this._edgesLayer.setHoveredEdges(activeEdges);
+              const hoveredEdges = this.neighbourhoodEdges[this._nodesLayer.hoveredNode.id];
+              this._edgesLayer.setHoveredEdges(hoveredEdges);
             }
             if (this._arrowsLayer) {
               this._arrowsLayer.recalculate();
@@ -780,7 +777,7 @@ export class PretyGraph {
             this._edgesLayer?.setDeactivatedEdges([hoveredEdges])
             this._arrowsLayer?.setDeactivatedArrowByEdges([hoveredEdges])
             // Деактивируем ноды ребра
-            this._nodesLayer?.setActiveNodes([hoveredEdges.source, hoveredEdges.target])
+            this._nodesLayer?.clearHoveredNodes()
             this.onEvent.emit('selectEdge', { selectedEdge: undefined })
 
           } else {
@@ -788,7 +785,7 @@ export class PretyGraph {
             this._arrowsLayer?.setActiveArrowByEdges([hoveredEdges])
 
             this._nodesLayer?.clearActiveNodes();
-            this._nodesLayer?.setActiveNodes([hoveredEdges.source, hoveredEdges.target])
+            this._nodesLayer?.setHoveredNodes([hoveredEdges.source, hoveredEdges.target])
             this.onEvent.emit('selectEdge', { selectedEdge: hoveredEdges })
           }
 
@@ -799,6 +796,10 @@ export class PretyGraph {
 
         this._render();
       }
+    }
+
+    if(this._nodesLayer && !this._nodesLayer.hoveredNode && this._edgesLayer && !this._edgesLayer.hoveredEdge){
+      this.onEvent.emit('workspaceClick');
     }
 
     this._controls.enabled = true;
@@ -862,10 +863,6 @@ export class PretyGraph {
 
     if (this._edgesLayer && this._edgesLayer.hoveredEdge) {
       this.onEvent.emit('edgeClick', { edge: this._edgesLayer.hoveredEdge, scale: this._controls.scale });
-    }
-
-    if (this._nodesLayer && !this._nodesLayer.hoveredNode && this._edgesLayer && !this._edgesLayer.hoveredEdge) {
-      this.onEvent.emit('workspaceClick');
     }
   }
 

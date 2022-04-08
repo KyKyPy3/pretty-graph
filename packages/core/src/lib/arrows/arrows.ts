@@ -121,7 +121,7 @@ export class ArrowsLayer extends EventDispatcher {
       if (newColor) {
         color.setStyle(newColor);
       } else {
-        color.setHex(edge.color);
+        color.setStyle(edge.color);
       }
 
       const index = edge.__arrowIndex / 3;
@@ -179,7 +179,7 @@ export class ArrowsLayer extends EventDispatcher {
 
       edges[i].__arrowIndex = c3;
 
-      color.setHex(edges[i].color);
+      color.setStyle(edges[i].color);
 
       const arrowVertices = this._calculateArrowVertices(edges[i].size, source, target);
 

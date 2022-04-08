@@ -209,7 +209,7 @@ export class AppComponent implements OnInit {
       nodes: [...Array(count).keys()].map((i, index) => {
         return {
           id: i,
-          color: 0x99A3A4,
+          color: '#99A3A4',
           name: this._getRandomString(Math.random() * (30 - 5) + 5),
           size: Math.random() * (30 - 5) + 5,
           showDot: !(index % 2) ? true : false,
@@ -223,7 +223,7 @@ export class AppComponent implements OnInit {
           return {
             source: id,
             target: Math.round(Math.random() * (id - 1)),
-            color: 0x99A3A4,
+            color: '#99A3A4',
             type: !(index % 10) ? 'dashed' : 'solid',
             size: Math.random() * (30 - 5) + 5
           };
