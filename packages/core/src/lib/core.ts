@@ -769,7 +769,7 @@ export class PretyGraph {
         this._render();
       }
 
-      if(this._edgesLayer?.hoveredEdge){
+      if(this._edgesLayer?.hoveredEdge && event.button === 0){
         this._edgesLayer.clearActiveEdges()
         this._arrowsLayer?.clearActiveArrowOfEdges();
         const hoveredEdges = this._edgesLayer.hoveredEdge;
