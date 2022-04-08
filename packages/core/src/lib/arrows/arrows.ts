@@ -22,6 +22,8 @@ export class ArrowsLayer extends EventDispatcher {
 
   private _arrowMaterial!: ShaderMaterial | null;
 
+  private _activeEdges: any[] = [];
+
   private _graph: any;
 
   constructor(graph: any) {
@@ -62,8 +64,10 @@ export class ArrowsLayer extends EventDispatcher {
 
     const { vertices, colors } = this._calculateArrowData();
 
-    this._arrowGeometry.setAttribute('position', new BufferAttribute(vertices, 2).setUsage(DynamicDrawUsage));
-    this._arrowGeometry.setAttribute('color', new Float32BufferAttribute( colors, 3 ).setUsage(DynamicDrawUsage));
+    this._arrowGeometry.setAttribute('position',
+      new BufferAttribute(vertices, 2).setUsage(DynamicDrawUsage));
+    this._arrowGeometry.setAttribute('color',
+      new Float32BufferAttribute( colors, 3 ).setUsage(DynamicDrawUsage));
 
     this._arrowGeometry.computeVertexNormals();
     this._arrowGeometry.boundingSphere = this._computeBoundingSphere(vertices);
@@ -83,11 +87,57 @@ export class ArrowsLayer extends EventDispatcher {
     this._graph._scene.add(this._arrowMesh);
   }
 
+
   public dispose(): void {
     this._clearInternalState();
 
     this._graph = null;
   }
+
+  public clearActiveArrowOfEdges(){
+      this.setArrowsColor(this._activeEdges)
+  }
+
+  public setActiveArrowByEdges(edges: any[]){
+    this._activeEdges = edges
+    this.setArrowsColor(this._activeEdges, this._graph.dataConfig.colorsEvents.selectEdge)
+  }
+
+  public setDeactivatedArrowByEdges(edges: any[]){
+    edges.map(x => this._activeEdges.indexOf(x)).forEach(index => {
+      this._activeEdges.splice(index , 1)
+    })
+    this.setArrowsColor(edges)
+  }
+
+  public setArrowsColor(edges: any[], newColor?: string){
+    if (!edges.length) {
+      return;
+    }
+
+    const color = new Color();
+
+    for (const edge of edges) {
+      if (newColor) {
+        color.setStyle(newColor);
+      } else {
+        color.setHex(edge.color);
+      }
+
+      const index = edge.__arrowIndex / 3;
+      this._arrowGeometry?.attributes.color.setXYZ(index, color.r, color.g, color.b);
+      this._arrowGeometry?.attributes.color.setXYZ(index + 1, color.r, color.g, color.b);
+      this._arrowGeometry?.attributes.color.setXYZ(index + 2, color.r, color.g, color.b);
+
+
+    }
+
+    if(this._arrowGeometry){
+      this._arrowGeometry.attributes.color.needsUpdate = true;
+    }
+
+  }
+
 
   private _clearInternalState(): void {
     if (this._arrowMesh) {
@@ -126,6 +176,8 @@ export class ArrowsLayer extends EventDispatcher {
         source = edges[i].target;
         target = edges[i].source;
       }
+
+      edges[i].__arrowIndex = c3;
 
       color.setHex(edges[i].color);
 

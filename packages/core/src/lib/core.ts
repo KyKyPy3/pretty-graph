@@ -98,7 +98,7 @@ export class PretyGraph {
 
   private _iframe: HTMLIFrameElement;
 
-  private _resizeTimeout: any = 0;
+  private _resizeTimeout: number = 0;
 
   private _labelHidedOnMove: boolean = false;
 
@@ -539,7 +539,7 @@ export class PretyGraph {
     this.onEvent.removeAllListeners();
   }
 
-  private _onWorkspaceClick(): void {
+  private  _onWorkspaceClick(): void {
     if (this._nodesLayer) {
       this._nodesLayer.clearActiveNodes();
     }
@@ -667,7 +667,6 @@ export class PretyGraph {
       }
 
       if (this._edgesLayer) {
-        this._edgesLayer.testEdge(position);
         this._edgesLayer.recalculate();
         this._edgesLayer.recalculatePicking();
       }
@@ -696,9 +695,10 @@ export class PretyGraph {
 		    this._selectBox.style.height = ( this._pointBottomRight.y - this._pointTopLeft.y ) + 'px';
       } else {
         if (this._nodesLayer && !this._nodesLayer.testNode(position)) {
-          if (this._edgesLayer) {
-            this._edgesLayer.testEdge(position);
-          }
+            setTimeout(() => {
+              this._edgesLayer?.testEdge(position);
+            }, 30)
+
         } else {
           if (this._edgesLayer) {
             this._edgesLayer.resetHoverEdge();
@@ -746,10 +746,13 @@ export class PretyGraph {
 
     } else {
       if (this._nodesLayer && !this._dragInProgress) {
-        if (event.ctrlKey && this._nodesLayer.hoveredNode) {
-          this._nodesLayer.setActiveNodes([this._nodesLayer.hoveredNode, ...this._nodesLayer.activeNodes]);
-        } else {
-          if (this._nodesLayer.hoveredNode) {
+
+        if( this._nodesLayer.hoveredNode){
+
+          if (event.ctrlKey ) {
+            this._nodesLayer.setActiveNodes([this._nodesLayer.hoveredNode, ...this._nodesLayer.activeNodes]);
+          } else {
+
             const activeNodes = [this._nodesLayer.hoveredNode, ...this.neighbourhoodNodes[this._nodesLayer.hoveredNode.id]];
             this._nodesLayer.setActiveNodes(activeNodes);
 
@@ -758,30 +761,37 @@ export class PretyGraph {
               const activeEdges = this.neighbourhoodEdges[this._nodesLayer.hoveredNode.id];
               this._edgesLayer.setHoveredEdges(activeEdges);
             }
-
             if (this._arrowsLayer) {
               this._arrowsLayer.recalculate();
             }
+
           }
         }
+
 
         this._render();
       }
 
       if(this._edgesLayer?.hoveredEdge){
-        console.log('try change color edge')
         this._edgesLayer.clearActiveEdges()
-        const hoveredEdges = [this._edgesLayer.hoveredEdge];
-        hoveredEdges.forEach(edge => {
-          if(edge.__active){
-            this._edgesLayer?.setDeactivatedEdges([edge])
-            this._nodesLayer?.setActiveNodes([edge.source, edge.target])
+        this._arrowsLayer?.clearActiveArrowOfEdges();
+        const hoveredEdges = this._edgesLayer.hoveredEdge;
+          if(hoveredEdges.__active){
+            this._edgesLayer?.setDeactivatedEdges([hoveredEdges])
+            this._arrowsLayer?.setDeactivatedArrowByEdges([hoveredEdges])
+            // Деактивируем ноды ребра
+            this._nodesLayer?.setActiveNodes([hoveredEdges.source, hoveredEdges.target])
+            this.onEvent.emit('selectEdge', { selectedEdge: undefined })
+
           } else {
-            this._edgesLayer?.setActiveEdges([edge])
+            this._edgesLayer?.setActiveEdges([hoveredEdges])
+            this._arrowsLayer?.setActiveArrowByEdges([hoveredEdges])
+
             this._nodesLayer?.clearActiveNodes();
-            this._nodesLayer?.setActiveNodes([edge.source, edge.target])
+            this._nodesLayer?.setActiveNodes([hoveredEdges.source, hoveredEdges.target])
+            this.onEvent.emit('selectEdge', { selectedEdge: hoveredEdges })
           }
-        })
+
 
         if (this._arrowsLayer) {
           this._arrowsLayer.recalculate();
