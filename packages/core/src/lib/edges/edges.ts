@@ -135,7 +135,7 @@ export class EdgesLayer extends EventDispatcher {
   }
 
   public clearActiveEdges(): void {
-    const deactivatingEdges = this._activeEdges.filter((edge) => edge.__active === true && !edge.__hovered);
+    const deactivatingEdges = this._activeEdges.filter((edge) => edge.__active === true && edge !== this.hoveredEdge);
     this._setEdgesSize(deactivatingEdges, 1, 1.3);
     this._setEdgesColor(deactivatingEdges)
     deactivatingEdges.forEach((edge) => edge.__active = false);
@@ -156,7 +156,7 @@ export class EdgesLayer extends EventDispatcher {
         edge.size = (edge.size * sizeMul) / sizeDiv;
 
         if (count > 1) {
-          for (let i = edge._lineSizeRange[0]; i < edge._lineSizeRange[1] / 2 + 2; i++) {
+          for (let i = edge._lineSizeRange[0]; i < edge._lineSizeRange[1]; i++) {
             this._lineGeometry.attributes.linewidth.setX(i, edge.size);
           }
         } else {
@@ -181,7 +181,6 @@ export class EdgesLayer extends EventDispatcher {
 
       this._graph.onEvent.emit('edgeUnhover', { edge: this._hoveredEdge });
       this._hoveredEdge = null;
-      console.log('unset hoveredEdge')
       this._hoveredEdgeID = -1;
     }
   }
@@ -200,7 +199,6 @@ export class EdgesLayer extends EventDispatcher {
           this.resetHoverEdge();
 
           this._hoveredEdge = this._graph._edges[id - 1];
-          console.log('set hoveredEdge')
 
           this._hoveredEdge.__hovered = true;
           this._hoveredEdgeID = id - 1;
@@ -244,8 +242,12 @@ export class EdgesLayer extends EventDispatcher {
       } else {
         color.setHex(edge.color);
       }
-      this._lineGeometry.attributes.instanceColorStart.setXYZ(edge.index, color.r, color.g, color.b);
-      this._lineGeometry.attributes.instanceColorEnd.setXYZ(edge.index, color.r, color.g, color.b);
+
+      for (let i = edge._lineSizeRange[0]; i < edge._lineSizeRange[1]; i++){
+        this._lineGeometry.attributes.instanceColorStart.setXYZ(i, color.r, color.g, color.b);
+        this._lineGeometry.attributes.instanceColorEnd.setXYZ(i, color.r, color.g, color.b);
+      }
+
     }
 
     this._lineGeometry.attributes.instanceColorStart.needsUpdate = true;
@@ -262,7 +264,7 @@ export class EdgesLayer extends EventDispatcher {
         const count = edge._lineSizeRange[1] - edge._lineSizeRange[0];
 
         if (count > 1) {
-          for (let i = edge._lineSizeRange[0]; i < edge._lineSizeRange[1] / 2 + 2; i++) {
+          for (let i = edge._lineSizeRange[0]; i < edge._lineSizeRange[1]; i++) {
             this._linesPickingGeometry.attributes.linewidth.setX(i, edge.size);
           }
         } else {
@@ -436,7 +438,7 @@ export class EdgesLayer extends EventDispatcher {
           vEnd
         );
         const points = curve.getPoints(50);
-        link._lineSizeRange = [sizes.length, sizes.length + points.length * 2];
+        link._lineSizeRange = [sizes.length, sizes.length + points.length-2];
 
         let lastPoint;
         for (let i = 0; i < points.length - 1; i += 2) {
