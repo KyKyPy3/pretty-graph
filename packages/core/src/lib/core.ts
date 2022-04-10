@@ -522,7 +522,7 @@ export class PretyGraph {
 
     this.onEvent.on('nodeHover', this._onNodeHover.bind(this));
     this.onEvent.on('nodeUnhover', this._onNodeUnhover.bind(this));
-    this.onEvent.on('workspaceClick', this. _onWorkspaceClick.bind(this));
+    this.onEvent.on('workspaceClick', this._onWorkspaceClick.bind(this));
   }
 
   private _removeControlsListeners(): void {
