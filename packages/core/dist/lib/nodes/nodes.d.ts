@@ -27,6 +27,8 @@ export declare class NodesLayer {
     setSilent(silent: boolean): void;
     draw(): void;
     getSize(): Vector3;
+    setHoveredNodes(nodes: any): void;
+    clearHoveredNodes(): void;
     setActiveNodes(nodes: any): void;
     clearActiveNodes(): void;
     setNodesColor(nodes: any[], newColor?: any): void;

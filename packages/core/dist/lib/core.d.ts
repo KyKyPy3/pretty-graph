@@ -1,5 +1,6 @@
 import { EventEmitter } from './emitter';
 import { GraphOptions } from './options';
+import { IGraphDataConfig } from './types';
 export declare class PretyGraph {
     onEvent: EventEmitter;
     nodeScalingFactor: number;
@@ -10,6 +11,7 @@ export declare class PretyGraph {
     neighbourhoodEdges: {
         [id: string]: any;
     };
+    dataConfig: IGraphDataConfig;
     private _camera;
     private _scene;
     private _options;
@@ -61,7 +63,7 @@ export declare class PretyGraph {
     activateSelectMode(): void;
     deactivateSelectMode(): void;
     toggleLabels(): void;
-    setData(data: any, options?: any): void;
+    setData(data: any, options?: IGraphDataConfig): void;
     getActiveNodes(): any[];
     getNodes(): any[];
     getNodeByID(nodeID: string): any;
