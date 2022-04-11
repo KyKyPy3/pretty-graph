@@ -12,7 +12,8 @@ import {
   Float32BufferAttribute,
   Sphere,
   Vector3,
-  WireframeGeometry
+  WireframeGeometry,
+  DynamicDrawUsage
 } from 'three';
 
 
@@ -183,6 +184,7 @@ class LineSegmentsGeometry  extends InstancedBufferGeometry {
 		}
 
 		const instanceColorBuffer = new InstancedInterleavedBuffer( colors, 6, 1 ); // rgb, rgb
+    instanceColorBuffer.setUsage(DynamicDrawUsage);
 
 		this.setAttribute( 'instanceColorStart', new InterleavedBufferAttribute( instanceColorBuffer, 3, 0 ) ); // rgb
 

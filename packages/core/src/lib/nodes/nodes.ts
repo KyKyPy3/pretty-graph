@@ -153,7 +153,7 @@ export class NodesLayer {
       translateArray[ i3 + 2 ] = 0;
 
       if (this._color) {
-        this._color.setHex(this._graph._nodes[i].color);
+        this._color.setStyle(this._graph._nodes[i].color);
 
         colors[ i3 + 0 ] = this._color.r;
         colors[ i3 + 1 ] = this._color.g;
@@ -285,6 +285,21 @@ export class NodesLayer {
     return this._size;
   }
 
+  public setHoveredNodes(nodes: any): void {
+
+    this.clearHoveredNodes();
+    this._hoveredNodes = nodes.filter(n => !n.__active );
+    this._hoveredNodes.forEach(n => n.__hovered = true);
+
+    this.setNodesColor(this._hoveredNodes, this._graph.dataConfig.colorsEvents.selectNode);
+  }
+
+  public clearHoveredNodes(): void {
+    const deactivatingNodes = this._hoveredNodes.filter((n) => n.__hovered === true
+      && !n.__active);
+    this.setNodesColor(deactivatingNodes);
+  }
+
   public setActiveNodes(nodes: any): void {
     if (this._activeNodes.length && nodes[0].index === this._activeNodes[0].index) {
       this.clearActiveNodes();
@@ -297,8 +312,10 @@ export class NodesLayer {
 
     const activatingNodes = this._activeNodes.filter((n) => n.__hovered === undefined || n.__hovered === false);
 
-    this.setNodesColor(activatingNodes, 0x4b7bec);
+    this.setNodesColor(activatingNodes, this._graph.dataConfig.colorsEvents.selectNode);
   }
+
+
 
   public clearActiveNodes(): void {
     this._activeNodes.forEach((n) => n.__active = false);
@@ -319,9 +336,9 @@ export class NodesLayer {
 
     for (const node of nodes) {
       if (newColor) {
-        color.setHex(newColor);
+        color.setStyle(newColor);
       } else {
-        color.setHex(node.color);
+        color.setStyle(node.color);
       }
 
       this._nodeColorAttribute.setXYZ(node.__positionIndex, color.r, color.g, color.b);
@@ -372,7 +389,7 @@ export class NodesLayer {
           this._hoveredNodes.forEach((n) => n.__hovered = true);
 
           const hoveringNodes = this._hoveredNodes.filter((n) => n.__active === undefined || n.__active === false);
-          this.setNodesColor(hoveringNodes, 0x4b7bec);
+          this.setNodesColor(hoveringNodes, this._graph.dataConfig.colorsEvents.hoverNode);
 
           const coordinates = this._graph._translateCoordinates(this.hoveredNode.x, this.hoveredNode.y);
           this._graph.onEvent.emit('nodeHover', { node: this.hoveredNode, ...coordinates, scale: this._graph._controls.scale });

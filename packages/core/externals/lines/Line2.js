@@ -3,12 +3,11 @@
  *
  */
 
-import {
-  LineGeometry,
-  LineMaterial
-} from 'three';
+
 
 import { LineSegments2 } from './LineSegments2';
+import {LineMaterial} from "./LineMaterial";
+import {LineGeometry} from "./LineGeometry";
 
 class Line2 extends LineSegments2 {
 	constructor(
