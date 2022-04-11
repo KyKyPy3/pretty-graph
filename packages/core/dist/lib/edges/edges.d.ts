@@ -22,12 +22,14 @@ export declare class EdgesLayer extends EventDispatcher {
     setHoveredEdges(edges: any): void;
     clearHoveredEdges(): void;
     setActiveEdges(edges: any): void;
+    setDeactivatedEdges(edges: any): void;
     clearActiveEdges(): void;
     _setEdgesSize(edges: any[], sizeMul: number, sizeDiv: number): void;
     resetHoverEdge(): void;
     testEdge(position: any): void;
     recalculate(): void;
     recalculatePicking(): void;
+    _setEdgesColor(edges: any[], newColor?: any): void;
     private _setPickingLineSize;
     private _constructMesh;
     private _constructPickingMesh;
