@@ -24,6 +24,8 @@ export class PrettyGraphControls extends EventDispatcher {
 
   private _camera!: PerspectiveCamera;
 
+  private _cameraMoved: boolean = false;
+
   private _zoom!: ZoomBehavior<Element, unknown>;
 
   private _selection!: Selection<Element, unknown, null, undefined>;
@@ -49,6 +51,7 @@ export class PrettyGraphControls extends EventDispatcher {
   public init() {
     this._zoom = zoom()
       .clickDistance(4)
+      .on('start', () => {this._cameraMoved = false})
       .filter(event => {
         if (
           !(event instanceof WheelEvent) &&
@@ -59,8 +62,8 @@ export class PrettyGraphControls extends EventDispatcher {
 
         return this.enabled && !event.ctrlKey;
       })
+      .on('zoom', event => this._zoomHandler(event))
       .on('end', this._onZoomEnd.bind(this))
-      .on('zoom', event => this._zoomHandler(event));
 
     this._selection
       .on('contextmenu', this._onContextMenu.bind(this) as OmitThisParameter<typeof this._onContextMenu>)
@@ -274,7 +277,12 @@ export class PrettyGraphControls extends EventDispatcher {
     const target = event.sourceEvent?.target || event.target;
     const e = event.sourceEvent || event;
 
-    this.dispatchEvent({ event, type: 'mouseup' });
+    this.dispatchEvent({
+      event,
+      type: 'mouseup',
+      subData: {
+        cameraMoved: this._cameraMoved
+      }});
 
     if (!this._renderer.domElement.contains(target) || e.which !== 1) {
       return;
@@ -346,6 +354,8 @@ export class PrettyGraphControls extends EventDispatcher {
       }
       const scale = this._getScaleFromZ(z);
 
+      let oldCoord = {x: this._camera.position.x, y: this._camera.position.y}
+
       if (scale !== this.scale) {
         if (scale > this.scale) {
           zoomDirection = 'in';
@@ -357,7 +367,6 @@ export class PrettyGraphControls extends EventDispatcher {
           this.scale = scale;
           const x = -(transform.x - dimensions.width / 2) / scale;
           const y = (transform.y - dimensions.height / 2) / scale;
-
           this._camera.position.set(x, y, z);
 
           this.dispatchEvent({
@@ -382,6 +391,10 @@ export class PrettyGraphControls extends EventDispatcher {
           scale: this.scale,
           type: 'pan'
         });
+      }
+
+      if(this._camera.position.x !== oldCoord.x || this._camera.position.y !== oldCoord.y){
+        this._cameraMoved = true;
       }
     }
   }

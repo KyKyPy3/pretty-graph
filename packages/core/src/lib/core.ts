@@ -252,6 +252,14 @@ export class PretyGraph {
     this.onEvent.emit('changeMode', { mode: 'view' });
   }
 
+  public clearSelectedEdges() {
+    this._edgesLayer?.clearActiveEdges();
+    this._arrowsLayer?.clearActiveArrowOfEdges();
+    this._nodesLayer?.clearHoveredNodes();
+
+    this._render()
+  }
+
   public toggleLabels(): void {
     if (this._labelsLayer) {
       this._labelsLayer.toggleLabels();
@@ -711,7 +719,7 @@ export class PretyGraph {
     this._render();
   }
 
-  private _onMouseUp({ event }): void {
+  private _onMouseUp({ event, subData }): void {
     if (this._selectMode) {
       this._selectMode = false;
       this.onEvent.emit('changeMode', { mode: 'view' });
@@ -769,8 +777,8 @@ export class PretyGraph {
         this._render();
       }
 
-      if(this._edgesLayer?.hoveredEdge && event.button === 0){
-        this._edgesLayer.clearActiveEdges()
+      if (this._edgesLayer?.hoveredEdge && event.sourceEvent.button === 0 && !subData.cameraMoved) {
+        this._edgesLayer.clearActiveEdges();
         this._arrowsLayer?.clearActiveArrowOfEdges();
         const hoveredEdges = this._edgesLayer.hoveredEdge;
           if(hoveredEdges.__active){
@@ -817,8 +825,7 @@ export class PretyGraph {
       this._controls.enabled = false;
       this._dragging = true;
     } else if(this._edgesLayer && this._edgesLayer.hoveredEdge !== null && event.buttons === 1){
-      this._controls.enabled = false;
-      this._dragging = true;
+      this._controls.enabled = true;
     } else {
       if (this._selectMode || event.shiftKey) {
         if (!this._selectMode) {
