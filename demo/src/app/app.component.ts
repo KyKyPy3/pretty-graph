@@ -164,8 +164,15 @@ export class AppComponent implements OnInit {
           links: links,
           center: nodes[nodes.length / 2]
         }, {
-          animate: true
-        });
+          showLabels: false,
+          animate: true,
+          locate: false,
+          colorsEvents: {
+            hoverEdge: '#547DE4',
+            selectEdge: '#547DE4',
+            hoverNode: '#547DE4',
+            selectNode: '#547DE4',
+          });
       });
 
       this._agent.init({
@@ -209,7 +216,7 @@ export class AppComponent implements OnInit {
       nodes: [...Array(count).keys()].map((i, index) => {
         return {
           id: i,
-          color: '#99A3A4',
+          color: '#13d6ee',
           name: this._getRandomString(Math.random() * (30 - 5) + 5),
           size: Math.random() * (30 - 5) + 5,
           showDot: !(index % 2) ? true : false,
@@ -223,7 +230,7 @@ export class AppComponent implements OnInit {
           return {
             source: id,
             target: Math.round(Math.random() * (id - 1)),
-            color: '#99A3A4',
+            color: '#be721b',
             type: !(index % 10) ? 'dashed' : 'solid',
             size: Math.random() * (30 - 5) + 5
           };
