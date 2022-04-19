@@ -164,7 +164,15 @@ export class AppComponent implements OnInit {
           links: links,
           center: nodes[nodes.length / 2]
         }, {
-          animate: true
+          showLabels: false,
+          animate: true,
+          locate: false,
+          colorsEvents: {
+            hoverEdge: '#547DE4',
+            selectEdge: '#547DE4',
+            hoverNode: '#547DE4',
+            selectNode: '#547DE4',
+          }
         });
       });
 
