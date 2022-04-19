@@ -62,6 +62,7 @@ export declare class PretyGraph {
     hideLabels(): void;
     activateSelectMode(): void;
     deactivateSelectMode(): void;
+    clearSelectedEdges(): void;
     toggleLabels(): void;
     setData(data: any, options?: IGraphDataConfig): void;
     getActiveNodes(): any[];

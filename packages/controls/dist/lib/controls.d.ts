@@ -3,6 +3,7 @@ export declare class PrettyGraphControls extends EventDispatcher {
     enabled: boolean;
     scale: number;
     private _camera;
+    private _cameraMoved;
     private _zoom;
     private _selection;
     private _renderer;
