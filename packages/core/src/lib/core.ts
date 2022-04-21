@@ -200,7 +200,14 @@ export class PretyGraph {
     this._iframe.style.width = '100%';
     this._iframe.style.zIndex = '-1';
 
-    this._container.appendChild(this._iframe);
+    if (this._renderer) {
+      this._renderer.getContext().canvas.onblur = () => {
+        this._edgesLayer?.resetHoverEdge();
+        if (this._nodesLayer) {
+          this._nodesLayer.hoveredNode = null;
+        }
+      };
+    }
 
     if (this._iframe.contentWindow) {
       this._iframe.contentWindow.addEventListener('resize', this._resizeHandler, false);
@@ -769,34 +776,34 @@ export class PretyGraph {
             if (this._arrowsLayer) {
               this._arrowsLayer.recalculate();
             }
-
           }
         }
-
 
         this._render();
       }
 
-      if (this._edgesLayer?.hoveredEdge && event.sourceEvent.button === 0 && !subData.cameraMoved) {
+      if (this._edgesLayer?.hoveredEdge
+        && event.sourceEvent
+        && event.sourceEvent.button === 0
+        && !subData.cameraMoved) {
+        const hoveredEdges = this._edgesLayer.hoveredEdge;
         this._edgesLayer.clearActiveEdges();
         this._arrowsLayer?.clearActiveArrowOfEdges();
-        const hoveredEdges = this._edgesLayer.hoveredEdge;
-          if(hoveredEdges.__active){
-            this._edgesLayer?.setDeactivatedEdges([hoveredEdges])
-            this._arrowsLayer?.setDeactivatedArrowByEdges([hoveredEdges])
-            // Деактивируем ноды ребра
-            this._nodesLayer?.clearHoveredNodes()
-            this.onEvent.emit('selectEdge', { selectedEdge: undefined })
 
-          } else {
-            this._edgesLayer?.setActiveEdges([hoveredEdges])
-            this._arrowsLayer?.setActiveArrowByEdges([hoveredEdges])
+        if (hoveredEdges.__active) {
+          this._edgesLayer?.setDeactivatedEdges([hoveredEdges]);
+          this._arrowsLayer?.setDeactivatedArrowByEdges([hoveredEdges]);
+          // Деактивируем ноды ребра
+          this._nodesLayer?.clearHoveredNodes();
+          this.onEvent.emit('selectEdge', { selectedEdge: undefined });
+        } else {
+          this._nodesLayer?.clearActiveNodes();
+          this._edgesLayer?.setActiveEdges([hoveredEdges]);
+          this._arrowsLayer?.setActiveArrowByEdges([hoveredEdges]);
 
-            this._nodesLayer?.clearActiveNodes();
-            this._nodesLayer?.setHoveredNodes([hoveredEdges.source, hoveredEdges.target])
-            this.onEvent.emit('selectEdge', { selectedEdge: hoveredEdges })
-          }
-
+          this._nodesLayer?.setHoveredNodes([hoveredEdges.source, hoveredEdges.target]);
+          this.onEvent.emit('selectEdge', { selectedEdge: hoveredEdges });
+        }
 
         if (this._arrowsLayer) {
           this._arrowsLayer.recalculate();
@@ -887,7 +894,6 @@ export class PretyGraph {
     } else if (this._edgesLayer && this._edgesLayer.hoveredEdge) {
       this.onEvent.emit('edgeContextMenu', { edge: this._edgesLayer.hoveredEdge, coordinates: position, scale: this._controls.scale });
     }
-
   }
 
   private _onPan(): void {
@@ -995,6 +1001,9 @@ export class PretyGraph {
 
     // Add the canvas to the DOM
     this._container.appendChild(this._renderer.domElement);
+
+    // Add tabIndex for focusable canvas
+    this._renderer.getContext().canvas.setAttribute('tabIndex', '0');
   }
 
   private _render(): void {
