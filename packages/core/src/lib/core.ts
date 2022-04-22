@@ -124,6 +124,8 @@ export class PretyGraph {
 
   private _onRotateListener: any;
 
+  private _onBlurListener?: (...some: any) => void;
+
   constructor(options: GraphOptions) {
     this.options = options;
 
@@ -179,7 +181,7 @@ export class PretyGraph {
         }
 
         this._render();
-      }, 20);
+      }, 20) as unknown as number;
     };
 
     this._controls.setCameraPosition(1000);
@@ -199,15 +201,6 @@ export class PretyGraph {
     this._iframe.style.height = '100%';
     this._iframe.style.width = '100%';
     this._iframe.style.zIndex = '-1';
-
-    if (this._renderer) {
-      this._renderer.getContext().canvas.onblur = () => {
-        this._edgesLayer?.resetHoverEdge();
-        if (this._nodesLayer) {
-          this._nodesLayer.hoveredNode = null;
-        }
-      };
-    }
 
     if (this._iframe.contentWindow) {
       this._iframe.contentWindow.addEventListener('resize', this._resizeHandler, false);
@@ -535,6 +528,9 @@ export class PretyGraph {
     this._onRotateListener = this._onRotate.bind(this);
     this._controls.addEventListener('rotate', this._onRotateListener);
 
+    this._onBlurListener = this._onBlur.bind(this);
+    this._controls.addEventListener('blur', this._onBlurListener)
+
     this.onEvent.on('nodeHover', this._onNodeHover.bind(this));
     this.onEvent.on('nodeUnhover', this._onNodeUnhover.bind(this));
     this.onEvent.on('workspaceClick', this._onWorkspaceClick.bind(this));
@@ -550,6 +546,7 @@ export class PretyGraph {
     this._controls.removeEventListener('mousedown', this._onMouseDownListener);
     this._controls.removeEventListener('mouseup', this._onMouseUpListener);
     this._controls.removeEventListener('rotate', this._onRotateListener);
+    this._controls.removeEventListener('blur', this._onBlurListener);
 
     this.onEvent.removeAllListeners();
   }
@@ -783,8 +780,7 @@ export class PretyGraph {
       }
 
       if (this._edgesLayer?.hoveredEdge
-        && event.sourceEvent
-        && event.sourceEvent.button === 0
+        && event.sourceEvent?.button === 0
         && !subData.cameraMoved) {
         const hoveredEdges = this._edgesLayer.hoveredEdge;
         this._edgesLayer.clearActiveEdges();
@@ -911,6 +907,11 @@ export class PretyGraph {
     }
   }
 
+  private _onBlur({ event }): void {
+    this._resetHoveredElements();
+    this.onEvent.emit('blur', event);
+  }
+
   private _onScale(event: any): void {
     if (this._nodesLayer) {
       this._nodesLayer.onScale(event.scale);
@@ -1003,7 +1004,7 @@ export class PretyGraph {
     this._container.appendChild(this._renderer.domElement);
 
     // Add tabIndex for focusable canvas
-    this._renderer.getContext().canvas.setAttribute('tabIndex', '0');
+    this._renderer.domElement.setAttribute('tabIndex', '0');
   }
 
   private _render(): void {
@@ -1153,5 +1154,12 @@ export class PretyGraph {
     };
 
     step();
+  }
+
+  private _resetHoveredElements(): void {
+    this._edgesLayer?.resetHoverEdge();
+    if (this._nodesLayer) {
+      this._nodesLayer.hoveredNode = null;
+    }
   }
 }
