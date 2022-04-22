@@ -74,6 +74,8 @@ export class PrettyGraphControls extends EventDispatcher {
       .on('wheel', this._onRotate.bind(this))
       .on('dblclick.zoom', null);
 
+    this._renderer.domElement.onblur = this._onBlur.bind(this);
+
     this._onResize = event => {
       const node = this._selection.node();
       if (node) {
@@ -190,6 +192,13 @@ export class PrettyGraphControls extends EventDispatcher {
     if (event.sourceEvent?.type === 'mouseup' && event.sourceEvent?.which === 1) {
       this._onMouseUp(event);
     }
+  }
+
+  private _onBlur(event){
+    this.dispatchEvent({
+      event,
+      type: 'blur'
+    });
   }
 
   private _onRotate() {

@@ -124,6 +124,8 @@ export class PretyGraph {
 
   private _onRotateListener: any;
 
+  private _onBlurListener?: (...some: any) => void;
+
   constructor(options: GraphOptions) {
     this.options = options;
 
@@ -179,7 +181,7 @@ export class PretyGraph {
         }
 
         this._render();
-      }, 20);
+      }, 20) as unknown as number;
     };
 
     this._controls.setCameraPosition(1000);
@@ -199,8 +201,6 @@ export class PretyGraph {
     this._iframe.style.height = '100%';
     this._iframe.style.width = '100%';
     this._iframe.style.zIndex = '-1';
-
-    this._container.appendChild(this._iframe);
 
     if (this._iframe.contentWindow) {
       this._iframe.contentWindow.addEventListener('resize', this._resizeHandler, false);
@@ -528,6 +528,9 @@ export class PretyGraph {
     this._onRotateListener = this._onRotate.bind(this);
     this._controls.addEventListener('rotate', this._onRotateListener);
 
+    this._onBlurListener = this._onBlur.bind(this);
+    this._controls.addEventListener('blur', this._onBlurListener)
+
     this.onEvent.on('nodeHover', this._onNodeHover.bind(this));
     this.onEvent.on('nodeUnhover', this._onNodeUnhover.bind(this));
     this.onEvent.on('workspaceClick', this._onWorkspaceClick.bind(this));
@@ -543,6 +546,7 @@ export class PretyGraph {
     this._controls.removeEventListener('mousedown', this._onMouseDownListener);
     this._controls.removeEventListener('mouseup', this._onMouseUpListener);
     this._controls.removeEventListener('rotate', this._onRotateListener);
+    this._controls.removeEventListener('blur', this._onBlurListener);
 
     this.onEvent.removeAllListeners();
   }
@@ -769,34 +773,33 @@ export class PretyGraph {
             if (this._arrowsLayer) {
               this._arrowsLayer.recalculate();
             }
-
           }
         }
-
 
         this._render();
       }
 
-      if (this._edgesLayer?.hoveredEdge && event.sourceEvent.button === 0 && !subData.cameraMoved) {
+      if (this._edgesLayer?.hoveredEdge
+        && event.sourceEvent?.button === 0
+        && !subData.cameraMoved) {
+        const hoveredEdges = this._edgesLayer.hoveredEdge;
         this._edgesLayer.clearActiveEdges();
         this._arrowsLayer?.clearActiveArrowOfEdges();
-        const hoveredEdges = this._edgesLayer.hoveredEdge;
-          if(hoveredEdges.__active){
-            this._edgesLayer?.setDeactivatedEdges([hoveredEdges])
-            this._arrowsLayer?.setDeactivatedArrowByEdges([hoveredEdges])
-            // Деактивируем ноды ребра
-            this._nodesLayer?.clearHoveredNodes()
-            this.onEvent.emit('selectEdge', { selectedEdge: undefined })
 
-          } else {
-            this._edgesLayer?.setActiveEdges([hoveredEdges])
-            this._arrowsLayer?.setActiveArrowByEdges([hoveredEdges])
+        if (hoveredEdges.__active) {
+          this._edgesLayer?.setDeactivatedEdges([hoveredEdges]);
+          this._arrowsLayer?.setDeactivatedArrowByEdges([hoveredEdges]);
+          // Деактивируем ноды ребра
+          this._nodesLayer?.clearHoveredNodes();
+          this.onEvent.emit('selectEdge', { selectedEdge: undefined });
+        } else {
+          this._nodesLayer?.clearActiveNodes();
+          this._edgesLayer?.setActiveEdges([hoveredEdges]);
+          this._arrowsLayer?.setActiveArrowByEdges([hoveredEdges]);
 
-            this._nodesLayer?.clearActiveNodes();
-            this._nodesLayer?.setHoveredNodes([hoveredEdges.source, hoveredEdges.target])
-            this.onEvent.emit('selectEdge', { selectedEdge: hoveredEdges })
-          }
-
+          this._nodesLayer?.setHoveredNodes([hoveredEdges.source, hoveredEdges.target]);
+          this.onEvent.emit('selectEdge', { selectedEdge: hoveredEdges });
+        }
 
         if (this._arrowsLayer) {
           this._arrowsLayer.recalculate();
@@ -887,7 +890,6 @@ export class PretyGraph {
     } else if (this._edgesLayer && this._edgesLayer.hoveredEdge) {
       this.onEvent.emit('edgeContextMenu', { edge: this._edgesLayer.hoveredEdge, coordinates: position, scale: this._controls.scale });
     }
-
   }
 
   private _onPan(): void {
@@ -903,6 +905,11 @@ export class PretyGraph {
     } else {
       this.onEvent.emit('workspaceViewChanged', { scale: this._controls.scale });
     }
+  }
+
+  private _onBlur({ event }): void {
+    this._resetHoveredElements();
+    this.onEvent.emit('blur', event);
   }
 
   private _onScale(event: any): void {
@@ -995,6 +1002,9 @@ export class PretyGraph {
 
     // Add the canvas to the DOM
     this._container.appendChild(this._renderer.domElement);
+
+    // Add tabIndex for focusable canvas
+    this._renderer.domElement.setAttribute('tabIndex', '0');
   }
 
   private _render(): void {
@@ -1144,5 +1154,12 @@ export class PretyGraph {
     };
 
     step();
+  }
+
+  private _resetHoveredElements(): void {
+    this._edgesLayer?.resetHoverEdge();
+    if (this._nodesLayer) {
+      this._nodesLayer.hoveredNode = null;
+    }
   }
 }
