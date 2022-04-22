@@ -23,6 +23,7 @@ export declare class PrettyGraphControls extends EventDispatcher {
     }): void;
     dispose(): void;
     private _onZoomEnd;
+    private _onBlur;
     private _onRotate;
     private _onContextMenu;
     private _dist;

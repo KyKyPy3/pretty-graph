@@ -52,6 +52,7 @@ export declare class PretyGraph {
     private _onMouseDownListener;
     private _onMouseUpListener;
     private _onRotateListener;
+    private _onBlurListener?;
     constructor(options: GraphOptions);
     set options(options: GraphOptions);
     get options(): GraphOptions;
@@ -83,6 +84,7 @@ export declare class PretyGraph {
     private _onDblClick;
     private _onContextMenu;
     private _onPan;
+    private _onBlur;
     private _onScale;
     private _disposeRenderer;
     private _translateCoordinates;
@@ -97,4 +99,5 @@ export declare class PretyGraph {
     private _getRandomFromRange;
     private _interpolate;
     private _animate;
+    private _resetHoveredElements;
 }
