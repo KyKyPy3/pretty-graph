@@ -807,11 +807,13 @@ export class PretyGraph {
 
         this._render();
       }
+
+      if(this._nodesLayer && !this._nodesLayer.hoveredNode && this._edgesLayer && !this._edgesLayer.hoveredEdge){
+        this.onEvent.emit('workspaceClick');
+      }
     }
 
-    if(this._nodesLayer && !this._nodesLayer.hoveredNode && this._edgesLayer && !this._edgesLayer.hoveredEdge){
-      this.onEvent.emit('workspaceClick');
-    }
+
 
     this._controls.enabled = true;
     this._dragging = false;
@@ -868,11 +870,19 @@ export class PretyGraph {
   private _onClick(): void {
     if (this._nodesLayer && this._nodesLayer.hoveredNode) {
       const coordinates = this._translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
-      this.onEvent.emit('nodeClick', { node: this._nodesLayer.hoveredNode, ...coordinates, scale: this._controls.scale });
+      this.onEvent.emit('nodeClick', {
+        node: this._nodesLayer.hoveredNode,
+        ...coordinates,
+        scale: this._controls.scale,
+
+      });
     }
 
     if (this._edgesLayer && this._edgesLayer.hoveredEdge) {
-      this.onEvent.emit('edgeClick', { edge: this._edgesLayer.hoveredEdge, scale: this._controls.scale });
+      this.onEvent.emit('edgeClick', {
+        edge: this._edgesLayer.hoveredEdge,
+        scale: this._controls.scale,
+      });
     }
   }
 
@@ -1005,6 +1015,7 @@ export class PretyGraph {
 
     // Add tabIndex for focusable canvas
     this._renderer.domElement.setAttribute('tabIndex', '0');
+    this._renderer.domElement.style.outline = 'none';
   }
 
   private _render(): void {
