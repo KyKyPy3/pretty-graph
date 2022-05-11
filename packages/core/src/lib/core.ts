@@ -867,14 +867,14 @@ export class PretyGraph {
     }
   }
 
-  private _onClick(): void {
+  private _onClick(e: { event: MouseEvent }): void {
     if (this._nodesLayer && this._nodesLayer.hoveredNode) {
       const coordinates = this._translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
       this.onEvent.emit('nodeClick', {
         node: this._nodesLayer.hoveredNode,
         ...coordinates,
         scale: this._controls.scale,
-
+        mouseEvent: e.event,
       });
     }
 
