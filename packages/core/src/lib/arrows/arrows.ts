@@ -13,9 +13,9 @@ import {
 } from 'three';
 
 import { fragmentShader, vertexShader } from './shaders';
+import { PretyGraph } from '../core';
 
 export class ArrowsLayer extends EventDispatcher {
-
   private _arrowGeometry!: BufferGeometry | null;
 
   private _arrowMesh!: Mesh | null;
@@ -24,7 +24,7 @@ export class ArrowsLayer extends EventDispatcher {
 
   private _activeEdges: any[] = [];
 
-  private _graph: any;
+  private _graph: PretyGraph;
 
   constructor(graph: any) {
     super();
@@ -65,9 +65,11 @@ export class ArrowsLayer extends EventDispatcher {
     const { vertices, colors } = this._calculateArrowData();
 
     this._arrowGeometry.setAttribute('position',
-      new BufferAttribute(vertices, 2).setUsage(DynamicDrawUsage));
+      new BufferAttribute(vertices, 2)
+        .setUsage(DynamicDrawUsage));
     this._arrowGeometry.setAttribute('color',
-      new Float32BufferAttribute( colors, 3 ).setUsage(DynamicDrawUsage));
+      new Float32BufferAttribute(colors, 3)
+        .setUsage(DynamicDrawUsage));
 
     this._arrowGeometry.computeVertexNormals();
     this._arrowGeometry.boundingSphere = this._computeBoundingSphere(vertices);
@@ -84,33 +86,31 @@ export class ArrowsLayer extends EventDispatcher {
     this._arrowMaterial.name = 'ArrowMaterial';
 
     this._arrowMesh = new Mesh(this._arrowGeometry, this._arrowMaterial);
-    this._graph._scene.add(this._arrowMesh);
+    this._graph._scene?.add(this._arrowMesh);
   }
-
 
   public dispose(): void {
     this._clearInternalState();
-
-    this._graph = null;
   }
 
-  public clearActiveArrowOfEdges(){
-      this.setArrowsColor(this._activeEdges)
+  public clearActiveArrowOfEdges() {
+    this.setArrowsColor(this._activeEdges);
   }
 
-  public setActiveArrowByEdges(edges: any[]){
-    this._activeEdges = edges
-    this.setArrowsColor(this._activeEdges, this._graph.dataConfig.colorsEvents.selectEdge)
+  public setActiveArrowByEdges(edges: any[]) {
+    this._activeEdges = edges;
+    this.setArrowsColor(this._activeEdges, this._graph.dataConfig.colorsEvents.selectEdge);
   }
 
-  public setDeactivatedArrowByEdges(edges: any[]){
-    edges.map(x => this._activeEdges.indexOf(x)).forEach(index => {
-      this._activeEdges.splice(index , 1)
-    })
-    this.setArrowsColor(edges)
+  public setDeactivatedArrowByEdges(edges: any[]) {
+    edges.map(x => this._activeEdges.indexOf(x))
+      .forEach(index => {
+        this._activeEdges.splice(index, 1);
+      });
+    this.setArrowsColor(edges);
   }
 
-  public setArrowsColor(edges: any[], newColor?: string){
+  public setArrowsColor(edges: any[], newColor?: string) {
     if (!edges.length) {
       return;
     }
@@ -128,20 +128,16 @@ export class ArrowsLayer extends EventDispatcher {
       this._arrowGeometry?.attributes.color.setXYZ(index, color.r, color.g, color.b);
       this._arrowGeometry?.attributes.color.setXYZ(index + 1, color.r, color.g, color.b);
       this._arrowGeometry?.attributes.color.setXYZ(index + 2, color.r, color.g, color.b);
-
-
     }
 
-    if(this._arrowGeometry){
+    if (this._arrowGeometry) {
       this._arrowGeometry.attributes.color.needsUpdate = true;
     }
-
   }
-
 
   private _clearInternalState(): void {
     if (this._arrowMesh) {
-      this._graph._scene.remove(this._arrowMesh);
+      this._graph._scene?.remove(this._arrowMesh);
       this._arrowMesh = null;
     }
 
@@ -162,7 +158,7 @@ export class ArrowsLayer extends EventDispatcher {
     const colors = new Float32Array(edges.length * 9);
 
     const color = new Color();
-    for ( let i = 0, i2 = 0, c3 = 0, l = edges.length; i < l; i ++, i2 += 6, c3 += 9 ) {
+    for (let i = 0, i2 = 0, c3 = 0, l = edges.length; i < l; i++, i2 += 6, c3 += 9) {
       if (edges[i].arrow === 'none') {
         continue;
       }
@@ -229,44 +225,41 @@ export class ArrowsLayer extends EventDispatcher {
     const scalingOnLineFactor = size < 6 ? 12 : 1.5 * size;
 
     // point on line at distance
-    const pointOnLine = [sourceX + scalingOnLineFactor * dx / vNorm, sourceY + scalingOnLineFactor * dy / vNorm]
+    const pointOnLine = [sourceX + scalingOnLineFactor * dx / vNorm, sourceY + scalingOnLineFactor * dy / vNorm];
 
     // endpoints of arrows at length above point (the distance from the original line
-    const pointBelow = [pointOnLine[0] - scalingCornerFactor * -dy / vNorm, pointOnLine[1] - scalingCornerFactor * dx / vNorm, ]
-    const pointAbove = [pointOnLine[0] + scalingCornerFactor * -dy / vNorm, pointOnLine[1] + scalingCornerFactor * dx / vNorm, ]
+    const pointBelow = [pointOnLine[0] - scalingCornerFactor * -dy / vNorm, pointOnLine[1] - scalingCornerFactor * dx / vNorm];
+    const pointAbove = [pointOnLine[0] + scalingCornerFactor * -dy / vNorm, pointOnLine[1] + scalingCornerFactor * dx / vNorm];
 
     return {
       pointAbove,
       pointBelow,
-      pointOnLine: [sourceX, sourceY]
-    }
+      pointOnLine: [sourceX, sourceY],
+    };
   }
 
   private _computeBoundingSphere(positions: any): Sphere {
     const boundingSphere = new Sphere();
 
-    if ( positions ) {
+    if (positions) {
       const vector = new Vector2();
       const center = new Vector2(boundingSphere.center.x, boundingSphere.center.y);
 
       let maxRadiusSq = 0;
 
-      for ( let i = 0, il = positions.length; i < il; i += 2 ) {
-
-        vector.fromArray( positions, i );
-        maxRadiusSq = Math.max( maxRadiusSq, center.distanceToSquared( vector ) );
-
+      for (let i = 0, il = positions.length; i < il; i += 2) {
+        vector.fromArray(positions, i);
+        maxRadiusSq = Math.max(maxRadiusSq, center.distanceToSquared(vector));
       }
 
       boundingSphere.radius = Math.sqrt(maxRadiusSq);
 
-      if ( isNaN( boundingSphere.radius ) ) {
+      if (isNaN(boundingSphere.radius)) {
         /* tslint:disable-next-line no-console */
-        console.error( 'THREE.BufferGeometry.computeBoundingSphere(): Computed radius is NaN. The "position" attribute is likely to have NaN values.', this );
+        console.error('THREE.BufferGeometry.computeBoundingSphere(): Computed radius is NaN. The "position" attribute is likely to have NaN values.', this);
       }
     }
 
     return boundingSphere;
-	}
-
+  }
 }

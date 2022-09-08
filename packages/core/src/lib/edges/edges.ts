@@ -7,15 +7,15 @@ import {
   LinearFilter,
   Scene,
   Vector3,
-  WebGLRenderTarget
+  WebGLRenderTarget,
 } from 'three';
 
 import { Line2 } from '../../../externals/lines/Line2.js';
 import { LineMaterial } from '../../../externals/lines/LineMaterial.js';
 import { LineSegmentsGeometry } from '../../../externals/lines/LineSegmentsGeometry.js';
+import { PretyGraph } from '../core';
 
 export class EdgesLayer extends EventDispatcher {
-
   private _lineMaterial!: LineMaterial;
 
   private _linePickingMaterial!: LineMaterial;
@@ -24,9 +24,9 @@ export class EdgesLayer extends EventDispatcher {
 
   private _linesPickingGeometry!: LineSegmentsGeometry;
 
-  private _graph: any;
+  private _graph: PretyGraph;
 
-  private _lineMesh!: Line2;
+  public _lineMesh!: Line2;
 
   private _linePickingMesh!: Line2;
 
@@ -99,8 +99,6 @@ export class EdgesLayer extends EventDispatcher {
       this._pickingTexture.dispose();
       this._pickingTexture = null;
     }
-
-    this._graph = null;
   }
 
   public setHoveredEdges(edges): void {
@@ -117,24 +115,23 @@ export class EdgesLayer extends EventDispatcher {
   }
 
   public setActiveEdges(edges): void {
-
-    this._activeEdges = edges.filter((edge) => !edge.__active);
-    this._activeEdges.forEach((edge) => edge.__active = true);
-    this._setEdgesColor(this._activeEdges, this._graph.dataConfig.colorsEvents.selectEdge)
+    this._activeEdges = edges.filter(edge => !edge.__active);
+    this._activeEdges.forEach(edge => edge.__active = true);
+    this._setEdgesColor(this._activeEdges, this._graph.dataConfig.colorsEvents.selectEdge);
   }
 
-  public setDeactivatedEdges(edges){
-
-    const deactivateEdges = edges.filter(edges => edges.__active)
+  public setDeactivatedEdges(edges) {
+    const deactivateEdges = edges.filter(edges => edges.__active);
     deactivateEdges.forEach(edge => edge.__active = false);
-    this._setEdgesColor(deactivateEdges)
+    this._setEdgesColor(deactivateEdges);
+    this._activeEdges = this._activeEdges.filter(el => edges.some(el) === false);
   }
 
   public clearActiveEdges(): void {
-    const deactivatingEdges = this._activeEdges.filter((edge) => edge.__active === true && edge !== this.hoveredEdge);
+    const deactivatingEdges = this._activeEdges.filter(edge => edge.__active === true && edge !== this.hoveredEdge);
     this._setEdgesSize(deactivatingEdges, 1, 1.3);
-    this._setEdgesColor(deactivatingEdges)
-    deactivatingEdges.forEach((edge) => edge.__active = false);
+    this._setEdgesColor(deactivatingEdges);
+    deactivatingEdges.forEach(edge => edge.__active = false);
     this._activeEdges = [];
 
     this.recalculate();
@@ -162,7 +159,6 @@ export class EdgesLayer extends EventDispatcher {
         // this._lineGeometry.attributes.linewidth.updateRange = { offset: edge._lineSizeRange[0], count };
       }
     }
-
     this._setPickingLineSize(edges);
 
     this._lineGeometry.attributes.linewidth.needsUpdate = true;
@@ -178,18 +174,20 @@ export class EdgesLayer extends EventDispatcher {
       this._graph.onEvent.emit('edgeUnhover', { edge: this._hoveredEdge });
       this._hoveredEdge = null;
       this._hoveredEdgeID = -1;
+
+      this.recalculate();
     }
   }
 
   public testEdge(position: any): void {
-    if (this._pickingTexture) {
+    if (this._pickingTexture && this._graph._renderer && this._pickingLineScene && this._graph._camera) {
       this._graph._renderer.setRenderTarget(this._pickingTexture);
       this._graph._renderer.render(this._pickingLineScene, this._graph._camera);
       this._graph._renderer.setRenderTarget(null);
       const pixelBuffer = new Uint8Array(4);
       this._graph._renderer.readRenderTargetPixels(this._pickingTexture, position.x, this._pickingTexture.height - position.y, 1, 1, pixelBuffer);
       /* tslint:disable-next-line */
-      const id = (pixelBuffer[0]<<16)|(pixelBuffer[1]<<8)|(pixelBuffer[2]);
+      const id = (pixelBuffer[0] << 16) | (pixelBuffer[1] << 8) | (pixelBuffer[2]);
       if (id) {
         if (this._hoveredEdgeID !== id - 1) {
           this.resetHoverEdge();
@@ -239,11 +237,10 @@ export class EdgesLayer extends EventDispatcher {
         color.setStyle(edge.color);
       }
 
-      for (let i = edge._lineSizeRange[0]; i < edge._lineSizeRange[1]; i++){
+      for (let i = edge._lineSizeRange[0]; i < edge._lineSizeRange[1]; i++) {
         this._lineGeometry.attributes.instanceColorStart.setXYZ(i, color.r, color.g, color.b);
         this._lineGeometry.attributes.instanceColorEnd.setXYZ(i, color.r, color.g, color.b);
       }
-
     }
 
     this._lineGeometry.attributes.instanceColorStart.needsUpdate = true;
@@ -297,7 +294,7 @@ export class EdgesLayer extends EventDispatcher {
       depthTest: false,
       gapSize: 1,
       scale: this._graph._controls ? this._graph._controls.scale : 1.0,
-      vertexColors: true
+      vertexColors: true,
     });
 
     this._lineMaterial.useColor = 1.0;
@@ -305,7 +302,7 @@ export class EdgesLayer extends EventDispatcher {
 
     this._lineMesh = new Line2(this._lineGeometry, this._lineMaterial);
     this._lineMesh.computeLineDistances();
-    this._graph._scene.add(this._lineMesh);
+    this._graph._scene?.add(this._lineMesh);
   }
 
   private _constructPickingMesh(linesData): void {
@@ -331,7 +328,7 @@ export class EdgesLayer extends EventDispatcher {
       depthTest: false,
       gapSize: 1,
       scale: this._graph._controls ? this._graph._controls.scale : 1.0,
-      vertexColors: true
+      vertexColors: true,
     });
 
     this._linePickingMaterial.useColor = 1.0;
@@ -373,7 +370,7 @@ export class EdgesLayer extends EventDispatcher {
     }
 
     if (this._lineMesh && this._graph) {
-      this._graph._scene.remove(this._lineMesh);
+      this._graph._scene?.remove(this._lineMesh);
       this._lineMesh = null;
     }
 
@@ -429,12 +426,14 @@ export class EdgesLayer extends EventDispatcher {
 
         const curve = new CubicBezierCurve3(
           vStart,
-          new Vector3(d * Math.cos(startAngle), d * Math.sin(startAngle), 0).add(vStart),
-          new Vector3(d * Math.cos(endAngle), d * Math.sin(endAngle), 0).add(vStart),
-          vEnd
+          new Vector3(d * Math.cos(startAngle), d * Math.sin(startAngle), 0)
+            .add(vStart),
+          new Vector3(d * Math.cos(endAngle), d * Math.sin(endAngle), 0)
+            .add(vStart),
+          vEnd,
         );
         const points = curve.getPoints(50);
-        link._lineSizeRange = [sizes.length, sizes.length + points.length-2];
+        link._lineSizeRange = [sizes.length, sizes.length + points.length - 2];
 
         let lastPoint;
         for (let i = 0; i < points.length - 1; i += 2) {
@@ -443,7 +442,7 @@ export class EdgesLayer extends EventDispatcher {
               lastPoint.x, lastPoint.y, 0,
               points[i].x, points[i].y, 0,
               points[i].x, points[i].y, 0,
-              points[i + 1].x, points[i + 1].y, 0
+              points[i + 1].x, points[i + 1].y, 0,
             );
 
             sizes.push(link.size, link.size);
@@ -456,9 +455,9 @@ export class EdgesLayer extends EventDispatcher {
 
             colors.push(
               color.r, color.g, color.b, // color start
-              color.r, color.g, color.b,  // color end
+              color.r, color.g, color.b, // color end
               color.r, color.g, color.b, // color start
-              color.r, color.g, color.b  // color end
+              color.r, color.g, color.b, // color end
             );
 
             pickingColors.push(
@@ -470,7 +469,7 @@ export class EdgesLayer extends EventDispatcher {
           } else {
             positions.push(
               points[i].x, points[i].y, 0,
-              points[i + 1].x, points[i + 1].y, 0
+              points[i + 1].x, points[i + 1].y, 0,
             );
 
             sizes.push(link.size);
@@ -482,7 +481,7 @@ export class EdgesLayer extends EventDispatcher {
 
             colors.push(
               color.r, color.g, color.b, // color start
-              color.r, color.g, color.b  // color end
+              color.r, color.g, color.b, // color end
             );
 
             pickingColors.push(
@@ -495,7 +494,7 @@ export class EdgesLayer extends EventDispatcher {
       } else {
         positions.push(
           sourceX, sourceY, 0, // start point
-          targetX, targetY, 0  // end point
+          targetX, targetY, 0, // end point
         );
 
         link._lineSizeRange = [sizes.length, sizes.length + 1];
@@ -508,7 +507,7 @@ export class EdgesLayer extends EventDispatcher {
 
         colors.push(
           color.r, color.g, color.b, // color start
-          color.r, color.g, color.b  // color end
+          color.r, color.g, color.b, // color end
         );
 
         pickingColors.push(
@@ -524,6 +523,6 @@ export class EdgesLayer extends EventDispatcher {
       pickingColors,
       positions,
       sizes,
-    }
+    };
   }
 }
