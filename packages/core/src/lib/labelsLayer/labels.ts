@@ -1,6 +1,7 @@
-export class LabelsLayer {
+import { PretyGraph } from '../core';
 
-  private _graph: any;
+export class LabelsLayer {
+  private readonly _graph: PretyGraph;
 
   private _labels: any[] = [];
 
@@ -8,42 +9,43 @@ export class LabelsLayer {
 
   private _textCanvas: any;
 
-  private _textContext: any;
+  private readonly _textContext: any;
 
   constructor(graph) {
     this._graph = graph;
 
-    this._textCanvas = document.createElement("canvas");
-    this._textCanvas.setAttribute("style", "position: absolute;left: 0px;top: 0px;z-index:10;");
-    this._textCanvas.width = this._graph._renderer.domElement.width;
-    this._textCanvas.height = this._graph._renderer.domElement.height;
+    this._textCanvas = document.createElement('canvas');
+    this._textCanvas.setAttribute('style', 'position: absolute;left: 0px;top: 0px;z-index:10;');
+    this._textCanvas.width = this._graph._renderer?.domElement.width;
+    this._textCanvas.height = this._graph._renderer?.domElement.height;
     this._textCanvas.style.userSelect = 'none';
     this._textCanvas.style.pointerEvents = 'none';
 
-    this._textContext = this._textCanvas.getContext("2d");
+    this._textContext = this._textCanvas.getContext('2d');
     this._graph._container.appendChild(this._textCanvas);
 
-    this._textContext.font = "12px Roboto";
+    this._textContext.font = '12px Roboto';
 
-    (CanvasRenderingContext2D.prototype as any).roundRect = function(x, y, w, h, r) {
+    (CanvasRenderingContext2D.prototype as any).roundRect = function (x, y, w, h, r) {
       let newR;
 
       if (w < 2 * r) {
         newR = w / 2;
-      };
+      }
       if (h < 2 * r) {
         newR = h / 2;
       }
 
       this.beginPath();
-      this.moveTo(x+newR, y);
-      this.arcTo(x+w, y,   x+w, y+h, newR);
-      this.arcTo(x+w, y+h, x,   y+h, newR);
-      this.arcTo(x,   y+h, x,   y,   newR);
-      this.arcTo(x,   y,   x+w, y,   newR);
+      this.moveTo(x + newR, y);
+      this.arcTo(x + w, y, x + w, y + h, newR);
+      this.arcTo(x + w, y + h, x, y + h, newR);
+      this.arcTo(x, y + h, x, y, newR);
+      this.arcTo(x, y, x + w, y, newR);
       this.closePath();
+
       return this;
-    }
+    };
   }
 
   public onResize(): void {
@@ -69,7 +71,7 @@ export class LabelsLayer {
       nodeSize,
       text,
       x,
-      y
+      y,
     });
 
     return index;
@@ -91,7 +93,7 @@ export class LabelsLayer {
 
   public toggleLabels(): void {
     if (this._isHidden) {
-      this.show()
+      this.show();
     } else {
       this.hide();
     }
@@ -124,7 +126,7 @@ export class LabelsLayer {
     const bounds = this._graph._container.getBoundingClientRect();
 
     for (const label of this._labels) {
-      const coords = this._graph._translateCoordinates(label.x, label.y);
+      const coords = this._graph.translateCoordinates(label.x, label.y);
       if (coords.x > 0 && coords.x < bounds.width && coords.y > 0 && coords.y < bounds.height && label.nodeSize * 7 * this._graph._controls.scale > 45) {
         this._drawText(label.text, coords, label.nodeSize, canvasCtx);
       }
@@ -140,7 +142,7 @@ export class LabelsLayer {
     const bounds = this._graph._container.getBoundingClientRect();
 
     for (const label of this._labels) {
-      const coords = this._graph._translateCoordinates(label.x, label.y);
+      const coords = this._graph.translateCoordinates(label.x, label.y);
       if (coords.x > 0 && coords.x < bounds.width && coords.y > 0 && coords.y < bounds.height && label.nodeSize * 7 * this._graph._controls.scale > 45) {
         this._drawText(label.text, coords, label.nodeSize);
       }
@@ -156,7 +158,7 @@ export class LabelsLayer {
     this._textContext.clearRect(0, 0, this._textContext.canvas.width, this._textContext.canvas.height);
   }
 
-  private _drawText(text: string, coords: { x: number, y: number}, nodeSize: number, canvasCtx?: CanvasRenderingContext2D): void {
+  private _drawText(text: string, coords: { x: number, y: number }, nodeSize: number, canvasCtx?: CanvasRenderingContext2D): void {
     let ctx: CanvasRenderingContext2D;
 
     if (canvasCtx) {
@@ -169,7 +171,7 @@ export class LabelsLayer {
     const textHeight = 12 * 1.286;
 
     // Calculate text width
-    ctx.font = "12px Roboto";
+    ctx.font = '12px Roboto';
     const textWidth = ctx.measureText(text).width;
 
     const textOffset = (nodeSize / 2) * this._graph.nodeScalingFactor * this._graph._controls.scale;
@@ -183,15 +185,14 @@ export class LabelsLayer {
 
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
     ctx.stroke();
-    ctx.fillStyle = "white";
+    ctx.fillStyle = 'white';
     ctx.fill();
 
     ctx.shadowColor = '';
     ctx.shadowBlur = 0;
     ctx.shadowOffsetY = 0;
 
-    ctx.fillStyle = "black";
+    ctx.fillStyle = 'black';
     ctx.fillText(text, textOffset + 6 + coords.x, coords.y + 5);
   }
-
 }

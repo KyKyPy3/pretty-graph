@@ -14,7 +14,7 @@ import {
   Vector2,
   Vector3,
   WebGLRenderTarget,
-} from "three";
+} from 'three';
 
 import {
   fragmentShader,
@@ -24,6 +24,8 @@ import {
 } from './shaders';
 
 import { ImageCanvas } from './imageCanvas';
+import { PretyGraph } from '../core';
+import { PgActivateNodeMode } from '../models/events';
 
 function throttle(func: any, wait: number, options: any = {}): any {
   let args;
@@ -61,14 +63,13 @@ function throttle(func: any, wait: number, options: any = {}): any {
 }
 
 export class NodesLayer {
-
   public hoveredNode: any = null;
 
   private _color!: Color | null;
 
   private _colorToNodeID: { [id: number]: string; } = {};
 
-  private _graph: any;
+  private readonly _graph: PretyGraph;
 
   private _nodesInstancedGeometry!: InstancedBufferGeometry | null;
 
@@ -86,7 +87,7 @@ export class NodesLayer {
 
   private _nodesPickingsMesh!: Points | null;
 
-  private _imageCanvas: ImageCanvas;
+  private readonly _imageCanvas: ImageCanvas;
 
   private _nodeTranslateAttribute!: InstancedBufferAttribute;
 
@@ -94,11 +95,11 @@ export class NodesLayer {
 
   private _pickingTexture!: WebGLRenderTarget | null;
 
-  private _imageLoaded: (event: ThreeEvent) => void;
+  private readonly _imageLoaded: (event: ThreeEvent) => void;
 
   private _silent: boolean = false;
 
-  private _size: Vector3 = new Vector3();
+  private readonly _size: Vector3 = new Vector3();
 
   private _buffer: Uint8Array = new Uint8Array();
 
@@ -106,12 +107,12 @@ export class NodesLayer {
 
   private _activeNodes: any[] = [];
 
-  constructor(graph: any) {
+  constructor(graph: PretyGraph) {
     this._graph = graph;
 
     this._imageLoaded = throttle(() => {
       if (!this._silent) {
-        this._graph._render();
+        this._graph.render();
       }
     }, 800, { trailing: true });
 
@@ -147,17 +148,17 @@ export class NodesLayer {
     const images = new Float32Array(this._graph._nodes.length);
     const showDot = new Float32Array(this._graph._nodes.length);
 
-    for (let i = 0, i3 = 0, l = this._graph._nodes.length; i < l; i ++, i3 += 3 ) {
-      translateArray[ i3 + 0 ] = this._graph._nodes[i].x;
-      translateArray[ i3 + 1 ] = this._graph._nodes[i].y;
-      translateArray[ i3 + 2 ] = 0;
+    for (let i = 0, i3 = 0, l = this._graph._nodes.length; i < l; i++, i3 += 3) {
+      translateArray[i3 + 0] = this._graph._nodes[i].x;
+      translateArray[i3 + 1] = this._graph._nodes[i].y;
+      translateArray[i3 + 2] = 0;
 
       if (this._color) {
         this._color.setStyle(this._graph._nodes[i].color);
 
-        colors[ i3 + 0 ] = this._color.r;
-        colors[ i3 + 1 ] = this._color.g;
-        colors[ i3 + 2 ] = this._color.b;
+        colors[i3 + 0] = this._color.r;
+        colors[i3 + 1] = this._color.g;
+        colors[i3 + 2] = this._color.b;
       }
 
       sizes[i] = this._graph._nodes[i].size;
@@ -185,7 +186,7 @@ export class NodesLayer {
           this._graph._nodes[i].label,
           this._graph._nodes[i].x,
           this._graph._nodes[i].y,
-          this._graph._nodes[i].size
+          this._graph._nodes[i].size,
         );
       }
     }
@@ -219,20 +220,20 @@ export class NodesLayer {
       transparent: false,
       uniforms: {
         nodeScalingFactor: {
-          value: this._graph.nodeScalingFactor
+          value: this._graph.nodeScalingFactor,
         },
         scale: {
-          value: this._graph._controls ? this._graph._controls.scale : 1.0
+          value: this._graph._controls ? this._graph._controls.scale : 1.0,
         },
         spriteDim: {
-          value: new Vector2(this._imageCanvas.textureWidth, this._imageCanvas.textureHeight)
+          value: new Vector2(this._imageCanvas.textureWidth, this._imageCanvas.textureHeight),
         },
         textureDim: {
-          value: new Vector2(this._imageCanvas.canvasWidth, this._imageCanvas.canvasHeight)
+          value: new Vector2(this._imageCanvas.canvasWidth, this._imageCanvas.canvasHeight),
         },
         textureMap: {
-          value: this._imageCanvas.textureMap
-        }
+          value: this._imageCanvas.textureMap,
+        },
       },
       vertexColors: true,
       vertexShader,
@@ -241,17 +242,17 @@ export class NodesLayer {
     this._nodeMesh = new Points(this._nodesInstancedGeometry, this._nodesMaterial);
     this._nodeMesh.frustumCulled = false;
     this._nodeMesh.renderOrder = 10;
-    this._graph._scene.add(this._nodeMesh);
+    this._graph._scene?.add(this._nodeMesh);
 
     // Add duplicates for GPU picking
     const pickingColors = new Float32Array(this._graph._nodes.length * 3);
-    for (let i = 0, i3 = 0, l = this._graph._nodes.length; i < l; i ++, i3 += 3 ) {
+    for (let i = 0, i3 = 0, l = this._graph._nodes.length; i < l; i++, i3 += 3) {
       if (this._color) {
         this._color.setHex(i + 1);
 
-        pickingColors[ i3 + 0 ] = this._color.r;
-        pickingColors[ i3 + 1 ] = this._color.g;
-        pickingColors[ i3 + 2 ] = this._color.b;
+        pickingColors[i3 + 0] = this._color.r;
+        pickingColors[i3 + 1] = this._color.g;
+        pickingColors[i3 + 2] = this._color.b;
       }
 
       this._colorToNodeID[i + 1] = this._graph._nodes[i].id;
@@ -261,16 +262,16 @@ export class NodesLayer {
       fragmentShader: pickingFragmentShader,
       uniforms: {
         nodeScalingFactor: {
-          value: this._graph.nodeScalingFactor
+          value: this._graph.nodeScalingFactor,
         },
         scale: {
-          value: this._graph._controls ? this._graph._controls.scale : 1.0
-        }
+          value: this._graph._controls ? this._graph._controls.scale : 1.0,
+        },
       },
       vertexShader: pickingVertexShader,
     });
 
-    this._nodesPickingGeometry = this._nodeMesh.geometry.clone() as BufferGeometry;
+    this._nodesPickingGeometry = this._nodeMesh.geometry.clone();
     this._nodesPickingGeometry.setAttribute('color', new InstancedBufferAttribute(pickingColors, 3));
     this._nodesPickingsMesh = new Points(this._nodesPickingGeometry, this._nodesPickingMaterial);
     this._nodesPickingsMesh.frustumCulled = false;
@@ -286,41 +287,40 @@ export class NodesLayer {
   }
 
   public setHoveredNodes(nodes: any): void {
-
     this.clearHoveredNodes();
-    this._hoveredNodes = nodes.filter(n => !n.__active );
+    this._hoveredNodes = nodes.filter(n => !n.__active);
     this._hoveredNodes.forEach(n => n.__hovered = true);
 
     this.setNodesColor(this._hoveredNodes, this._graph.dataConfig.colorsEvents.selectNode);
   }
 
   public clearHoveredNodes(): void {
-    const deactivatingNodes = this._hoveredNodes.filter((n) => n.__hovered === true
+    const deactivatingNodes = this._hoveredNodes.filter(n => n.__hovered === true
       && !n.__active);
     this.setNodesColor(deactivatingNodes);
   }
 
-  public setActiveNodes(nodes: any): void {
+  public setActiveNodes(nodes: any, mode: PgActivateNodeMode): void {
     if (this._activeNodes.length && nodes[0].index === this._activeNodes[0].index) {
       this.clearActiveNodes();
+
       return;
     }
     this.clearActiveNodes();
 
+    this._graph.onEvent.emit('activateNodes', { nodes , mode});
     this._activeNodes = nodes;
-    this._activeNodes.forEach((n) => n.__active = true);
+    this._activeNodes.forEach(n => n.__active = true);
 
-    const activatingNodes = this._activeNodes.filter((n) => n.__hovered === undefined || n.__hovered === false);
+    const activatingNodes = this._activeNodes.filter(n => n.__hovered === undefined || n.__hovered === false);
 
     this.setNodesColor(activatingNodes, this._graph.dataConfig.colorsEvents.selectNode);
   }
 
-
-
   public clearActiveNodes(): void {
-    this._activeNodes.forEach((n) => n.__active = false);
+    this._activeNodes.forEach(n => n.__active = false);
 
-    const deactivatingNodes = this._activeNodes.filter((n) => n.__hovered === undefined || n.__hovered === false);
+    const deactivatingNodes = this._activeNodes.filter(n => n.__hovered === undefined || n.__hovered === false);
 
     this.setNodesColor(deactivatingNodes);
 
@@ -354,7 +354,7 @@ export class NodesLayer {
           node.x -= offset.x;
           node.y -= offset.y;
 
-          const coordinates = this._graph._translateCoordinates(node.x, node.y);
+          const coordinates = this._graph.translateCoordinates(node.x, node.y);
           node.coordinates = coordinates;
 
           this._nodesInstancedGeometry.attributes.translation.setXYZ(node.__positionIndex, node.x, node.y, 0);
@@ -368,49 +368,55 @@ export class NodesLayer {
   }
 
   public testNode(position): any {
-    if (this._pickingTexture) {
+    if (this._pickingTexture && this._graph._renderer) {
       this._graph._renderer.setRenderTarget(this._pickingTexture);
-      this._graph._renderer.render(this._pickingNodesScene, this._graph._camera);
+      if(this._pickingNodesScene && this._graph._camera){
+        this._graph._renderer.render(this._pickingNodesScene,this._graph._camera );
+      }
+
       this._graph._renderer.setRenderTarget(null);
       const pixelBuffer = new Uint8Array(4);
       this._graph._renderer.readRenderTargetPixels(this._pickingTexture, position.x, this._pickingTexture.height - position.y, 1, 1, pixelBuffer);
       /* tslint:disable-next-line */
-      const id = (pixelBuffer[0]<<16)|(pixelBuffer[1]<<8)|(pixelBuffer[2]);
+      const id = (pixelBuffer[0] << 16) | (pixelBuffer[1] << 8) | (pixelBuffer[2]);
       if (id) {
         const node = this._graph._indexedNodes[this._colorToNodeID[id]];
         if (this.hoveredNode !== node) {
           // clear last nodes
-          const unhoveringNodes = this._hoveredNodes.filter((n) => n.__active === undefined || n.__active === false);
+          const unhoveringNodes = this._hoveredNodes.filter(n => n.__active === undefined || n.__active === false);
           this.setNodesColor(unhoveringNodes);
-          this._hoveredNodes.forEach((n) => n.__hovered = false);
+          this._hoveredNodes.forEach(n => n.__hovered = false);
 
           this.hoveredNode = node;
           this._hoveredNodes = [node, ...this._graph.neighbourhoodNodes[node.id]];
-          this._hoveredNodes.forEach((n) => n.__hovered = true);
+          this._hoveredNodes.forEach(n => n.__hovered = true);
 
-          const hoveringNodes = this._hoveredNodes.filter((n) => n.__active === undefined || n.__active === false);
+          const hoveringNodes = this._hoveredNodes.filter(n => n.__active === undefined || n.__active === false);
           this.setNodesColor(hoveringNodes, this._graph.dataConfig.colorsEvents.hoverNode);
 
-          const coordinates = this._graph._translateCoordinates(this.hoveredNode.x, this.hoveredNode.y);
-          this._graph.onEvent.emit('nodeHover', { node: this.hoveredNode, ...coordinates, scale: this._graph._controls.scale });
-          this._graph._render();
+          const coordinates = this._graph.translateCoordinates(this.hoveredNode.x, this.hoveredNode.y);
+          this._graph.onEvent.emit('nodeHover', {
+            node: this.hoveredNode,
+            ...coordinates,
+            scale: this._graph._controls.scale,
+          });
+          this._graph.render();
         }
 
         return this.hoveredNode;
-      } else {
-        if (this.hoveredNode !== null) {
-          const unhoveringNodes = this._hoveredNodes.filter((n) => n.__active === undefined || n.__active === false);
-          this.setNodesColor(unhoveringNodes);
-          this._hoveredNodes.forEach((n) => n.__hovered = false);
-          this._hoveredNodes = [];
-
-          this._graph.onEvent.emit('nodeUnhover', { node: this.hoveredNode });
-          this.hoveredNode = null;
-          this._graph._render();
-        }
-
-        return undefined;
       }
+      if (this.hoveredNode !== null) {
+        const unhoveringNodes = this._hoveredNodes.filter(n => n.__active === undefined || n.__active === false);
+        this.setNodesColor(unhoveringNodes);
+        this._hoveredNodes.forEach(n => n.__hovered = false);
+        this._hoveredNodes = [];
+
+        this._graph.onEvent.emit('nodeUnhover', { node: this.hoveredNode });
+        this.hoveredNode = null;
+        this._graph.render();
+      }
+
+      return undefined;
     }
 
     return undefined;
@@ -421,7 +427,7 @@ export class NodesLayer {
       const index = position.x + (this._pickingTexture.height - position.y) * this._pickingTexture.width;
       const pixel = this._buffer.slice(index * 4, index * 4 + 4);
       /* tslint:disable-next-line */
-      const id = (pixel[0]<<16)|(pixel[1]<<8)|(pixel[2]);
+      const id = (pixel[0] << 16) | (pixel[1] << 8) | (pixel[2]);
       if (id) {
         return this._graph._indexedNodes[this._colorToNodeID[id]];
       }
@@ -432,17 +438,19 @@ export class NodesLayer {
 
   public recalculate(): void {
     const translateArray = new Float32Array(this._graph._nodes.length * 3);
-    for (let i = 0, i3 = 0, l = this._graph._nodes.length; i < l; i ++, i3 += 3 ) {
-      translateArray[ i3 + 0 ] = this._graph._nodes[i].x;
-      translateArray[ i3 + 1 ] = this._graph._nodes[i].y;
-      translateArray[ i3 + 2 ] = 0;
+    for (let i = 0, i3 = 0, l = this._graph._nodes.length; i < l; i++, i3 += 3) {
+      translateArray[i3 + 0] = this._graph._nodes[i].x;
+      translateArray[i3 + 1] = this._graph._nodes[i].y;
+      translateArray[i3 + 2] = 0;
 
       this._graph._nodes[i].__positionIndex = i;
       const coordinates = this._graph.translateCoordinatesFromCamera(this._graph._nodes[i].x, this._graph._nodes[i].y);
       this._graph._nodes[i].coordinates = coordinates;
 
       if (this._graph._labelsLayer && this._graph._nodes[i].__labelIndex !== undefined) {
-        this._graph._labelsLayer.setLabelPosition(this._graph._nodes[i].__labelIndex, { x: this._graph._nodes[i].x, y: this._graph._nodes[i].y, z: 0}, false);
+        this._graph._labelsLayer.setLabelPosition(this._graph._nodes[i].__labelIndex, {
+          x: this._graph._nodes[i].x, y: this._graph._nodes[i].y, z: 0,
+        });
       }
     }
 
@@ -455,10 +463,10 @@ export class NodesLayer {
   public recalculatePicking(): void {
     const translateArray = new Float32Array(this._graph._nodes.length * 3);
 
-    for (let i = 0, i3 = 0, l = this._graph._nodes.length; i < l; i ++, i3 += 3 ) {
-      translateArray[ i3 + 0 ] = this._graph._nodes[i].x;
-      translateArray[ i3 + 1 ] = this._graph._nodes[i].y;
-      translateArray[ i3 + 2 ] = 0;
+    for (let i = 0, i3 = 0, l = this._graph._nodes.length; i < l; i++, i3 += 3) {
+      translateArray[i3 + 0] = this._graph._nodes[i].x;
+      translateArray[i3 + 1] = this._graph._nodes[i].y;
+      translateArray[i3 + 2] = 0;
     }
 
     if (this._nodesPickingGeometry) {
@@ -506,7 +514,7 @@ export class NodesLayer {
   }
 
   public refreshBuffer(): void {
-    if (this._pickingTexture) {
+    if (this._pickingTexture && this._pickingNodesScene && this._graph._renderer && this._graph._camera) {
       this._graph._renderer.setRenderTarget(this._pickingTexture);
       this._graph._renderer.render(this._pickingNodesScene, this._graph._camera);
       this._graph._renderer.setRenderTarget(null);
@@ -532,7 +540,7 @@ export class NodesLayer {
     }
 
     if (this._nodeMesh) {
-      this._graph._scene.remove(this._nodeMesh);
+      this._graph._scene?.remove(this._nodeMesh);
       this._nodeMesh = null;
     }
 
@@ -556,5 +564,4 @@ export class NodesLayer {
     this.hoveredNode = null;
     this._activeNodes = [];
   }
-
 }

@@ -17,6 +17,11 @@ import { EdgesLayer } from './edges/edges';
 import { LabelsLayer } from './labelsLayer/labels';
 import { NodesLayer } from './nodes/nodes';
 import { IGraphDataConfig } from './types';
+import {
+  pgActivateNodeMode,
+} from './models';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 
 export class PretyGraph {
 
@@ -39,46 +44,48 @@ export class PretyGraph {
       selectEdge: '#547DE4',
       hoverNode: '#547DE4',
       selectNode: '#547DE4',
-    }
+    },
   };
 
-  private _camera!: PerspectiveCamera | null;
+  public _container: HTMLElement = document.body;
 
-  private _scene!: Scene | null;
+  public _labelsLayer: LabelsLayer | null = null;
+
+  public _controls!: any;
+
+  public _nodes: any[] = [];
+
+  public _edges: any[] = [];
+
+  public _renderer!: WebGLRenderer | null;
+
+  public _scene!: Scene | null;
+
+  public _camera!: PerspectiveCamera | null;
+
+  public _indexedNodes: { [id: string]: any; } = {};
 
   private _options: GraphOptions = {};
 
-  private _renderer!: WebGLRenderer | null;
+  private _composer!: EffectComposer;
 
-  private _container: HTMLElement = document.body;
+  private readonly _fov: number = 75;
 
-  private _fov: number = 75;
-
-  private _far: number = 10000;
-
-  private _nodes: any[] = [];
-
-  private _edges: any[] = [];
+  private readonly _far: number = 10000;
 
   private _center: any = null;
-
-  private _controls!: any;
 
   private _dragInProgress: boolean = false;
 
   private _dragging: boolean = false;
 
-  private _plane = new Plane();
+  private readonly _plane = new Plane();
 
-  private _raycaster = new Raycaster();
+  private readonly _raycaster = new Raycaster();
 
-  private _intersection = new Vector3()
+  private readonly _intersection = new Vector3();
 
-  private _offset = new Vector3();
-
-  private _indexedNodes: { [id: string]: any; } = {};
-
-  private _labelsLayer: LabelsLayer | null = null;
+  private readonly _offset = new Vector3();
 
   private _arrowsLayer: ArrowsLayer | null = null;
 
@@ -86,9 +93,9 @@ export class PretyGraph {
 
   private _nodesLayer: NodesLayer | null = null;
 
-  private _resizeHandler: any;
+  private readonly _resizeHandler: any;
 
-  private _selectBox: HTMLElement;
+  private readonly _selectBox: HTMLElement;
 
   private _startPoint = new Vector2();
 
@@ -96,7 +103,7 @@ export class PretyGraph {
 
   private _pointBottomRight = new Vector2();
 
-  private _iframe: HTMLIFrameElement;
+  private readonly _iframe: HTMLIFrameElement;
 
   private _resizeTimeout: number = 0;
 
@@ -147,7 +154,7 @@ export class PretyGraph {
 
     this._addControlsListeners();
 
-    this._render();
+    this.render();
 
     if (!this.options.disableLabels) {
       this._labelsLayer = new LabelsLayer(this);
@@ -180,7 +187,7 @@ export class PretyGraph {
           this._nodesLayer.onResize();
         }
 
-        this._render();
+        this.render();
       }, 20) as unknown as number;
     };
 
@@ -240,6 +247,10 @@ export class PretyGraph {
     }
   }
 
+  public render(): void {
+    this._composer.render();
+  }
+
   public activateSelectMode(): void {
     this._selectMode = true;
     this._controls.enabled = false;
@@ -257,7 +268,7 @@ export class PretyGraph {
     this._arrowsLayer?.clearActiveArrowOfEdges();
     this._nodesLayer?.clearHoveredNodes();
 
-    this._render()
+    this.render();
   }
 
   public toggleLabels(): void {
@@ -267,7 +278,6 @@ export class PretyGraph {
   }
 
   public setData(data: any, options: IGraphDataConfig = this.dataConfig): void {
-
     this.dataConfig = options;
     // Клонируем переданные узлы
     this._nodes = JSON.parse(JSON.stringify(data.nodes));
@@ -312,48 +322,48 @@ export class PretyGraph {
     }
 
     if (options.animate) {
-        for (const k in this._indexedNodes) {
-          if (lastIndexedNodes[k]) {
-            this._indexedNodes[k].toX = this._indexedNodes[k].x;
-            this._indexedNodes[k].toY = this._indexedNodes[k].y;
-            this._indexedNodes[k].fromX = lastIndexedNodes[k].x;
-            this._indexedNodes[k].fromY = lastIndexedNodes[k].y;
-            this._indexedNodes[k].x = lastIndexedNodes[k].x;
-            this._indexedNodes[k].y = lastIndexedNodes[k].y;
+      for (const k in this._indexedNodes) {
+        if (lastIndexedNodes[k]) {
+          this._indexedNodes[k].toX = this._indexedNodes[k].x;
+          this._indexedNodes[k].toY = this._indexedNodes[k].y;
+          this._indexedNodes[k].fromX = lastIndexedNodes[k].x;
+          this._indexedNodes[k].fromY = lastIndexedNodes[k].y;
+          this._indexedNodes[k].x = lastIndexedNodes[k].x;
+          this._indexedNodes[k].y = lastIndexedNodes[k].y;
+        } else {
+          this._indexedNodes[k].toX = this._indexedNodes[k].x;
+          this._indexedNodes[k].toY = this._indexedNodes[k].y;
+          if (this._center && this._indexedNodes[k].id === this._center.id) {
+            this._indexedNodes[k].fromX = this._center.x;
+            this._indexedNodes[k].fromY = this._center.y;
+            this._indexedNodes[k].x = this._center.x;
+            this._indexedNodes[k].y = this._center.y;
           } else {
-            this._indexedNodes[k].toX = this._indexedNodes[k].x;
-            this._indexedNodes[k].toY = this._indexedNodes[k].y;
-            if (this._center && this._indexedNodes[k].id === this._center.id) {
-              this._indexedNodes[k].fromX = this._center.x;
-              this._indexedNodes[k].fromY = this._center.y;
-              this._indexedNodes[k].x = this._center.x;
-              this._indexedNodes[k].y = this._center.y;
-            } else {
-              this._indexedNodes[k].fromX = this._getRandomFromRange(-this._container.clientWidth, this._container.clientWidth);
-              this._indexedNodes[k].fromY = this._getRandomFromRange(-this._container.clientHeight, this._container.clientHeight);
-              this._indexedNodes[k].x = this._getRandomFromRange(-this._container.clientWidth, this._container.clientWidth);
-              this._indexedNodes[k].y = this._getRandomFromRange(-this._container.clientHeight, this._container.clientHeight);
-            }
+            this._indexedNodes[k].fromX = this._getRandomFromRange(-this._container.clientWidth, this._container.clientWidth);
+            this._indexedNodes[k].fromY = this._getRandomFromRange(-this._container.clientHeight, this._container.clientHeight);
+            this._indexedNodes[k].x = this._getRandomFromRange(-this._container.clientWidth, this._container.clientWidth);
+            this._indexedNodes[k].y = this._getRandomFromRange(-this._container.clientHeight, this._container.clientHeight);
           }
         }
+      }
 
-        if (this._edgesLayer) {
-          this._edgesLayer.draw();
-        }
-        if (this._arrowsLayer) {
-          this._arrowsLayer.draw();
-        }
-        if (this._nodesLayer) {
-          this._nodesLayer.draw();
-        }
+      if (this._edgesLayer) {
+        this._edgesLayer.draw();
+      }
+      if (this._arrowsLayer) {
+        this._arrowsLayer.draw();
+      }
+      if (this._nodesLayer) {
+        this._nodesLayer.draw();
+      }
 
-        if (this._labelsLayer) {
-          this._labelsLayer.draw();
-        }
+      if (this._labelsLayer) {
+        this._labelsLayer.draw();
+      }
 
-        this._render();
+      this.render();
 
-        requestAnimationFrame(this._animate.bind(this));
+      requestAnimationFrame(this._animate.bind(this));
     } else {
       if (this._edgesLayer) {
         this._edgesLayer.draw();
@@ -369,7 +379,7 @@ export class PretyGraph {
         this._labelsLayer.draw();
       }
 
-      this._render();
+      this.render();
     }
 
     if (this._camera && this._nodesLayer) {
@@ -417,17 +427,22 @@ export class PretyGraph {
   public getNodeByID(nodeID: string): any {
     const node = this._indexedNodes[nodeID];
 
-    const coordinates = this._translateCoordinates(node.x, node.y);
+    const coordinates = this.translateCoordinates(node.x, node.y);
 
     return {
       node,
       ...coordinates,
-      scale: this._controls.scale
+      scale: this._controls.scale,
     };
   }
 
   public getScreenshot(): string {
-    const renderer = new WebGLRenderer({ premultipliedAlpha: false, preserveDrawingBuffer: true, antialias: true, alpha: true });
+    const renderer = new WebGLRenderer({
+      premultipliedAlpha: false,
+      preserveDrawingBuffer: true,
+      antialias: true,
+      alpha: true,
+    });
 
     if (this._scene && this._camera) {
       renderer.setSize(this._container.clientWidth, this._container.clientHeight);
@@ -435,13 +450,13 @@ export class PretyGraph {
       renderer.render(this._scene, this._camera);
     }
 
-    const screenshotCanvas = document.createElement("canvas");
+    const screenshotCanvas = document.createElement('canvas');
     screenshotCanvas.width = this._container.clientWidth;
     screenshotCanvas.height = this._container.clientHeight;
     const canvasCtx = screenshotCanvas.getContext('2d');
 
     if (canvasCtx) {
-      canvasCtx.fillStyle = "white";
+      canvasCtx.fillStyle = 'white';
       canvasCtx.fillRect(0, 0, screenshotCanvas.width, screenshotCanvas.height);
       canvasCtx.drawImage(renderer.getContext().canvas, 0, 0);
 
@@ -450,7 +465,7 @@ export class PretyGraph {
       }
     }
 
-    const image = screenshotCanvas.toDataURL( 'image/png' );
+    const image = screenshotCanvas.toDataURL('image/png');
 
     return image;
   }
@@ -500,6 +515,34 @@ export class PretyGraph {
     this._scene = null;
   }
 
+  public translateCoordinates(x: number, y: number): any {
+    const vector = new Vector3(x, y, 0);
+
+    if (this._camera && this._renderer) {
+      const widthHalf = 0.5 * this._renderer.getContext().canvas.width;
+      const heightHalf = 0.5 * this._renderer.getContext().canvas.height;
+
+      vector.project(this._camera);
+
+      vector.x = (vector.x * widthHalf) + widthHalf;
+      vector.y = -(vector.y * heightHalf) + heightHalf;
+    }
+
+    return {
+      x: vector.x,
+      y: vector.y,
+    };
+  }
+
+  public translateCoordinatesFromCamera(x: number, y: number): any {
+    const vector = new Vector3(x, y, 0);
+
+    return {
+      x: vector.x,
+      y: -vector.y,
+    };
+  }
+
   private _addControlsListeners(): void {
     this._onScaleListener = this._onScale.bind(this);
     this._controls.addEventListener('scale', this._onScaleListener);
@@ -529,7 +572,7 @@ export class PretyGraph {
     this._controls.addEventListener('rotate', this._onRotateListener);
 
     this._onBlurListener = this._onBlur.bind(this);
-    this._controls.addEventListener('blur', this._onBlurListener)
+    this._controls.addEventListener('blur', this._onBlurListener);
 
     this.onEvent.on('nodeHover', this._onNodeHover.bind(this));
     this.onEvent.on('nodeUnhover', this._onNodeUnhover.bind(this));
@@ -564,11 +607,11 @@ export class PretyGraph {
       this._arrowsLayer.recalculate();
     }
 
-    this._render();
+    this.render();
   }
 
   private _onNodeHover(data): void {
-    const node = data.node;
+    const { node } = data;
 
     const hoveredEdges = this.neighbourhoodEdges[node.id];
     if (this._edgesLayer) {
@@ -579,7 +622,7 @@ export class PretyGraph {
       this._arrowsLayer.recalculate();
     }
 
-    this._render();
+    this.render();
   }
 
   private _onNodeUnhover(): void {
@@ -591,8 +634,7 @@ export class PretyGraph {
       this._arrowsLayer.recalculate();
     }
 
-    this._render();
-
+    this.render();
   }
 
   private _onRotate({ delta }): void {
@@ -600,24 +642,21 @@ export class PretyGraph {
       this._scene.rotation.z += delta * 0.001;
     }
 
-    this._render();
+    this.render();
   }
 
   private _onMouseMove({ position, event }: any): void {
     if (this._dragging && this._camera) {
-
-
       // dragging node
       const mouse = new Vector3();
       mouse.x = (position.x / this._container.clientWidth) * 2 - 1;
       mouse.y = -(position.y / this._container.clientHeight) * 2 + 1;
       let newPos = {
         x: 0,
-        y: 0
+        y: 0,
       };
 
       if (this._nodesLayer && this._nodesLayer.hoveredNode) {
-
         if (this._labelsLayer && !this._labelsLayer.isHidden()) {
           this._labelHidedOnMove = true;
           this._labelsLayer.hide();
@@ -625,9 +664,8 @@ export class PretyGraph {
 
         newPos = {
           x: this._nodesLayer.hoveredNode ? this._nodesLayer.hoveredNode.x : 0,
-          y: this._nodesLayer.hoveredNode ? this._nodesLayer.hoveredNode.y : 0
+          y: this._nodesLayer.hoveredNode ? this._nodesLayer.hoveredNode.y : 0,
         };
-
 
         if (!this._dragInProgress) {
           const worldVector = new Vector3();
@@ -635,25 +673,28 @@ export class PretyGraph {
           this._plane.setFromNormalAndCoplanarPoint(worldVector, new Vector3(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y, 0));
           this._raycaster.setFromCamera(mouse, this._camera);
           this._raycaster.ray.intersectPlane(this._plane, this._intersection);
-          this._offset.copy(this._intersection).sub(new Vector3(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y, 0));
-          newPos = this._intersection.sub(this._offset).clone();
+          this._offset.copy(this._intersection)
+            .sub(new Vector3(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y, 0));
+          newPos = this._intersection.sub(this._offset)
+            .clone();
 
           this._dragInProgress = true;
         } else {
           this._raycaster.setFromCamera(mouse, this._camera);
           this._raycaster.ray.intersectPlane(this._plane, this._intersection);
-          newPos = this._intersection.sub(this._offset).clone();
+          newPos = this._intersection.sub(this._offset)
+            .clone();
         }
 
         if (this._nodesLayer.hoveredNode !== null) {
-          const offset = { x: 0, y: 0};
+          const offset = { x: 0, y: 0 };
           offset.x = this._nodesLayer.hoveredNode.x - newPos.x;
           offset.y = this._nodesLayer.hoveredNode.y - newPos.y;
           let nodes;
           if (this._nodesLayer && this._nodesLayer.activeNodes.length) {
-            const hasHoveredNode = this._nodesLayer.activeNodes.find((n) => {
+            const hasHoveredNode = this._nodesLayer.activeNodes.find(n => {
               if (this._nodesLayer && this._nodesLayer.hoveredNode) {
-                return n.id === this._nodesLayer.hoveredNode.id
+                return n.id === this._nodesLayer.hoveredNode.id;
               }
 
               return false;
@@ -674,8 +715,14 @@ export class PretyGraph {
           }
         }
 
-        const coordinates = this._translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
-        this.onEvent.emit('nodeMoving', { node: this._nodesLayer.hoveredNode, ...coordinates, scale: this._controls.scale });
+        const coordinates = this.translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
+        this.onEvent.emit('nodeMoving',
+          {
+            node: this._nodesLayer.hoveredNode,
+            activeNodes: this._nodesLayer.activeNodes,
+            ...coordinates,
+            scale: this._controls.scale,
+          });
       }
 
       if (this._edgesLayer) {
@@ -696,22 +743,20 @@ export class PretyGraph {
       }
 
       if (this._selectMode) {
-        this._pointBottomRight.x = Math.max( this._startPoint.x, position.x );
-		    this._pointBottomRight.y = Math.max( this._startPoint.y, position.y );
-		    this._pointTopLeft.x = Math.min( this._startPoint.x, position.x );
-        this._pointTopLeft.y = Math.min( this._startPoint.y, position.y );
+        this._pointBottomRight.x = Math.max(this._startPoint.x, position.x);
+        this._pointBottomRight.y = Math.max(this._startPoint.y, position.y);
+        this._pointTopLeft.x = Math.min(this._startPoint.x, position.x);
+        this._pointTopLeft.y = Math.min(this._startPoint.y, position.y);
 
-        this._selectBox.style.left = this._pointTopLeft.x + 'px';
-		    this._selectBox.style.top = this._pointTopLeft.y + 'px';
-		    this._selectBox.style.width = ( this._pointBottomRight.x - this._pointTopLeft.x ) + 'px';
-		    this._selectBox.style.height = ( this._pointBottomRight.y - this._pointTopLeft.y ) + 'px';
+        this._selectBox.style.left = `${this._pointTopLeft.x}px`;
+        this._selectBox.style.top = `${this._pointTopLeft.y}px`;
+        this._selectBox.style.width = `${this._pointBottomRight.x - this._pointTopLeft.x}px`;
+        this._selectBox.style.height = `${this._pointBottomRight.y - this._pointTopLeft.y}px`;
       } else {
         if (this._nodesLayer && !this._nodesLayer.testNode(position)) {
-              this._edgesLayer?.testEdge(position);
-        } else {
-          if (this._edgesLayer) {
-            this._edgesLayer.resetHoverEdge();
-          }
+          this._edgesLayer?.testEdge(position);
+        } else if (this._edgesLayer) {
+          this._edgesLayer.resetHoverEdge();
         }
 
         if (this._arrowsLayer) {
@@ -720,7 +765,7 @@ export class PretyGraph {
       }
     }
 
-    this._render();
+    this.render();
   }
 
   private _onMouseUp({ event, subData }): void {
@@ -735,8 +780,8 @@ export class PretyGraph {
       if (this._nodesLayer && this._camera) {
         const nodes = {};
         this._nodesLayer.refreshBuffer();
-        for (let x = this._pointTopLeft.x; x < this._pointBottomRight.x; x++) {
-          for (let y = this._pointTopLeft.y; y < this._pointBottomRight.y; y++) {
+        for (let { x } = this._pointTopLeft; x < this._pointBottomRight.x; x++) {
+          for (let { y } = this._pointTopLeft; y < this._pointBottomRight.y; y++) {
             const node = this._nodesLayer.pickNode({ x, y });
             if (node) {
               nodes[node.id] = node;
@@ -746,24 +791,26 @@ export class PretyGraph {
 
         if (Object.values(nodes).length) {
           if (this._nodesLayer) {
-            this._nodesLayer.setActiveNodes(Object.values(nodes));
+            this._nodesLayer.setActiveNodes(
+              Object.values(nodes),
+              pgActivateNodeMode.ByGroup,
+            );
           }
 
-          this._render();
+          this.render();
         }
       }
-
     } else {
       if (this._nodesLayer && !this._dragInProgress) {
-
-        if( this._nodesLayer.hoveredNode){
-
-          if (event.ctrlKey ) {
-            this._nodesLayer.setActiveNodes([this._nodesLayer.hoveredNode, ...this._nodesLayer.activeNodes]);
+        if (this._nodesLayer.hoveredNode) {
+          if (event.ctrlKey) {
+            this._nodesLayer.setActiveNodes(
+              [this._nodesLayer.hoveredNode, ...this._nodesLayer.activeNodes],
+              pgActivateNodeMode.BySteps,
+            );
           } else {
-
             const activeNodes = [this._nodesLayer.hoveredNode, ...this.neighbourhoodNodes[this._nodesLayer.hoveredNode.id]];
-            this._nodesLayer.setActiveNodes(activeNodes);
+            this._nodesLayer.setActiveNodes(activeNodes, pgActivateNodeMode.Single);
 
             if (this._edgesLayer) {
               this._edgesLayer.clearHoveredEdges();
@@ -776,44 +823,42 @@ export class PretyGraph {
           }
         }
 
-        this._render();
+        this.render();
       }
 
       if (this._edgesLayer?.hoveredEdge
         && event.sourceEvent?.button === 0
         && !subData.cameraMoved) {
-        const hoveredEdges = this._edgesLayer.hoveredEdge;
+        const { hoveredEdge } = this._edgesLayer;
         this._edgesLayer.clearActiveEdges();
         this._arrowsLayer?.clearActiveArrowOfEdges();
 
-        if (hoveredEdges.__active) {
-          this._edgesLayer?.setDeactivatedEdges([hoveredEdges]);
-          this._arrowsLayer?.setDeactivatedArrowByEdges([hoveredEdges]);
+        if (hoveredEdge.__active) {
+          this._edgesLayer?.setDeactivatedEdges([hoveredEdge]);
+          this._arrowsLayer?.setDeactivatedArrowByEdges([hoveredEdge]);
           // Деактивируем ноды ребра
           this._nodesLayer?.clearHoveredNodes();
           this.onEvent.emit('selectEdge', { selectedEdge: undefined });
         } else {
           this._nodesLayer?.clearActiveNodes();
-          this._edgesLayer?.setActiveEdges([hoveredEdges]);
-          this._arrowsLayer?.setActiveArrowByEdges([hoveredEdges]);
+          this._edgesLayer?.setActiveEdges([hoveredEdge]);
+          this._arrowsLayer?.setActiveArrowByEdges([hoveredEdge]);
 
-          this._nodesLayer?.setHoveredNodes([hoveredEdges.source, hoveredEdges.target]);
-          this.onEvent.emit('selectEdge', { selectedEdge: hoveredEdges });
+          this._nodesLayer?.setHoveredNodes([hoveredEdge.source, hoveredEdge.target]);
+          this.onEvent.emit('selectEdge', { selectedEdge: hoveredEdge });
         }
 
         if (this._arrowsLayer) {
           this._arrowsLayer.recalculate();
         }
 
-        this._render();
+        this.render();
       }
 
-      if(this._nodesLayer && !this._nodesLayer.hoveredNode && this._edgesLayer && !this._edgesLayer.hoveredEdge){
+      if (this._nodesLayer && !this._nodesLayer.hoveredNode && this._edgesLayer && !this._edgesLayer.hoveredEdge) {
         this.onEvent.emit('workspaceClick');
       }
     }
-
-
 
     this._controls.enabled = true;
     this._dragging = false;
@@ -829,47 +874,45 @@ export class PretyGraph {
     if (this._nodesLayer && this._nodesLayer.hoveredNode !== null && event.buttons === 1) {
       this._controls.enabled = false;
       this._dragging = true;
-    } else if(this._edgesLayer && this._edgesLayer.hoveredEdge !== null && event.buttons === 1){
+    } else if (this._edgesLayer && this._edgesLayer.hoveredEdge !== null && event.buttons === 1) {
       this._controls.enabled = true;
-    } else {
-      if (this._selectMode || event.shiftKey) {
-        if (!this._selectMode) {
-          this.activateSelectMode();
-        }
-
-        if (this._nodesLayer) {
-          this._nodesLayer.clearActiveNodes();
-
-          this._render();
-        }
-
-        if (this._renderer && this._renderer.domElement && this._renderer.domElement.parentElement) {
-          this._renderer.domElement.parentElement.appendChild(this._selectBox);
-        }
-
-        this._selectBox.style.left = position.x + 'px';
-        this._selectBox.style.top = position.y + 'px';
-        this._selectBox.style.width = '0px';
-        this._selectBox.style.height = '0px';
-        this._selectBox.style.zIndex = '10001';
-        this._selectBox.style.backgroundColor = 'rgba(75, 160, 255, 0.3)';
-        this._selectBox.style.position = 'absolute';
-        this._selectBox.style.border = '1px solid red';
-        this._selectBox.style.pointerEvents = 'none';
-
-        this._startPoint = new Vector2();
-        this._pointBottomRight = new Vector2();
-        this._pointTopLeft = new Vector2();
-
-        this._startPoint.x = position.x;
-        this._startPoint.y = position.y;
+    } else if (this._selectMode || event.shiftKey) {
+      if (!this._selectMode) {
+        this.activateSelectMode();
       }
+
+      if (this._nodesLayer) {
+        this._nodesLayer.clearActiveNodes();
+
+        this.render();
+      }
+
+      if (this._renderer && this._renderer.domElement && this._renderer.domElement.parentElement) {
+        this._renderer.domElement.parentElement.appendChild(this._selectBox);
+      }
+
+      this._selectBox.style.left = `${position.x}px`;
+      this._selectBox.style.top = `${position.y}px`;
+      this._selectBox.style.width = '0px';
+      this._selectBox.style.height = '0px';
+      this._selectBox.style.zIndex = '10001';
+      this._selectBox.style.backgroundColor = 'rgba(75, 160, 255, 0.3)';
+      this._selectBox.style.position = 'absolute';
+      this._selectBox.style.border = '1px solid red';
+      this._selectBox.style.pointerEvents = 'none';
+
+      this._startPoint = new Vector2();
+      this._pointBottomRight = new Vector2();
+      this._pointTopLeft = new Vector2();
+
+      this._startPoint.x = position.x;
+      this._startPoint.y = position.y;
     }
   }
 
   private _onClick(e: { event: MouseEvent }): void {
     if (this._nodesLayer && this._nodesLayer.hoveredNode) {
-      const coordinates = this._translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
+      const coordinates = this.translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
       this.onEvent.emit('nodeClick', {
         node: this._nodesLayer.hoveredNode,
         ...coordinates,
@@ -888,30 +931,46 @@ export class PretyGraph {
 
   private _onDblClick(): void {
     if (this._nodesLayer && this._nodesLayer.hoveredNode !== null) {
-      const coordinates = this._translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
-      this.onEvent.emit('nodeDblClick', { node: this._nodesLayer.hoveredNode, ...coordinates, scale: this._controls.scale });
+      const coordinates = this.translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
+      this.onEvent.emit('nodeDblClick', {
+        node: this._nodesLayer.hoveredNode,
+        ...coordinates,
+        scale: this._controls.scale,
+      });
     }
   }
 
   private _onContextMenu(position: { x: number, y: number }): void {
     if (this._nodesLayer && this._nodesLayer.hoveredNode) {
-      const coordinates = this._translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
-      this.onEvent.emit('nodeContextMenu', { node: this._nodesLayer.hoveredNode, ...coordinates, scale: this._controls.scale });
+      const coordinates = this.translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
+      this.onEvent.emit('nodeContextMenu', {
+        node: this._nodesLayer.hoveredNode,
+        ...coordinates,
+        scale: this._controls.scale,
+      });
     } else if (this._edgesLayer && this._edgesLayer.hoveredEdge) {
-      this.onEvent.emit('edgeContextMenu', { edge: this._edgesLayer.hoveredEdge, coordinates: position, scale: this._controls.scale });
+      this.onEvent.emit('edgeContextMenu', {
+        edge: this._edgesLayer.hoveredEdge,
+        coordinates: position,
+        scale: this._controls.scale,
+      });
     }
   }
 
   private _onPan(): void {
-    this._render();
+    this.render();
 
     if (this._labelsLayer) {
       this._labelsLayer.recalculate();
     }
 
     if (this._nodesLayer && this._nodesLayer.hoveredNode) {
-      const coordinates = this._translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
-      this.onEvent.emit('nodeScaling', { node: this._nodesLayer.hoveredNode, ...coordinates, scale: this._controls.scale });
+      const coordinates = this.translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
+      this.onEvent.emit('nodeScaling', {
+        node: this._nodesLayer.hoveredNode,
+        ...coordinates,
+        scale: this._controls.scale,
+      });
     } else {
       this.onEvent.emit('workspaceViewChanged', { scale: this._controls.scale });
     }
@@ -931,17 +990,27 @@ export class PretyGraph {
       this._edgesLayer.onScale(event.scale);
     }
 
-    this._render();
+    this.render();
 
     if (this._labelsLayer) {
       this._labelsLayer.recalculate();
     }
 
     if (this._nodesLayer && this._nodesLayer.hoveredNode) {
-      const coordinates = this._translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
-      this.onEvent.emit('nodeScaling', { node: this._nodesLayer.hoveredNode, ...coordinates, scale: this._controls.scale, canZoom: event.canZoom, zoomDirection: event.zoomDirection });
+      const coordinates = this.translateCoordinates(this._nodesLayer.hoveredNode.x, this._nodesLayer.hoveredNode.y);
+      this.onEvent.emit('nodeScaling', {
+        node: this._nodesLayer.hoveredNode,
+        ...coordinates,
+        scale: this._controls.scale,
+        canZoom: event.canZoom,
+        zoomDirection: event.zoomDirection,
+      });
     } else {
-      this.onEvent.emit('workspaceViewChanged', { scale: this._controls.scale, canZoom: event.canZoom, zoomDirection: event.zoomDirection });
+      this.onEvent.emit('workspaceViewChanged', {
+        scale: this._controls.scale,
+        canZoom: event.canZoom,
+        zoomDirection: event.zoomDirection,
+      });
     }
   }
 
@@ -957,34 +1026,6 @@ export class PretyGraph {
     }
   }
 
-  private _translateCoordinates(x: number, y: number): any {
-    const vector = new Vector3(x, y, 0);
-
-    if (this._camera && this._renderer) {
-      const widthHalf = 0.5 * this._renderer.getContext().canvas.width;
-      const heightHalf = 0.5 * this._renderer.getContext().canvas.height;
-
-      vector.project(this._camera);
-
-      vector.x = ( vector.x * widthHalf ) + widthHalf;
-      vector.y = - ( vector.y * heightHalf ) + heightHalf;
-    }
-
-    return {
-      x: vector.x,
-      y: vector.y
-    };
-  }
-
-  public translateCoordinatesFromCamera(x: number, y: number): any {
-    const vector = new Vector3(x, y, 0);
-
-    return {
-      x: vector.x,
-      y: -vector.y
-    };
-  }
-
   private _setupScene(): void {
     this._scene = new Scene();
     this._scene.background = new Color(this.options.backgroundColor || 'white');
@@ -998,7 +1039,7 @@ export class PretyGraph {
   private _setupRenderer(): void {
     this._renderer = new WebGLRenderer({
       alpha: true,
-      antialias: true
+      antialias: true,
     });
 
     // Add support for retina displays
@@ -1010,18 +1051,21 @@ export class PretyGraph {
     this._renderer.domElement.style.position = 'absolute';
     this._renderer.domElement.style.userSelect = 'none';
 
+    // postprocessing
+
+    this._composer = new EffectComposer(this._renderer);
+
+    if (this._scene && this._camera) {
+      const renderPass = new RenderPass(this._scene, this._camera);
+      this._composer.addPass(renderPass);
+    }
+
     // Add the canvas to the DOM
     this._container.appendChild(this._renderer.domElement);
 
     // Add tabIndex for focusable canvas
     this._renderer.domElement.setAttribute('tabIndex', '0');
     this._renderer.domElement.style.outline = 'none';
-  }
-
-  private _render(): void {
-    if (this._scene && this._camera && this._renderer) {
-      this._renderer.render(this._scene, this._camera);
-    }
   }
 
   private _collectNeighbourhoods(): void {
@@ -1106,7 +1150,8 @@ export class PretyGraph {
     if ((newValue *= 2) < 1) {
       return 0.5 * newValue * newValue;
     }
-    return - 0.5 * (--newValue * (newValue - 2) - 1);
+
+    return -0.5 * (--newValue * (newValue - 2) - 1);
   }
 
   private _animate(): void {
@@ -1146,7 +1191,7 @@ export class PretyGraph {
           this._nodesLayer.setSilent(false);
         }
 
-        this._render();
+        this.render();
       } else {
         p = this._interpolate(p);
         for (const k in this._indexedNodes) {
@@ -1159,7 +1204,7 @@ export class PretyGraph {
         // ADD change node positions
         this._moveNodes();
 
-        this._render();
+        this.render();
         requestAnimationFrame(step);
       }
     };
