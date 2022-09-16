@@ -1,11 +1,12 @@
 import { EventDispatcher } from 'three';
+import { Line2 } from '../../../externals/lines/Line2.js';
 export declare class EdgesLayer extends EventDispatcher {
     private _lineMaterial;
     private _linePickingMaterial;
     private _lineGeometry;
     private _linesPickingGeometry;
     private _graph;
-    private _lineMesh;
+    _lineMesh: Line2;
     private _linePickingMesh;
     private _pickingLineScene;
     private _pickingTexture;

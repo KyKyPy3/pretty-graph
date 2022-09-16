@@ -1,9 +1,9 @@
 export declare class LabelsLayer {
-    private _graph;
+    private readonly _graph;
     private _labels;
     private _isHidden;
     private _textCanvas;
-    private _textContext;
+    private readonly _textContext;
     constructor(graph: any);
     onResize(): void;
     clear(): void;
